@@ -1,12 +1,12 @@
 ---
 name: chain-builder
-description: Create, modify, and manage agent chains through natural language. Use when user says "show chain", "add agent to chain", "create chain", "modify chain", "activate chain", "switch chain", "test chain", or wants to customize agent workflow.
-argument-hint: [describe what you want to do with the chain]
+description: Create, modify, and manage agent chains and per-project hooks. Use when user says "show chain", "add agent to chain", "create chain", "modify chain", "add hook", "create custom hook", "activate chain", "switch chain", or wants to customize agent workflow.
+argument-hint: [describe what you want to do with the chain or hooks]
 ---
 
 # Chain Builder
 
-Build and manage agent chains through natural language. Single YAML file = entire chain.
+Build and manage agent chains + per-project custom hooks. Single YAML = entire chain.
 
 ## Workflow
 
@@ -30,10 +30,28 @@ Build and manage agent chains through natural language. Single YAML file = entir
 | Switch to NAME | Backup current → activate NAME |
 | List chains | `ls ~/.claude/chains/*.yaml` |
 | Test chain | Run validation, report results |
+| Add hook EVENT | Create per-project custom hook |
+| Show hooks | List project hooks for current CWD |
+| Remove hook NAME | Remove custom hook from project |
+
+## Per-Project Hooks
+
+Manage custom hooks that run per-project alongside the plugin chain. Details in `references/per-project-hooks.md`.
+
+### Quick Reference
+
+```bash
+# User says: "add a PostToolUse hook for linting"
+# chain-builder does:
+1. Encode CWD: /Users/me/myapp → -Users-me-myapp
+2. Create ~/.claude/projects/-Users-me-myapp/chain-config.yaml
+3. Create ~/.claude/projects/-Users-me-myapp/custom-hooks/lint-check.js
+4. Show confirmation
+```
 
 ## Show Chain Diagram
 
-Read `~/.claude/hooks/chains/chain-config.json` and display:
+Read `chain-config.json` and display:
 
 ```
 planner → plan-reviewer → implementer → code-reviewer → tester → git-manager
@@ -48,29 +66,12 @@ Schema reference: `references/chain-schema.md`
 
 ## Validate
 
-Before every generate, run checks from `references/validation-rules.md`:
-- All agents exist (file or inline)
-- No broken links
-- No orphans
-- Terminal node exists
-- Warn on cycles (don't block)
-- Skills exist
+Before every generate, run checks from `references/validation-rules.md`.
 
 ## Generate
 
-From YAML, produce 3 outputs:
-
-```bash
-# 1. Backup
-cp ~/.claude/hooks/chains/chain-config.json ~/.claude/chains/.backup/chain-config.json.bak
-cp ~/.claude/hooks/chains/verification-rules.json ~/.claude/chains/.backup/verification-rules.json.bak
-
-# 2. Generate chain-config.json from YAML flow section
-# 3. Generate verification-rules.json from YAML verification section
-# 4. Generate agent .md files for existing: false agents only
-```
-
-**Never overwrite existing agent `.md` files.**
+From YAML, produce chain-config.json + verification-rules.json + agent .md files.
+Always backup before overwrite. Never overwrite existing agent `.md` files.
 
 ## Rules
 
