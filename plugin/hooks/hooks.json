@@ -1,0 +1,53 @@
+{
+  "description": "BrainBrew DevKit - Agent chain engine hooks",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; node \"$_R/scripts/runner.cjs\" PostToolUse",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; node \"$_R/scripts/runner.cjs\" SubagentStart",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; node \"$_R/scripts/runner.cjs\" SubagentStop",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; node \"$_R/scripts/runner.cjs\" Stop",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
