@@ -5,45 +5,74 @@ AI-powered development toolkit for Claude Code — customizable agent chains, mo
 ## Installation
 
 ```bash
-# Install from GitHub
 claude plugins install github:brainbrewlabs/brainbrew-devkit
 ```
 
 ## Quick Start
 
-Just tell Claude what you want:
+Just tell Claude what you want in natural language:
 
 ```
-"Set up a development workflow"
-"I need a CI/CD pipeline for this project"
-"Create a custom agent for API testing"
-"Build me a skill for database backups"
+"Set up a development workflow"        → bump_template(develop)
+"I need a CI/CD pipeline"              → bump_template(devops)
+"Create an agent for API testing"      → create_agent(...)
+"Build me a deployment skill"          → create_skill(...)
+"Tell implementer to fix the bug"      → memory_add(...)
+"What agents do I have?"               → list_agents()
 ```
 
-Or use slash commands:
-```bash
-/chain-builder bump develop
-/skill-creator
-```
+## MCP Tools
+
+All functionality exposed via MCP - no CLI needed:
+
+| Tool | Description |
+|------|-------------|
+| `bump_template` | Set up workflow template |
+| `list_templates` | Show available templates |
+| `create_agent` | Create new agent |
+| `list_agents` | List project agents |
+| `create_skill` | Create new skill |
+| `list_skills` | List project skills |
+| `memory_add` | Send message to agents |
+| `memory_list` | List messages |
+| `memory_clear` | Clear messages |
+| `get_chain_flow` | Show chain config |
+| `add_agent_to_flow` | Add agent to chain |
 
 ## Workflow Templates
 
-| Template | Agents | Skills | Chain |
-|----------|--------|--------|-------|
-| **develop** | 22 | 22 | planner → plan-reviewer → implementer → code-reviewer → tester → git-manager |
-| **devops** | 10 | 10 | code-scanner → security-auditor → test-runner → deployer → monitor |
-| **marketing** | 6 | 6 | researcher → content-writer → editor → seo-optimizer → publisher → analyzer |
-| **research** | 5 | 5 | topic-researcher → source-gatherer → analyzer → synthesizer → report-writer |
-| **docs** | 5 | 5 | code-scanner → doc-generator → doc-reviewer → formatter → publisher |
-| **support** | 5 | 5 | ticket-classifier → router → knowledge-searcher → response-drafter → reviewer |
-| **data** | 5 | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
-| **moderation** | 5 | 5 | content-scanner → classifier → flagger → reviewer → actioner |
-| **review** | 1 | 1 | code-reviewer → END |
-| **minimal** | 0 | 0 | hooks only (add your own) |
+| Template | Agents | Chain |
+|----------|--------|-------|
+| **develop** | 22 | planner → plan-reviewer → implementer → code-reviewer → tester → git-manager |
+| **devops** | 10 | code-scanner → security-auditor → test-runner → deployer → monitor |
+| **marketing** | 6 | researcher → content-writer → editor → seo-optimizer → publisher |
+| **research** | 5 | topic-researcher → source-gatherer → analyzer → synthesizer → report-writer |
+| **docs** | 5 | code-scanner → doc-generator → doc-reviewer → formatter → publisher |
+| **support** | 5 | ticket-classifier → router → knowledge-searcher → response-drafter → reviewer |
+| **data** | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
+| **moderation** | 5 | content-scanner → classifier → flagger → reviewer → actioner |
+| **review** | 1 | code-reviewer → END |
+| **minimal** | 0 | hooks only (add your own) |
+
+## Memory Bus - Inter-Agent Communication
+
+Send messages between agents:
+
+```
+"Tell implementer to fix auth"     → memory_add(target: "agent:implementer")
+"Next agent should check security" → memory_add(target: "next")
+"Remember to use TypeScript"       → memory_add(persistence: "permanent")
+```
+
+| Persistence | Behavior |
+|-------------|----------|
+| `session` | Default - cleared on exit |
+| `once` | Consumed after delivery |
+| `permanent` | Forever (rules, knowledge) |
 
 ## AI-Powered Routing
 
-Each template includes intelligent routing rules:
+Each template includes intelligent routing:
 
 ```yaml
 flow:
@@ -51,97 +80,18 @@ flow:
     routes:
       tester: "Code approved"
       implementer: "Code has issues"
-      security-scan: "Security concerns"
     decide: |
-      If code is APPROVED → "tester"
-      If ANY bugs, issues → "implementer"
-      If security vulnerabilities → "security-scan"
+      If APPROVED → "tester"
+      If issues → "implementer"
 ```
-
-The `decide:` prompt is sent to Haiku AI to analyze agent output and pick the next agent.
-
-## Always Available (Plugin Scope)
-
-**Management Skills:**
-- `chain-builder` — bump workflow templates
-- `skill-creator` — create new skills
-- `skill-improver` — improve existing skills
-- `improve-agent` — improve agent definitions
-- `skillhub` — search and install skills
-
-**Management Agents:**
-- `skill-reviewer` — review skill quality
-- `skillhub-manager` — search skills from SkillHub
-
-## How It Works
-
-1. `/chain-builder bump <template>` copies agents, skills, and config to `{cwd}/.claude/`
-2. **Plugin hooks** route events through `runner.cjs`
-3. **post-agent.cjs** reads `decide:` prompt, calls Haiku, picks next agent
-4. Chain continues automatically until END
 
 ## Customization
-
-### Create Custom Agent
-
-```markdown
-<!-- .claude/agents/my-agent.md -->
----
-name: my-agent
-description: What this agent does.
-tools:
-  - Bash
-  - Read
-  - Edit
----
-
-# My Agent
-
-## Responsibilities
-1. Task 1
-2. Task 2
-```
-
-### Create Custom Skill
-
-```bash
-/skill-creator
-```
-
-Or manually create `.claude/skills/my-skill/SKILL.md`
-
-### Create Custom Chain
-
-Edit `.claude/chain-config.yaml`:
-
-```yaml
-flow:
-  agent-a:
-    routes:
-      agent-b: "Step complete"
-
-  agent-b:
-    routes:
-      agent-c: "Success"
-      agent-a: "Needs retry"
-    decide: |
-      If SUCCESS → "agent-c"
-      If FAILED → "agent-a"
-
-  agent-c:
-    routes:
-      END: "Done"
-```
-
-### Use Cases
 
 | What you want | Just say |
 |---------------|----------|
 | Dev workflow | "Set up a development workflow" |
 | CI/CD pipeline | "I need a CI/CD pipeline" |
-| Content workflow | "Create a content marketing workflow" |
 | Custom agent | "Create an agent for X" |
 | Custom skill | "Build me a skill for Y" |
-| Custom chain | "Create a workflow: A → B → C" |
-| Find skills | "Find me a skill for testing" |
-| Improve agent | "Improve my code-reviewer agent" |
+| Send to agent | "Tell implementer to fix X" |
+| List items | "What agents/skills do I have?" |
