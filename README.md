@@ -65,6 +65,117 @@ flow:
 - **routes:** Maps agent names to descriptions (multiple routes allowed)
 - **decide:** AI prompt sent to Haiku to pick which route based on output
 
+## Customization
+
+### Create Custom Agent
+
+```bash
+# Start with minimal template
+/chain-builder bump minimal
+
+# Create a new agent
+# Add file: .claude/agents/my-agent.md
+```
+
+```markdown
+---
+name: my-agent
+description: Description of what this agent does.
+tools:
+  - Bash
+  - Read
+  - Edit
+---
+
+# My Agent
+
+## Responsibilities
+1. Task 1
+2. Task 2
+
+## Output Format
+- Expected output structure
+```
+
+### Create Custom Skill
+
+```bash
+# Use skill-creator
+/skill-creator
+
+# Or manually create: .claude/skills/my-skill/SKILL.md
+```
+
+```markdown
+---
+name: my-skill
+description: When to trigger this skill.
+---
+
+# My Skill
+
+## Steps
+1. Step 1
+2. Step 2
+
+## Commands
+\`\`\`bash
+# Example commands
+\`\`\`
+```
+
+### Create Custom Chain
+
+Edit `.claude/chain-config.yaml`:
+
+```yaml
+hooks:
+  PostToolUse:
+    - plugin:post-agent.cjs
+  SubagentStart:
+    - plugin:subagent-start.cjs
+  SubagentStop:
+    - plugin:subagent-stop.cjs
+
+flow:
+  # Your custom chain
+  researcher:
+    routes:
+      writer: "Research complete"
+
+  writer:
+    routes:
+      reviewer: "Draft complete"
+      researcher: "Need more research"
+    decide: |
+      If draft COMPLETE → "reviewer"
+      If needs MORE INFO → "researcher"
+
+  reviewer:
+    routes:
+      publisher: "Approved"
+      writer: "Needs revision"
+    decide: |
+      If APPROVED → "publisher"
+      If REVISION needed → "writer"
+
+  publisher:
+    routes:
+      END: "Published"
+```
+
+### Mix & Match Templates
+
+```bash
+# Start with one template
+/chain-builder bump develop
+
+# Copy agents from another template manually
+cp ~/.claude/plugins/cache/.../devops/agents/deployer.md .claude/agents/
+
+# Add to your flow in chain-config.yaml
+```
+
 ## Directory Structure
 
 ```

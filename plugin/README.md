@@ -72,7 +72,65 @@ The `decide:` prompt is sent to Haiku AI to analyze agent output and pick the ne
 
 ## Customization
 
-After bumping a template, customize in `.claude/`:
-- Edit agents in `.claude/agents/`
-- Edit skills in `.claude/skills/`
-- Modify flow in `.claude/chain-config.yaml`
+### Create Custom Agent
+
+```markdown
+<!-- .claude/agents/my-agent.md -->
+---
+name: my-agent
+description: What this agent does.
+tools:
+  - Bash
+  - Read
+  - Edit
+---
+
+# My Agent
+
+## Responsibilities
+1. Task 1
+2. Task 2
+```
+
+### Create Custom Skill
+
+```bash
+/skill-creator
+```
+
+Or manually create `.claude/skills/my-skill/SKILL.md`
+
+### Create Custom Chain
+
+Edit `.claude/chain-config.yaml`:
+
+```yaml
+flow:
+  agent-a:
+    routes:
+      agent-b: "Step complete"
+
+  agent-b:
+    routes:
+      agent-c: "Success"
+      agent-a: "Needs retry"
+    decide: |
+      If SUCCESS → "agent-c"
+      If FAILED → "agent-a"
+
+  agent-c:
+    routes:
+      END: "Done"
+```
+
+### Use Cases
+
+| Goal | Command |
+|------|---------|
+| Full dev workflow | `/chain-builder bump develop` |
+| CI/CD pipeline | `/chain-builder bump devops` |
+| Content creation | `/chain-builder bump marketing` |
+| Custom from scratch | `/chain-builder bump minimal` |
+| Create new skill | `/skill-creator` |
+| Improve agent | `/improve-agent` |
+| Find skills | `/skillhub search <query>` |
