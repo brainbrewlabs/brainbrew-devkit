@@ -2,8 +2,6 @@
 # Chain: topic-researcher → source-gatherer → analyzer → synthesizer → report-writer
 #
 # Usage: /chain-builder bump research
-#
-# For academic research, market research, and technical investigation.
 
 hooks:
   PostToolUse:
@@ -12,3 +10,36 @@ hooks:
     - plugin:subagent-start.cjs
   SubagentStop:
     - plugin:subagent-stop.cjs
+
+flow:
+  topic-researcher:
+    routes:
+      source-gatherer: "Topic defined, gather sources"
+
+  source-gatherer:
+    routes:
+      analyzer: "Sources collected"
+      topic-researcher: "Need to refine topic"
+    decide: |
+      If SUFFICIENT sources found → "analyzer"
+      If INSUFFICIENT sources, topic too broad/narrow → "topic-researcher"
+
+  analyzer:
+    routes:
+      synthesizer: "Analysis complete"
+      source-gatherer: "Need more sources"
+    decide: |
+      If analysis COMPLETE, patterns found → "synthesizer"
+      If GAPS in data, need more sources → "source-gatherer"
+
+  synthesizer:
+    routes:
+      report-writer: "Synthesis complete"
+      analyzer: "Need deeper analysis"
+    decide: |
+      If synthesis COMPLETE, insights clear → "report-writer"
+      If needs MORE ANALYSIS → "analyzer"
+
+  report-writer:
+    routes:
+      END: "Report complete"

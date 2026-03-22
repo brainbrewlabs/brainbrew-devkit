@@ -2,8 +2,6 @@
 # Chain: ticket-classifier → router → knowledge-searcher → response-drafter → reviewer
 #
 # Usage: /chain-builder bump support
-#
-# For customer support, helpdesk, and ticket management.
 
 hooks:
   PostToolUse:
@@ -12,3 +10,40 @@ hooks:
     - plugin:subagent-start.cjs
   SubagentStop:
     - plugin:subagent-stop.cjs
+
+flow:
+  ticket-classifier:
+    routes:
+      router: "Ticket classified"
+
+  router:
+    routes:
+      knowledge-searcher: "Route to knowledge base"
+      response-drafter: "Simple query, draft response"
+    decide: |
+      If needs KNOWLEDGE lookup → "knowledge-searcher"
+      If SIMPLE question, can answer directly → "response-drafter"
+
+  knowledge-searcher:
+    routes:
+      response-drafter: "Knowledge found"
+      router: "Need to reroute"
+    decide: |
+      If FOUND relevant knowledge → "response-drafter"
+      If NO knowledge found, escalate → "router"
+
+  response-drafter:
+    routes:
+      reviewer: "Response drafted"
+      knowledge-searcher: "Need more info"
+    decide: |
+      If response COMPLETE → "reviewer"
+      If needs MORE INFO → "knowledge-searcher"
+
+  reviewer:
+    routes:
+      END: "Response approved, send"
+      response-drafter: "Response needs revision"
+    decide: |
+      If response APPROVED, helpful, accurate → "END"
+      If response NEEDS REVISION → "response-drafter"
