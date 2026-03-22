@@ -1,49 +1,40 @@
 ---
 name: chain-builder
-description: Create and manage agent chains + hooks per-project. Use when user says "bump template", "bump develop", "bump devops", "add hook", "show hooks", or wants to customize agent workflow.
-argument-hint: "[bump <template> | add <event> <hook> | show]"
+description: Bump workflow templates to project. Use when user says "bump [template]" where template is develop/devops/marketing/research/docs/support/data/moderation/review/minimal.
+argument-hint: "bump <template>"
 ---
 
-# Chain Builder
+# Chain Builder - EXECUTE IMMEDIATELY
 
-**IMPORTANT: Everything is PROJECT-SCOPED (cwd). Do NOT use ~/.claude/chains/ or ~/.claude/projects/.**
+## When user says "bump [template]"
 
-## Available Templates
+**DO NOT ASK QUESTIONS. Execute immediately:**
 
-Templates are in `${CLAUDE_PLUGIN_ROOT}/config/templates/`:
+### Step 1: Identify template from argument
 
-| Template | Agents | Skills | Use Case |
-|----------|--------|--------|----------|
-| develop | 21 | 21 | Software development |
-| marketing | 6 | 6 | Content marketing |
-| devops | 5 | 5 | CI/CD pipelines |
-| research | 5 | 5 | Research workflow |
-| docs | 5 | 5 | Documentation |
-| support | 5 | 5 | Customer support |
-| data | 5 | 5 | Data pipelines |
-| moderation | 5 | 5 | Content moderation |
-| review | 1 | 1 | Code review |
-| minimal | 0 | 0 | Clean slate |
+Templates: `develop`, `devops`, `marketing`, `research`, `docs`, `support`, `data`, `moderation`, `review`, `minimal`
 
-## Bump Template
-
-**When user says "bump [template]", execute these commands:**
+### Step 2: Run these bash commands
 
 ```bash
-# Get plugin root (use actual path from env or hardcode)
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-/path/to/plugin}"
-TEMPLATE="[template_name]"  # e.g., devops, develop, marketing
+# Replace TEMPLATE with the requested template name
+TEMPLATE="devops"  # or develop, marketing, etc.
 
-# 1. Create directories in CWD
+# Create directories
 mkdir -p .claude/agents .claude/skills .claude/hooks
 
-# 2. Copy agents from template
-cp "$PLUGIN_ROOT/config/templates/$TEMPLATE/agents/"*.md .claude/agents/ 2>/dev/null || true
+# Copy from plugin templates (find plugin path first)
+PLUGIN_ROOT=$(dirname $(dirname $(which claude 2>/dev/null || echo "/Users/noroom113/company/brainbrewlabs/brainbrew-devkit/plugin")))
+# Or use hardcoded path if CLAUDE_PLUGIN_ROOT not available
+PLUGIN_ROOT="/Users/noroom113/company/brainbrewlabs/brainbrew-devkit/plugin"
 
-# 3. Copy skills from template
-cp -r "$PLUGIN_ROOT/config/templates/$TEMPLATE/skills/"* .claude/skills/ 2>/dev/null || true
+# Copy agents
+cp "$PLUGIN_ROOT/config/templates/$TEMPLATE/agents/"*.md .claude/agents/ 2>/dev/null
 
-# 4. Write chain-config.yaml
+# Copy skills
+cp -r "$PLUGIN_ROOT/config/templates/$TEMPLATE/skills/"* .claude/skills/ 2>/dev/null
+
+# Write config
 cat > .claude/chain-config.yaml << 'EOF'
 hooks:
   PostToolUse:
@@ -54,38 +45,37 @@ hooks:
     - plugin:subagent-stop.cjs
 EOF
 
-# 5. Show result
-echo "Bumped $TEMPLATE template to $(pwd)/.claude/"
-ls .claude/agents/ 2>/dev/null | wc -l | xargs echo "Agents:"
-ls .claude/skills/ 2>/dev/null | wc -l | xargs echo "Skills:"
+# Show result
+echo "=== Bumped $TEMPLATE ==="
+echo "Agents: $(ls .claude/agents/*.md 2>/dev/null | wc -l)"
+echo "Skills: $(ls -d .claude/skills/*/ 2>/dev/null | wc -l)"
 ```
 
-## Show Current Config
+### Step 3: Report success
 
-```bash
-cat .claude/chain-config.yaml 2>/dev/null || echo "No config"
-echo "Agents:" && ls .claude/agents/ 2>/dev/null || echo "  (none)"
-echo "Skills:" && ls .claude/skills/ 2>/dev/null || echo "  (none)"
-```
+Show what was copied.
 
-## Add Custom Hook
+---
 
-1. Create `.claude/hooks/{name}.js`
-2. Add `- ./{name}.js` to `.claude/chain-config.yaml` under the event
+## CRITICAL RULES
 
-## Config Format
+1. **DO NOT** read from `~/.claude/chains/`
+2. **DO NOT** read from `~/.claude/projects/`
+3. **DO NOT** ask "what do you mean by bump"
+4. **DO** copy templates to `{cwd}/.claude/`
+5. **EXECUTE** the bash commands above immediately
 
-```yaml
-# .claude/chain-config.yaml
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs    # From plugin/scripts/
-    - ./my-hook.js             # From .claude/hooks/
-```
+## Template Details
 
-## DO NOT
-
-- Do NOT read from `~/.claude/chains/`
-- Do NOT read from `~/.claude/projects/`
-- Do NOT use global config
-- Everything is in `{cwd}/.claude/`
+| Template | Description |
+|----------|-------------|
+| develop | Full dev chain (21 agents) |
+| devops | CI/CD pipeline (5 agents) |
+| marketing | Content marketing (6 agents) |
+| research | Research workflow (5 agents) |
+| docs | Documentation (5 agents) |
+| support | Customer support (5 agents) |
+| data | Data pipeline (5 agents) |
+| moderation | Content moderation (5 agents) |
+| review | Code review only (1 agent) |
+| minimal | Empty slate (0 agents) |
