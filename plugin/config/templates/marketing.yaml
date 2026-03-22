@@ -2,8 +2,6 @@
 # Chain: researcher → content-writer → editor → seo-optimizer → publisher → analyzer
 #
 # Usage: /chain-builder bump marketing
-#
-# For content marketing, social media, email campaigns, and SEO content.
 
 hooks:
   PostToolUse:
@@ -12,3 +10,40 @@ hooks:
     - plugin:subagent-start.cjs
   SubagentStop:
     - plugin:subagent-stop.cjs
+
+flow:
+  researcher:
+    routes:
+      content-writer: "Research complete, ready to write"
+
+  content-writer:
+    routes:
+      editor: "Draft complete, ready for editing"
+      researcher: "Need more research"
+    decide: |
+      If draft is COMPLETE, ready for review → "editor"
+      If needs MORE INFO, facts, sources → "researcher"
+
+  editor:
+    routes:
+      seo-optimizer: "Content approved"
+      content-writer: "Revisions needed"
+    decide: |
+      If content is APPROVED, well-written → "seo-optimizer"
+      If needs REVISIONS, unclear, errors → "content-writer"
+
+  seo-optimizer:
+    routes:
+      publisher: "SEO optimized"
+      content-writer: "SEO issues, rewrite needed"
+    decide: |
+      If SEO OPTIMIZED, keywords good → "publisher"
+      If SEO ISSUES, missing keywords → "content-writer"
+
+  publisher:
+    routes:
+      analyzer: "Published successfully"
+
+  analyzer:
+    routes:
+      END: "Analysis complete"

@@ -2,8 +2,6 @@
 # Chain: code-scanner → doc-generator → doc-reviewer → formatter → publisher
 #
 # Usage: /chain-builder bump docs
-#
-# For API documentation, README files, and technical writing.
 
 hooks:
   PostToolUse:
@@ -12,3 +10,36 @@ hooks:
     - plugin:subagent-start.cjs
   SubagentStop:
     - plugin:subagent-stop.cjs
+
+flow:
+  code-scanner:
+    routes:
+      doc-generator: "Code scanned, ready to generate docs"
+
+  doc-generator:
+    routes:
+      doc-reviewer: "Docs generated"
+      code-scanner: "Need to rescan code"
+    decide: |
+      If docs GENERATED successfully → "doc-reviewer"
+      If code CHANGED, need rescan → "code-scanner"
+
+  doc-reviewer:
+    routes:
+      formatter: "Docs approved"
+      doc-generator: "Docs need revision"
+    decide: |
+      If docs APPROVED, accurate, complete → "formatter"
+      If docs INACCURATE, incomplete → "doc-generator"
+
+  formatter:
+    routes:
+      publisher: "Formatting complete"
+      doc-reviewer: "Formatting issues"
+    decide: |
+      If formatting COMPLETE, looks good → "publisher"
+      If formatting ISSUES → "doc-reviewer"
+
+  publisher:
+    routes:
+      END: "Docs published"

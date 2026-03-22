@@ -2,8 +2,6 @@
 # Chain: content-scanner → classifier → flagger → reviewer → actioner
 #
 # Usage: /chain-builder bump moderation
-#
-# For content moderation, trust & safety, and policy enforcement.
 
 hooks:
   PostToolUse:
@@ -12,3 +10,36 @@ hooks:
     - plugin:subagent-start.cjs
   SubagentStop:
     - plugin:subagent-stop.cjs
+
+flow:
+  content-scanner:
+    routes:
+      classifier: "Content scanned"
+
+  classifier:
+    routes:
+      flagger: "Content classified"
+      content-scanner: "Need rescan"
+    decide: |
+      If classification COMPLETE → "flagger"
+      If UNCLEAR, need rescan → "content-scanner"
+
+  flagger:
+    routes:
+      reviewer: "Potential issues flagged"
+      actioner: "Clear content, auto-approve"
+    decide: |
+      If ISSUES FOUND, needs review → "reviewer"
+      If CLEAN, no issues → "actioner"
+
+  reviewer:
+    routes:
+      actioner: "Review complete"
+      classifier: "Need reclassification"
+    decide: |
+      If review COMPLETE, decision made → "actioner"
+      If UNCLEAR classification → "classifier"
+
+  actioner:
+    routes:
+      END: "Action taken"

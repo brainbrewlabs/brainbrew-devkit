@@ -2,8 +2,6 @@
 # Chain: data-collector → cleaner → analyzer → visualizer → reporter
 #
 # Usage: /chain-builder bump data
-#
-# For ETL, data analysis, business intelligence, and reporting.
 
 hooks:
   PostToolUse:
@@ -12,3 +10,36 @@ hooks:
     - plugin:subagent-start.cjs
   SubagentStop:
     - plugin:subagent-stop.cjs
+
+flow:
+  data-collector:
+    routes:
+      cleaner: "Data collected"
+
+  cleaner:
+    routes:
+      analyzer: "Data cleaned"
+      data-collector: "Need more data"
+    decide: |
+      If data CLEANED, quality good → "analyzer"
+      If data INSUFFICIENT or corrupted → "data-collector"
+
+  analyzer:
+    routes:
+      visualizer: "Analysis complete"
+      cleaner: "Data quality issues"
+    decide: |
+      If analysis COMPLETE, insights found → "visualizer"
+      If DATA QUALITY issues found → "cleaner"
+
+  visualizer:
+    routes:
+      reporter: "Visualizations created"
+      analyzer: "Need different analysis"
+    decide: |
+      If visualizations COMPLETE → "reporter"
+      If needs DIFFERENT ANALYSIS → "analyzer"
+
+  reporter:
+    routes:
+      END: "Report complete"

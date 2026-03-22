@@ -2,13 +2,16 @@
 # Focused on code review without full planning/testing chain
 #
 # Usage: /chain-builder bump review
-#
-# Includes:
-# - 1 agent: code-reviewer
-# - 1 skill: requesting-code-review
 
 hooks:
   PostToolUse:
     - plugin:post-agent.cjs
+  SubagentStart:
+    - plugin:subagent-start.cjs
   SubagentStop:
     - plugin:subagent-stop.cjs
+
+flow:
+  code-reviewer:
+    routes:
+      END: "Review complete"
