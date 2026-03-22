@@ -246,11 +246,11 @@ Agents can communicate via the Memory Bus:
 | `agent:NAME` | Specific agent type |
 | `chain:NAME` | All agents in chain |
 
-| Persistence | Behavior |
-|-------------|----------|
-| `permanent` | Forever (learnings) |
-| `session` | Until session ends |
-| `once` | Consumed after delivery |
+| Persistence | Behavior | Auto-cleanup |
+|-------------|----------|--------------|
+| `session` | **Default** - temporary | ✅ On exit |
+| `once` | Queue - consumed after read | ✅ After delivery |
+| `permanent` | Forever (rules, knowledge) | ❌ Never |
 
 ## Architecture
 
