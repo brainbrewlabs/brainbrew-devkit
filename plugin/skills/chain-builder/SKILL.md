@@ -35,3 +35,27 @@ TEMPLATE="devops" && PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-/Users/noroom113/company
 - `agents/*.md` → `.claude/agents/`
 - `skills/*` → `.claude/skills/`
 - `$TEMPLATE.yaml` → `.claude/chain-config.yaml` (has hooks + flow)
+
+## Next Steps - Customize Your Workflow
+
+After bumping a template, suggest these options to the user:
+
+| Want to... | Say this |
+|------------|----------|
+| Create a new agent | "Create an agent for [task]" → triggers `/improve-agent` |
+| Create a new skill | "Create a skill for [task]" → triggers `/skill-creator` |
+| Improve an agent | "Improve my [agent-name] agent" → triggers `/improve-agent` |
+| Improve a skill | "Improve my [skill-name] skill" → triggers `/skill-improver` |
+| Find more skills | "Find me a skill for [task]" → triggers `/skillhub` |
+
+## After Bump - Tell User
+
+After successfully bumping a template, tell the user:
+
+```
+Workflow set up! You can now:
+- "Create an agent for X" - add custom agents
+- "Create a skill for Y" - add custom skills
+- "Improve my [agent] agent" - enhance existing agents
+- "Find a skill for Z" - search SkillHub for more skills
+```
