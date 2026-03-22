@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { getState } from '../utils/state.js';
 import { log, logEvent } from '../utils/logger.js';
 import { CHAIN_CONFIG_FILE, VERIFICATION_RULES_FILE, TMP_DIR } from '../utils/paths.js';
+import { subscribe, formatForContext } from '../memory/bus.js';
 import { join } from 'path';
 
 const LOG_FILE = join(TMP_DIR, 'subagent-start.log');
@@ -93,8 +94,27 @@ This helps the workflow decide if more implementation is needed.
 `;
     }
 
-    // Inject shared state from previous agents
+    // Get session state
     const state = getState(sessionId);
+
+    // ─── Message Bus: Subscribe and inject messages ───
+    try {
+      const { messages, consumed } = subscribe(type, {
+        sessionId,
+        chainId: state?.currentChain as string | undefined,
+        cwd: process.cwd(),
+      });
+
+      if (messages.length > 0) {
+        const busContext = formatForContext(messages);
+        context += `\n${busContext}\n`;
+        log(LOG_FILE, `[BUS] Injected ${messages.length} messages (consumed: ${consumed})`);
+      }
+    } catch (e) {
+      log(LOG_FILE, `[BUS] Error: ${(e as Error).message}`);
+    }
+
+    // Inject shared state from previous agents
     if (state?.sharedContext) {
       context += `
 ## Shared Context from Previous Agents
