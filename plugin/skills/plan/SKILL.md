@@ -1,7 +1,7 @@
 ---
 name: plan
 description: Create technical implementation plans with research and codebase analysis. Use when user says "plan this", "design the approach", "how should we implement", "architect this", "break down this feature", or needs a roadmap before coding. Use "fast" to skip research phase.
-argument-hint: [fast] [task]
+argument-hint: "[fast] [task]"
 ---
 
 # Planning
