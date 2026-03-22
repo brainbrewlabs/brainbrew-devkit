@@ -106,13 +106,6 @@ function main() {
     }
     const cleared = clearSession(sessionId, cwd);
     log(LOG_FILE, `[SESSION END] ${sessionId} - Cleared ${cleared} messages`);
-    console.log(JSON.stringify({
-      continue: true,
-      hookSpecificOutput: {
-        hookEventName: "SessionEnd",
-        additionalContext: cleared > 0 ? `Cleaned up ${cleared} session messages from Memory Bus.` : ""
-      }
-    }));
     process.exit(0);
   } catch (e) {
     console.error(`[session-end] ${e.message}`);

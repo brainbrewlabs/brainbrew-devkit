@@ -33,16 +33,7 @@ function main(): void {
 
     log(LOG_FILE, `[SESSION END] ${sessionId} - Cleared ${cleared} messages`);
 
-    console.log(JSON.stringify({
-      continue: true,
-      hookSpecificOutput: {
-        hookEventName: 'SessionEnd',
-        additionalContext: cleared > 0
-          ? `Cleaned up ${cleared} session messages from Memory Bus.`
-          : '',
-      },
-    }));
-
+    // SessionEnd doesn't support hookSpecificOutput, just exit silently
     process.exit(0);
 
   } catch (e: unknown) {
