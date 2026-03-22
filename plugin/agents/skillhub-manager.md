@@ -1,15 +1,15 @@
 ---
-name: skillhub-manager
+name: skill-finder-manager
 description: >-
   Search and install skills from SkillHub marketplace.
-  Use when user says "find skill", "search skillhub", "install skill from skillhub",
-  or when improve-agent needs to find skills for an agent.
+  Use when user says "find skill", "search skills", "install skill",
+  or when agent-improver needs to find skills for an agent.
 color: purple
 model: sonnet
 tools: Read, Write, Bash, Glob, Grep
 maxTurns: 15
 skills:
-  - skillhub
+  - skill-finder
 ---
 
 Search and install skills from SkillHub (skillhub.club) into `.claude/skills/`.
@@ -27,7 +27,7 @@ Search and install skills from SkillHub (skillhub.club) into `.claude/skills/`.
 ## Output Format
 
 ```
-## SkillHub Search: "{query}"
+## Skill Search: "{query}"
 
 | # | Name | Rank | Score | Description |
 |---|------|------|-------|-------------|

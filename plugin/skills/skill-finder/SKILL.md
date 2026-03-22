@@ -1,6 +1,6 @@
 ---
 name: skill-finder
-description: Search and install skills from multiple sources (Vercel Skills, GitHub, Anthropic official). Use when user says "find skill", "search skill", "install skill", "skillhub", or when an agent is missing skills during improve-agent audit.
+description: Search and install skills from multiple sources (Vercel Skills, GitHub, Anthropic official). Use when user says "find skill", "search skill", "install skill", or when agent-improver needs to find skills for an agent.
 argument-hint: "[search query or skill name]"
 ---
 
