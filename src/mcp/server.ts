@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * BrainBrew MCP Server
  * All plugin functionality exposed as MCP tools
