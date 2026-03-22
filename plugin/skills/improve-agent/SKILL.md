@@ -29,10 +29,7 @@ Audit subagent `.md` files against official Claude Code subagent documentation a
 
 ## Agent Locations
 
-| Location | Scope | Priority |
-|----------|-------|----------|
-| `.claude/agents/` | Current project | High |
-| `~/.claude/agents/` | All projects | Medium |
+Agents are in `.claude/agents/` (project-scoped only).
 
 ## Examples
 
@@ -41,10 +38,7 @@ Audit subagent `.md` files against official Claude Code subagent documentation a
 /improve-agent debugger
 
 # Audit by path
-/improve-agent ~/.claude/agents/implementer.md
-
-# Self-audit
-/improve-agent improve-agent
+/improve-agent .claude/agents/implementer.md
 ```
 
 ## Rules
