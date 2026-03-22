@@ -18,7 +18,6 @@ export default defineConfig([
     entry: { 'mcp-server': 'src/mcp/server.ts' },
     format: ['cjs'],
     outDir: 'plugin/mcp',
-    banner: { js: '#!/usr/bin/env node' },
     sourcemap: false,
     minify: false,
     splitting: false,
