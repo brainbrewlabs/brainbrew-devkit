@@ -221,6 +221,37 @@ npm run build      # Compile TypeScript
 npm run dev        # Watch mode
 ```
 
+## Memory Bus - Inter-Agent Communication
+
+Agents can communicate via the Memory Bus:
+
+```bash
+# Tell specific agent
+"Tell the implementer to fix the auth bug"
+
+# Next agent (queue)
+"Next agent should check security"
+
+# Permanent learning
+"Remember to always use TypeScript"
+
+# Chain handoff
+"After this chain, deploy to staging"
+```
+
+| Target | Who receives |
+|--------|--------------|
+| `global` | All agents |
+| `next` | Next agent only (consumed) |
+| `agent:NAME` | Specific agent type |
+| `chain:NAME` | All agents in chain |
+
+| Persistence | Behavior |
+|-------------|----------|
+| `permanent` | Forever (learnings) |
+| `session` | Until session ends |
+| `once` | Consumed after delivery |
+
 ## Architecture
 
 Hook-driven chain engine:
