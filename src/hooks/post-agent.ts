@@ -430,7 +430,7 @@ function main(): void {
           continue: true,
           hookSpecificOutput: {
             hookEventName: 'PostToolUse',
-            additionalContext: `Agent ${type} completed | Chain stopped — **${next}** already ran ${nextAgentCount} times.\n\n<system-reminder>\n## CHAIN LOOP DETECTED\nDo NOT spawn another agent. Report to user.\n</system-reminder>`,
+            additionalContext: `**Chain stopped** — **${next}** already ran ${nextAgentCount} times (max ${MAX_AGENT_LOOPS}). Review the output above and decide how to proceed.\n\n<system-reminder>\n## CHAIN LOOP DETECTED\nThe agent **${next}** has hit the maximum revision limit (${nextAgentCount}/${MAX_AGENT_LOOPS}).\nDo NOT spawn another agent. Report this to the user with a clear summary of what was accomplished and what still needs attention.\n</system-reminder>`,
           },
         }));
         process.exit(2);
