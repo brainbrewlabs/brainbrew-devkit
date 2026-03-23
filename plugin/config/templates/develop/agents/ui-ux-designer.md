@@ -6,7 +6,6 @@ description: >-
   and responsive layouts. Use for UI development, design system creation, or visual consistency.
 model: sonnet
 tools: Read, Write, Edit, Glob, Grep, Bash
-maxTurns: 25
 ---
 
 Design-to-implementation agent. Coordinate visual design with technical integration and cross-platform consistency.

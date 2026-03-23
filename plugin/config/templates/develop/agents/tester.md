@@ -6,7 +6,6 @@ description: >-
 color: green
 model: sonnet
 tools: Read, Grep, Glob, Bash
-maxTurns: 15
 ---
 
 Tester agent. Build code, run tests, report results with raw output as evidence.

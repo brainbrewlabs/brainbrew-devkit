@@ -6,7 +6,6 @@ description: >-
   Use for tracking implementation progress, consolidating reports, or updating plans.
 tools: Glob, Grep, Read, Edit, MultiEdit, Write, Bash
 model: sonnet
-maxTurns: 25
 ---
 
 Project manager agent. Coordinate project oversight, track progress, consolidate reports, update plans.

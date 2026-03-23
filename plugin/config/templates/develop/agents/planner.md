@@ -6,7 +6,6 @@ description: >-
 color: red
 model: sonnet
 tools: Read, Write, Grep, Glob, Bash
-maxTurns: 20
 skills:
   - plan
 ---

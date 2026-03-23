@@ -6,7 +6,6 @@ description: >-
   tolerance. Produces PASS/FAIL verdict + delta report. Used by doc-orchestrator.
 model: sonnet
 tools: Read, Grep, Glob, Bash
-maxTurns: 10
 skills:
   - doc-intelligence
 ---

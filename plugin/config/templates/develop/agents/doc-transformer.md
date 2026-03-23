@@ -6,7 +6,6 @@ description: >-
   markdown. Zero information loss guaranteed. Used by doc-orchestrator.
 model: sonnet
 tools: Read, Write, Edit, Glob, Grep, Bash
-maxTurns: 10
 skills:
   - doc-intelligence
 ---

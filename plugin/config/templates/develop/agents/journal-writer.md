@@ -6,7 +6,6 @@ description: >-
   Use for crisis documentation, retrospectives, or process improvement after incidents.
 tools: Read, Write, Edit, Glob, Grep, Bash
 model: sonnet
-maxTurns: 15
 skills:
   - journal
 ---

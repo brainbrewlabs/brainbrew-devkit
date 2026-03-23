@@ -6,7 +6,6 @@ description: >-
 color: green
 model: sonnet
 tools: Read, Edit, Bash, Grep, Glob
-maxTurns: 25
 skills:
   - debugging
   - problem-solving
