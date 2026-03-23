@@ -62,6 +62,8 @@ Agents, skills, and chain config are just files — Claude reads/writes them dir
 | **review** | 1 | code-reviewer → END |
 | **minimal** | 0 | hooks only (add your own) |
 
+> **Note:** After bumping a template (`template_bump`), restart your Claude Code session for the new hooks, agents, and chain config to take effect.
+
 ## Flow Config
 
 Each template includes a `flow:` section with AI-powered routing:
