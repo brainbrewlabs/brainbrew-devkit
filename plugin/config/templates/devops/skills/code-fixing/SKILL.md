@@ -1,34 +1,93 @@
 ---
 name: code-fixing
-description: Fix code issues identified by scanners and security audits.
+description: >-
+  Fix code issues identified by code-scanning, security-auditor, or linter output.
+  Triggers on 'fix these issues', 'apply fixes', 'fix vulnerabilities', 'fix lint errors'.
+  NOT for writing new features or refactoring -- only fix identified issues.
+allowed-tools: Read, Edit, Write, Bash
 ---
 
-# Code Fixing Skill
+## When to Use
+- Applying fixes for issues found by `code-scanning` or `security-auditor`
+- Fixing linting or formatting errors
+- Updating vulnerable dependencies
+- Patching security vulnerabilities identified in audit reports
 
-## Steps
-1. Review identified issues
-2. Apply automated fixes
-3. Manual fixes for complex issues
-4. Run linting/formatting
-5. Verify fixes
+## When NOT to Use
+- Writing new features or tests -- that is implementation work
+- Refactoring code without identified issues -- not a fix
+- Rolling back deployments -- use `rollback`
+- Investigating performance problems -- use `performance-analysis`
 
-## Commands
+## Instructions
+
+### 1. Review the findings
+
+Read the scan or audit report to understand each issue. Use `Read` and `Grep` to locate the affected code. Prioritize fixes by severity: CRITICAL first, then HIGH, MEDIUM, LOW.
+
+### 2. Apply automated fixes
+
+Run auto-fix tools via `Bash` where available:
 ```bash
-# Auto-fix linting
-npm run lint -- --fix
-black .
-go fmt ./...
+# Node.js linting
+npx eslint --fix [files]
 
-# Fix vulnerabilities
+# Python formatting
+black [files]
+isort [files]
+
+# Go formatting
+go fmt ./...
+goimports -w [files]
+
+# Dependency vulnerabilities
 npm audit fix
 pip install --upgrade [package]
-
-# Verify
-npm run test
-npm run lint
 ```
 
+### 3. Apply manual fixes
+
+For issues that cannot be auto-fixed, use `Edit` to modify the code:
+- Replace string-concatenated SQL with parameterized queries
+- Replace hardcoded secrets with environment variable references
+- Add missing input validation or auth checks
+- Fix insecure cryptographic usage
+
+### 4. Verify fixes
+
+After applying fixes, run verification:
+```bash
+# Re-run linting
+npm run lint
+python -m flake8 [files]
+
+# Re-run tests
+npm test
+pytest -v
+```
+
+### 5. Report results
+
+List every fix applied and any issues that require manual human review.
+
 ## Output
-- List of fixes applied
-- Manual fixes required
-- Verification status
+
+```
+## Code Fix Report
+
+### Fixes Applied
+| # | Issue | File | Fix | Status |
+|---|-------|------|-----|--------|
+| 1 | SQL injection | db.js:15 | Parameterized query | Fixed |
+| 2 | Lint error | utils.py:8 | Auto-formatted | Fixed |
+
+### Manual Fixes Required
+- [ ] [issue requiring human judgment]
+
+### Verification
+- Lint: [PASS/FAIL]
+- Tests: [PASS/FAIL]
+
+### Verdict
+[RE-SCAN / READY] - [reason]
+```

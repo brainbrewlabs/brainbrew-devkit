@@ -7,7 +7,7 @@ color: red
 model: sonnet
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 skills:
-  - brainstorm
+  - brainstorming
   - sequential-thinking
 ---
 

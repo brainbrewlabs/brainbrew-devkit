@@ -1,256 +1,88 @@
 ---
 name: security-auditor
-description: Continuous security vulnerability scanning for OWASP Top 10, common vulnerabilities, and insecure patterns. Use when reviewing code, before deployments, or on file changes. Scans for SQL injection, XSS, secrets exposure, auth issues. Triggers on file changes, security mentions, deployment prep.
+description: >-
+  Scan code for security vulnerabilities against OWASP Top 10 and common insecure patterns.
+  Triggers on 'security audit', 'check for vulnerabilities', 'scan for secrets', 'OWASP check'.
+  NOT for compliance framework reviews (use compliance-review) or runtime alert handling (use alert-handling).
 allowed-tools: Read, Grep, Bash
 ---
 
-# Security Auditor Skill
+## When to Use
+- Reviewing code changes that touch auth, API, or database layers
+- Before deployments or commits to check for vulnerabilities
+- When dependency files change (package.json, requirements.txt, go.mod)
+- When user asks about security, vulnerabilities, or secret exposure
 
-Automatic security vulnerability detection.
+## When NOT to Use
+- Compliance framework audits (GDPR, SOC2, HIPAA) -- use `compliance-review`
+- Handling runtime alerts or incidents -- use `alert-handling`
+- Fixing identified vulnerabilities -- use `code-fixing`
+- Performance or load testing -- use `performance-analysis`
 
-## When I Activate
+## Instructions
 
-- ✅ Code files modified (especially auth, API, database)
-- ✅ User mentions security or vulnerabilities
-- ✅ Before deployments or commits
-- ✅ Dependency changes
-- ✅ Configuration file changes
+### 1. Identify scan scope
 
-## What I Scan For
+Determine which files changed or which scope the user wants scanned. Use `Grep` and `Read` to inspect relevant files.
 
-### OWASP Top 10 Patterns
+### 2. Scan for OWASP Top 10 patterns
 
-**1. SQL Injection**
-```javascript
-// CRITICAL: SQL injection
-const query = `SELECT * FROM users WHERE id = ${userId}`;
+Search for these vulnerability classes:
 
-// SECURE: Parameterized query
-const query = 'SELECT * FROM users WHERE id = ?';
-db.query(query, [userId]);
-```
-
-**2. XSS (Cross-Site Scripting)**
-```javascript
-// CRITICAL: XSS vulnerability
-element.innerHTML = userInput;
-
-// SECURE: Use textContent or sanitize
-element.textContent = userInput;
-// or
-element.innerHTML = DOMPurify.sanitize(userInput);
-```
-
-**3. Authentication Issues**
-```javascript
-// CRITICAL: Weak JWT secret
-const token = jwt.sign(payload, 'secret123');
-
-// SECURE: Strong secret from environment
-const token = jwt.sign(payload, process.env.JWT_SECRET);
-```
-
-**4. Sensitive Data Exposure**
-```python
-# CRITICAL: Exposed password
-password = "admin123"
-
-# SECURE: Environment variable
-password = os.getenv("DB_PASSWORD")
-```
-
-**5. Broken Access Control**
-```javascript
-// CRITICAL: No authorization check
-app.delete('/api/users/:id', (req, res) => {
-  User.delete(req.params.id);
-});
-
-// SECURE: Authorization check
-app.delete('/api/users/:id', auth, checkOwnership, (req, res) => {
-  User.delete(req.params.id);
-});
-```
-
-### Additional Security Checks
-
-- **Insecure Deserialization**
-- **Security Misconfiguration**
-- **Insufficient Logging**
-- **CSRF Protection Missing**
-- **CORS Misconfiguration**
-
-## Alert Format
-
-```
-🚨 CRITICAL: [Vulnerability type]
-📍 Location: file.js:42
-🔧 Fix: [Specific remediation]
-📖 Reference: [OWASP/CWE link]
-```
-
-### Severity Levels
-
-- 🚨 **CRITICAL**: Must fix immediately (exploitable vulnerabilities)
-- ⚠️ **HIGH**: Should fix soon (security weaknesses)
-- 📋 **MEDIUM**: Consider fixing (potential issues)
-- 💡 **LOW**: Best practice improvements
-
-## Real-World Examples
-
-### SQL Injection Detection
-
-```javascript
-// You write:
-app.get('/users', (req, res) => {
-  const sql = `SELECT * FROM users WHERE name = '${req.query.name}'`;
-  db.query(sql, (err, results) => res.json(results));
-});
-
-// I alert:
-🚨 CRITICAL: SQL injection vulnerability (line 2)
-📍 File: routes/users.js, Line 2
-🔧 Fix: Use parameterized queries
-  const sql = 'SELECT * FROM users WHERE name = ?';
-  db.query(sql, [req.query.name], ...);
-📖 https://owasp.org/www-community/attacks/SQL_Injection
-```
-
-### Password Storage
-
-```python
-# You write:
-def create_user(username, password):
-    user = User(username=username, password=password)
-    user.save()
-
-# I alert:
-🚨 CRITICAL: Storing plain text password (line 2)
-📍 File: models.py, Line 2
-🔧 Fix: Hash passwords before storing
-  from bcrypt import hashpw, gensalt
-  hashed = hashpw(password.encode(), gensalt())
-  user = User(username=username, password=hashed)
-📖 Use bcrypt, scrypt, or argon2 for password hashing
-```
-
-### API Key Exposure
-
-```javascript
-// You write:
-const stripe = require('stripe')('sk_live_abc123...');
-
-// I alert:
-🚨 CRITICAL: Hardcoded API key detected (line 1)
-📍 File: payment.js, Line 1
-🔧 Fix: Use environment variables
-  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-📖 Never commit API keys to version control
-```
-
-## Dependency Scanning
-
-I can run security audits on dependencies:
-
+**SQL Injection** -- string-concatenated queries, unsanitized user input in SQL:
 ```bash
-# Node.js
-npm audit
-
-# Python
-pip-audit
-
-# Results flagged with severity
+# Search for string interpolation in SQL contexts
 ```
 
-## Relationship with @code-reviewer Sub-Agent
+**XSS** -- innerHTML assignments, unsanitized template rendering, dangerouslySetInnerHTML.
 
-**Me (Skill):** Quick vulnerability pattern detection
-**@code-reviewer (Sub-Agent):** Deep security audit with threat modeling
+**Authentication issues** -- hardcoded JWT secrets, weak password storage, missing MFA checks.
 
-### Workflow
-1. I detect vulnerability pattern
-2. I flag: "🚨 SQL injection detected"
-3. You want full analysis → Invoke **@code-reviewer** sub-agent
-4. Sub-agent provides comprehensive security audit
+**Sensitive data exposure** -- hardcoded passwords, API keys, connection strings in source code.
 
-## Common Vulnerability Patterns
+**Broken access control** -- endpoints missing auth middleware, missing ownership checks.
 
-### Authentication
-- Weak password policies
-- Missing MFA
-- Session fixation
-- Insecure password storage
+### 3. Scan for secrets
 
-### Authorization
-- Missing access control
-- Privilege escalation
-- IDOR (Insecure Direct Object Reference)
+Search for hardcoded credentials, API keys, tokens, and private keys using `Grep`:
+- Patterns: `password =`, `secret =`, `api_key`, `sk_live_`, `-----BEGIN.*KEY-----`
+- Check `.env` files are in `.gitignore`
 
-### Data Protection
-- Unencrypted sensitive data
-- Weak encryption algorithms
-- Missing HTTPS
-- Insecure cookies
+### 4. Run dependency audit
 
-### Input Validation
-- SQL injection
-- Command injection
-- XSS
-- Path traversal
-
-## Sandboxing Compatibility
-
-**Works without sandboxing:** ✅ Yes
-**Works with sandboxing:** ✅ Yes
-
-**Optional: For dependency scanning**
-```json
-{
-  "network": {
-    "allowedDomains": [
-      "registry.npmjs.org",
-      "pypi.org",
-      "api.github.com"
-    ]
-  }
-}
-```
-
-## Integration with Tools
-
-### With secret-scanner Skill
-```
-security-auditor: Checks code patterns
-secret-scanner: Checks for exposed secrets
-Together: Comprehensive security coverage
-```
-
-### With /review Command
+Run the appropriate package audit command via `Bash`:
 ```bash
-/review --scope staged --checks security
-
-# Workflow:
-# 1. My automatic security findings
-# 2. @code-reviewer sub-agent deep audit
-# 3. Comprehensive security report
+# Node.js: npm audit
+# Python: pip-audit
+# Go: govulncheck ./...
 ```
 
-## Customization
+### 5. Classify findings by severity
 
-Add company-specific security patterns:
+- **CRITICAL**: Exploitable vulnerabilities (injection, exposed secrets, auth bypass)
+- **HIGH**: Security weaknesses that need prompt attention (weak crypto, missing HTTPS)
+- **MEDIUM**: Potential issues worth investigating (permissive CORS, verbose errors)
+- **LOW**: Best practice improvements (missing security headers, logging gaps)
 
-```bash
-cp -r ~/.claude/skills/security/security-auditor \
-      ~/.claude/skills/security/company-security-auditor
+## Output
 
-# Edit SKILL.md to add:
-# - Internal API patterns
-# - Company security policies
-# - Custom vulnerability checks
 ```
+## Security Audit Report
 
-## Learn More
+### Severity Summary
+- CRITICAL: X
+- HIGH: X
+- MEDIUM: X
+- LOW: X
 
-- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [CWE Top 25](https://cwe.mitre.org/top25/)
-- [Security Best Practices](../../standards/security/)
+### Findings
+| # | Severity | Type | Location | Description | Remediation |
+|---|----------|------|----------|-------------|-------------|
+| 1 | CRITICAL | SQLi | file.js:42 | String-concatenated query | Use parameterized queries |
+
+### Dependency Audit
+- [output from npm audit / pip-audit / govulncheck]
+
+### Verdict
+[PASS / FAIL] - [reason]
+```
