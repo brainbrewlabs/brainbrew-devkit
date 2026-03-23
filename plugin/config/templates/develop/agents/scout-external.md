@@ -6,7 +6,6 @@ description: >-
   Use when file locations span multiple directories and require coordinated search.
 tools: Glob, Grep, Read, WebFetch, WebSearch, Bash
 model: haiku
-maxTurns: 15
 ---
 
 External search agent. Coordinate parallel discovery operations across large codebases using external tools.

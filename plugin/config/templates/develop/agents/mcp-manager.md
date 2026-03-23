@@ -6,7 +6,6 @@ description: >-
   and executes MCP capabilities. Use when working with MCP tool discovery or execution.
 tools: Read, Grep, Glob, Bash
 model: haiku
-maxTurns: 15
 skills:
   - mcp-management
 ---

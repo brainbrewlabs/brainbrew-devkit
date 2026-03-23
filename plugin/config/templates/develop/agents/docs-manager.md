@@ -6,7 +6,6 @@ description: >-
   and content organization. Use when docs need updating after code changes or reorganization.
 model: sonnet
 tools: Glob, Grep, Read, Edit, MultiEdit, Write, Bash
-maxTurns: 20
 ---
 
 Documentation orchestrator. Coordinate content synchronization, standards management, and developer productivity workflows across codebases.

@@ -6,7 +6,6 @@ description: >-
   Use for launch campaigns, social media content, email copy, or landing pages.
 tools: Read, Write, Edit, Glob, Grep, Bash, WebSearch, WebFetch
 model: sonnet
-maxTurns: 20
 ---
 
 Content strategy agent. Coordinate multi-platform content creation with conversion optimization and viral mechanics.

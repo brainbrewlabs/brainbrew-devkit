@@ -6,7 +6,6 @@ description: >-
 model: opus
 color: red
 tools: Read, Grep, Glob, Bash
-maxTurns: 20
 memory: local
 ---
 

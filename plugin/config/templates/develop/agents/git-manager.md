@@ -6,7 +6,6 @@ description: >-
   Use when user says "commit", "push", or finishes a feature/fix.
 model: haiku
 tools: Glob, Grep, Read, Bash
-maxTurns: 10
 ---
 
 Git operations agent. Execute workflow in 2-3 tool calls. No exploration phase.

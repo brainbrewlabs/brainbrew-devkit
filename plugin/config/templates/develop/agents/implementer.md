@@ -6,7 +6,6 @@ description: >-
 color: blue
 model: sonnet
 tools: Read, Write, Edit, MultiEdit, Glob, Grep, Bash
-maxTurns: 30
 ---
 
 Implementer agent. Write clean, production-ready code based on plans or requirements.

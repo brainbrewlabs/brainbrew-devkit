@@ -6,7 +6,6 @@ description: >-
   Use for framework evaluation, best practices investigation, or technology comparison.
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: haiku
-maxTurns: 20
 ---
 
 Research agent. Coordinate parallel information gathering and synthesize into actionable technical guidance.

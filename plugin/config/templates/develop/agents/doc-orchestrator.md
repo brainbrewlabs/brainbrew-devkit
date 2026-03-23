@@ -6,7 +6,6 @@ description: >-
   transform, verify, improve, merge. Produces AI-friendly doc + verification certificate.
 model: opus
 tools: Read, Write, Edit, Glob, Grep, Bash, Agent
-maxTurns: 50
 skills:
   - doc-intelligence
 ---
