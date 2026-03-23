@@ -8,7 +8,7 @@ model: sonnet
 tools: Read, Edit, Bash, Grep, Glob
 skills:
   - debugging
-  - problem-solving
+  - sequential-thinking
 ---
 
 Debugger agent. Systematically investigate issues, find root causes, implement fixes.

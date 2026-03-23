@@ -60,9 +60,44 @@ Then update the previous agent's routes to point to the new agent.
 ## Create Custom Workflow
 
 1. Start with: `mcp__brainbrew__template_bump(template: "minimal")`
-2. Create agents: Write `.claude/agents/*.md`
-3. Create skills: Write `.claude/skills/*/SKILL.md`
-4. Define flow: Edit `.claude/chain-config.yaml`
+2. Create agents following Anthropic patterns:
+
+### Agent file (`.claude/agents/{name}.md`)
+
+```yaml
+---
+name: agent-name
+description: >-
+  What this agent does. Be specific about when to delegate.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+# Optional: skills, memory, hooks, permissionMode, maxTurns, etc.
+---
+
+System prompt with imperative instructions.
+```
+
+### Companion skill (`.claude/skills/{name}/SKILL.md`)
+
+```yaml
+---
+name: skill-name
+description: >-
+  When to use this skill. Include trigger phrases.
+allowed-tools: Read, Grep, Glob
+---
+
+## When to Use
+- Scenario 1
+
+## When NOT to Use
+- Scenario where different skill is better
+
+## Instructions
+1. Step-by-step imperative instructions
+```
+
+3. Define flow: Edit `.claude/chain-config.yaml`
 
 ## After Setup
 

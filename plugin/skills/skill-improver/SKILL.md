@@ -52,6 +52,11 @@ These block skill loading or cause runtime failures:
 - Invalid YAML frontmatter syntax — Parsing fails, skill won't load
 - Referenced files that don't exist — Runtime errors when Claude follows links
 - Broken file paths — Same as above, leads to tool failures
+- Invalid `allowed-tools` values — Tools that don't exist in Claude Code
+- Invalid `model` value — Must be `sonnet`, `opus`, `haiku`, or full model ID
+- Invalid `effort` value — Must be `low`, `medium`, `high`, or `max`
+- Invalid `context` value — Must be `fork` if set
+- `agent` field set without `context: fork` — Agent field requires context: fork
 
 ### Major Issues (MUST fix)
 
@@ -62,6 +67,13 @@ These significantly degrade skill effectiveness:
 - SKILL.md exceeds 500 lines without using references/ — Overloads context, reduces comprehension
 - Missing "When to Use" or "When NOT to Use" sections — Required by project quality standards
 - Description doesn't specify when to trigger — Skill may never be selected
+- Missing `allowed-tools` — Skill inherits all tools, potential security risk
+- `argument-hint` set but `$ARGUMENTS` not used in body — Arguments silently dropped
+- `disable-model-invocation: true` on a skill with no user-actionable task — Skill becomes unreachable
+- `user-invocable: false` on a skill Claude can't meaningfully auto-trigger — Skill becomes unreachable
+- Referenced supporting files don't exist — Claude instructed to read non-existent files
+- Cross-skill references point to non-existent skills — Dead links
+- Non-standard frontmatter fields (`risk`, `source`, `category`, `metadata`) — May confuse parsers
 
 ### Minor Issues (Evaluate before fixing)
 
@@ -71,6 +83,39 @@ These are polish items that may or may not improve the skill:
 - Optional enhancements — May add complexity without proportional value
 - "Nice to have" improvements — Consider cost-benefit before implementing
 - Formatting suggestions — Often valid but low impact
+- Description could be more specific — Functional but improvable
+
+## Frontmatter Validation Checklist
+
+When reviewing a skill, verify these fields against the official schema:
+
+| Field | Valid Values | Notes |
+|---|---|---|
+| `name` | lowercase, numbers, hyphens (max 64) | Uses dir name if omitted |
+| `description` | string | Should include trigger phrases |
+| `allowed-tools` | Claude Code tool names | Comma-separated or YAML list |
+| `argument-hint` | string | Shown in autocomplete |
+| `disable-model-invocation` | `true`/`false` | Prevents Claude auto-trigger |
+| `user-invocable` | `true`/`false` | Hides from `/` menu |
+| `context` | `fork` | Runs in isolated subagent |
+| `agent` | `Explore`, `Plan`, `general-purpose`, or custom | Requires `context: fork` |
+| `model` | `sonnet`, `opus`, `haiku`, full model ID | Override model |
+| `effort` | `low`, `medium`, `high`, `max` | Override effort |
+| `hooks` | Hook config object | Lifecycle hooks |
+
+Any field NOT in this list (e.g., `license`, `category`, `risk`, `source`, `date_added`, `metadata`) is non-standard.
+
+## String Substitution Validation
+
+Check that these are used correctly if present:
+
+| Variable | Valid Usage |
+|---|---|
+| `$ARGUMENTS` | Replaced with all args passed to skill |
+| `$ARGUMENTS[N]` or `$N` | 0-based index for specific arg |
+| `${CLAUDE_SESSION_ID}` | Current session ID |
+| `${CLAUDE_SKILL_DIR}` | Path to skill directory |
+| `` !`command` `` | Shell command preprocessed before Claude sees content |
 
 ## Minor Issue Evaluation
 
@@ -95,15 +140,19 @@ Replace `[SKILL_PATH]` with the absolute path to the skill directory (e.g., `/pa
 **Iteration 1 — skill-reviewer output:**
 ```text
 Critical: SKILL.md:1 - Missing required 'name' field in frontmatter
+Critical: SKILL.md:5 - agent: Explore set without context: fork
 Major: SKILL.md:3 - Description uses second person ("you should use")
 Major: Missing "When NOT to Use" section
+Major: Missing allowed-tools field
 Minor: Line 45 is verbose
 ```
 
 **Fixes applied:**
 - Added name field to frontmatter
-- Rewrote description in third person
+- Added `context: fork` since `agent: Explore` requires it
+- Rewrote description in imperative with trigger phrases
 - Added "When NOT to Use" section
+- Added `allowed-tools: Read, Grep, Glob`
 
 **Iteration 2 — run skill-reviewer again to verify fixes:**
 ```text

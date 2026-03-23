@@ -18,36 +18,126 @@ name: skill-name
 description: >-
   When to trigger this skill. Include natural language patterns:
   "deploy to X", "run migrations", "test API endpoints".
+  Use "This skill should be used when..." format for Claude auto-selection.
+allowed-tools: Read, Grep, Glob
+# Optional fields below - include only when needed:
+# argument-hint: "[target] [format]"
+# disable-model-invocation: true    # Only user can invoke via /skill-name
+# user-invocable: false             # Only Claude can invoke (background knowledge)
+# context: fork                     # Run in isolated subagent
+# agent: Explore                    # Subagent type when context: fork
+# model: sonnet                     # Model override: sonnet, opus, haiku
+# effort: high                      # Effort: low, medium, high, max
+# hooks:                            # Lifecycle hooks scoped to this skill
+#   PreToolUse:
+#     - matcher: "Bash"
+#       hooks:
+#         - type: command
+#           command: "./scripts/validate.sh"
 ---
 
 # Skill Name
 
-## Domain Knowledge
+## When to Use
 
-[Specific knowledge the agent needs - architecture, patterns, conventions]
+- Scenario 1 when this skill applies
+- Scenario 2
 
-## Procedures
+## When NOT to Use
 
-1. Step 1 - what to do
-2. Step 2 - what to do
+- Scenario where a different skill is better
+- Anti-patterns
+
+## Instructions
+
+1. Step 1 - imperative instruction (not "you should", use "Do X")
+2. Step 2 - what to do with which tools
 
 ## Commands
 
 \`\`\`bash
-# Common commands for this skill
+# Commands the skill may run
 \`\`\`
 
-## References
+## Output
 
-[Links to docs, specs, etc.]
+[Expected output format]
 ```
+
+## Frontmatter Reference
+
+| Field | Required | Purpose |
+|---|---|---|
+| `name` | No (uses dir name) | Lowercase letters, numbers, hyphens (max 64 chars) |
+| `description` | Recommended | When Claude should use this skill. Include trigger phrases |
+| `allowed-tools` | No | Restrict tools: `Read, Grep, Glob, Bash` |
+| `argument-hint` | No | Autocomplete hint: `[issue-number]` |
+| `disable-model-invocation` | No | `true` = only user can invoke (for deploy, commit, etc.) |
+| `user-invocable` | No | `false` = hide from `/` menu (background knowledge) |
+| `context` | No | `fork` = run in isolated subagent |
+| `agent` | No | Subagent type when `context: fork`: `Explore`, `Plan`, `general-purpose`, or custom |
+| `model` | No | `sonnet`, `opus`, `haiku`, or full model ID |
+| `effort` | No | `low`, `medium`, `high`, `max` (Opus 4.6 only) |
+| `hooks` | No | Lifecycle hooks scoped to this skill |
+
+## Invocation Control
+
+| Setting | User invokes | Claude invokes |
+|---|---|---|
+| Default | Yes | Yes |
+| `disable-model-invocation: true` | Yes | No |
+| `user-invocable: false` | No | Yes |
+
+Use `disable-model-invocation: true` for skills with side effects (deploy, commit, send-message).
+Use `user-invocable: false` for background knowledge Claude should apply automatically.
+
+## String Substitutions
+
+| Variable | Description |
+|---|---|
+| `$ARGUMENTS` | All arguments passed when invoking |
+| `$ARGUMENTS[N]` or `$N` | Specific argument by 0-based index |
+| `${CLAUDE_SESSION_ID}` | Current session ID |
+| `${CLAUDE_SKILL_DIR}` | Directory containing the SKILL.md |
+
+## Dynamic Context Injection
+
+Use `` !`command` `` to run shell commands before sending to Claude:
+
+```markdown
+## Current branch
+!`git branch --show-current`
+
+## Recent changes
+!`git log --oneline -5`
+```
+
+Commands run immediately; output replaces the placeholder. Claude only sees the result.
+
+## Supporting Files
+
+Keep SKILL.md under 500 lines. Move detail to supporting files:
+
+```
+my-skill/
+├── SKILL.md           # Main instructions (required, <500 lines)
+├── references/
+│   └── api-spec.md    # Detailed docs Claude loads when needed
+├── examples/
+│   └── sample.md      # Example outputs
+└── scripts/
+    └── helper.sh      # Scripts Claude can execute
+```
+
+Reference from SKILL.md: `For API details, see [references/api-spec.md](references/api-spec.md)`
 
 ## Key Principles
 
-1. **Description is critical** - Include natural language triggers
-2. **Domain knowledge** - What can't be derived from code
-3. **Procedures** - Step-by-step, not generic
-4. **Pair with agent** - Add skill name to agent's `skills:` frontmatter
+1. **Description is critical** — Include trigger phrases ("Use when...", "Triggers on...")
+2. **Include "When to Use" / "When NOT to Use"** — Required for quality
+3. **Write in imperative voice** — "Do X", not "you should do X"
+4. **Scope tool access** — Always set `allowed-tools` to minimum needed
+5. **Progressive disclosure** — Core instructions inline, details in references/
 
 ## List Skills
 
@@ -57,12 +147,14 @@ ls -d .claude/skills/*/
 
 ## Skill + Agent Pairing
 
-After creating a skill, attach it to the agent in `.claude/agents/{agent}.md`:
+After creating a skill, you can preload it into a subagent via `.claude/agents/{agent}.md`:
 
 ```yaml
 ---
 name: agent-name
 skills:
-  - your-new-skill   # ← add here
+  - your-new-skill   # Full skill content injected at startup
 ---
 ```
+
+Or run the skill itself in a subagent by adding `context: fork` and `agent:` to the skill frontmatter.

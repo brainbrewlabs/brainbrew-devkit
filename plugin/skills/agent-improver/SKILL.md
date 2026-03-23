@@ -17,30 +17,107 @@ Write directly to `.claude/agents/{name}.md`:
 ---
 name: agent-name
 description: >-
-  What this agent does. Be specific about when to use it.
-tools:
-  - Bash
-  - Read
-  - Edit
-  - Grep
-  - Glob
-skills:
-  - companion-skill-name
+  What this agent does and when Claude should delegate to it.
+  Be specific. Include "Use proactively" if it should auto-trigger.
+tools: Read, Grep, Glob, Bash
+# Optional fields below - include only when needed:
+# disallowedTools: Write, Edit           # Tools to deny (removed from inherited set)
+# model: sonnet                           # sonnet, opus, haiku, inherit, or full model ID
+# permissionMode: default                 # default, acceptEdits, dontAsk, bypassPermissions, plan
+# maxTurns: 20                            # Max agentic turns before stopping
+# skills:                                 # Skills preloaded into context at startup
+#   - api-conventions
+#   - error-handling
+# mcpServers:                             # MCP servers scoped to this agent
+#   - github                              # Reference existing server by name
+#   - playwright:                         # Or inline definition
+#       type: stdio
+#       command: npx
+#       args: ["-y", "@playwright/mcp@latest"]
+# hooks:                                  # Lifecycle hooks scoped to this agent
+#   PreToolUse:
+#     - matcher: "Bash"
+#       hooks:
+#         - type: command
+#           command: "./scripts/validate.sh"
+# memory: project                         # Persistent memory: user, project, or local
+# background: false                       # true = always run as background task
+# effort: high                            # low, medium, high, max
+# isolation: worktree                     # Run in isolated git worktree
 ---
 
-# Agent Name
+You are [role description]. [System prompt for the agent.]
 
-## Responsibilities
-
-1. First responsibility
-2. Second responsibility
+When invoked:
+1. First step
+2. Second step
+3. Third step
 
 ## Output Format
 
 [Expected output structure]
 ```
 
-**Always create a companion skill** at `.claude/skills/{name}/SKILL.md` with domain knowledge.
+## Frontmatter Reference
+
+| Field | Required | Purpose |
+|---|---|---|
+| `name` | Yes | Unique ID, lowercase + hyphens |
+| `description` | Yes | When Claude should delegate. Include "Use proactively" for auto-trigger |
+| `tools` | No | Allowlist of tools. Inherits all if omitted |
+| `disallowedTools` | No | Denylist (removed from inherited/specified set) |
+| `model` | No | `sonnet`, `opus`, `haiku`, `inherit`, or full model ID (e.g. `claude-opus-4-6`) |
+| `permissionMode` | No | `default`, `acceptEdits`, `dontAsk`, `bypassPermissions`, `plan` |
+| `maxTurns` | No | Max agentic turns before auto-stop |
+| `skills` | No | Skills preloaded into agent context (full content injected) |
+| `mcpServers` | No | MCP servers: string reference or inline definition |
+| `hooks` | No | PreToolUse/PostToolUse/Stop hooks scoped to this agent |
+| `memory` | No | `user` (~/.claude/agent-memory/), `project` (.claude/agent-memory/), `local` (.claude/agent-memory-local/) |
+| `background` | No | `true` = always run as background task |
+| `effort` | No | `low`, `medium`, `high`, `max` |
+| `isolation` | No | `worktree` = isolated git worktree copy |
+
+## Agent Scope
+
+| Location | Scope | Priority |
+|---|---|---|
+| `--agents` CLI flag | Current session only | 1 (highest) |
+| `.claude/agents/` | Current project | 2 |
+| `~/.claude/agents/` | All your projects | 3 |
+| Plugin `agents/` dir | Where plugin enabled | 4 (lowest) |
+
+Higher priority wins when names collide.
+
+## Model Selection Guide
+
+| Model | Best for |
+|---|---|
+| `haiku` | Fast, cheap: exploration, search, simple tasks |
+| `sonnet` | Balanced: code review, analysis, moderate complexity |
+| `opus` | Most capable: complex reasoning, architecture, planning |
+| `inherit` | Same as main conversation (default) |
+
+## Memory Scopes
+
+| Scope | Location | Use when |
+|---|---|---|
+| `user` | `~/.claude/agent-memory/{name}/` | Knowledge applies across all projects |
+| `project` | `.claude/agent-memory/{name}/` | Project-specific, shareable via VCS |
+| `local` | `.claude/agent-memory-local/{name}/` | Project-specific, NOT in VCS |
+
+When memory is enabled, include in system prompt:
+```
+Update your agent memory as you discover patterns, conventions, and
+architectural decisions. This builds institutional knowledge across conversations.
+```
+
+## Key Principles
+
+1. **Focused responsibility** — Each agent excels at one specific task
+2. **Detailed description** — Claude uses this to decide when to delegate
+3. **Minimal tool access** — Grant only necessary permissions
+4. **Imperative system prompt** — Clear instructions, not persona descriptions
+5. **Specify model** — Use haiku for fast/cheap, sonnet for balanced, opus for complex
 
 ## List Agents
 
@@ -75,6 +152,9 @@ mcp__brainbrew__memory_add(content: "...", target: "agent:agent-name")
 ## Improve Existing Agent
 
 1. Read the agent file: `.claude/agents/{name}.md`
-2. Review description, tools, instructions
-3. Edit to improve clarity, add missing tools/skills
-4. Check companion skill exists and has good content
+2. Check against frontmatter reference above — are fields correct?
+3. Verify description is specific with trigger phrases
+4. Verify tools are scoped to minimum needed
+5. Verify system prompt uses imperative voice
+6. Check if `skills` field should preload companion skills
+7. Check if `memory` would benefit this agent

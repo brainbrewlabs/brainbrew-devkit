@@ -34,8 +34,7 @@ implementer → code-reviewer → tester → git-manager → (next phase or done
 
 - Spawn `implementer` subagent with the current phase
 - **Let hooks chain the rest** — do NOT manually spawn code-reviewer, tester, or git-manager
-- Use `ui-ux-designer` subagent for frontend work if `./docs/design-guidelines.md` exists
-- Use `ai-multimodal` skill for image assets if needed
+- Use `ui-design` skill for frontend work if `./docs/design-guidelines.md` exists
 
 ### 3. Follow Hook Instructions
 
@@ -46,6 +45,6 @@ implementer → code-reviewer → tester → git-manager → (next phase or done
 ### 4. Completion
 
 - When git-manager commits and no phases remain, report to user
-- If user approves, use `project-manager` to update plan status
+- If user approves, use `project-management` skill to update plan status
 - Ask user if they want to push to remote
 - List any unresolved questions at the end
