@@ -7,6 +7,7 @@ BrainBrew development toolkit — a Claude Code plugin providing agent chains, s
 - **10 workflow templates** with pre-configured agent chains
 - **AI-powered routing** — Haiku analyzes agent output to pick the next step
 - **Flexible flows** — Multiple routes per agent, conditional branching
+- **Agent teams** — Parallel agent execution with team coordination
 - **60+ agents** and **60+ skills** across all templates
 
 ## Installation
@@ -51,7 +52,7 @@ Agents, skills, and chain config are just files — Claude reads/writes them dir
 
 | Template | Agents | Chain |
 |----------|--------|-------|
-| **develop** | 22 | planner → plan-reviewer → implementer → code-reviewer → tester → git-manager |
+| **develop** | 22 | planner → plan-reviewer → implementer → **parallel-review** (team) → tester → git-manager |
 | **devops** | 10 | code-scanner → security-auditor → test-runner → deployer → monitor |
 | **marketing** | 6 | researcher → content-writer → editor → seo-optimizer → publisher → analyzer |
 | **research** | 5 | topic-researcher → source-gatherer → analyzer → synthesizer → report-writer |
@@ -74,15 +75,38 @@ flow:
     routes:
       tester: "Code approved, ready for testing"
       implementer: "Code has issues, needs fixes"
-      security-scan: "Security concerns found"
     decide: |
       If code is APPROVED → "tester"
       If ANY bugs, issues → "implementer"
-      If security vulnerabilities → "security-scan"
 ```
 
 - **routes:** Maps agent names to descriptions (multiple routes allowed)
 - **decide:** AI prompt sent to Haiku to pick which route based on output
+
+### Agent Teams
+
+Use `type: team` to run multiple agents in parallel at a chain step:
+
+```yaml
+flow:
+  parallel-review:
+    type: team
+    teammates:
+      - name: code-quality
+        agent: code-reviewer
+        prompt: "Review code for bugs and quality"
+      - name: security-check
+        agent: security-scan
+        prompt: "Scan for security vulnerabilities"
+    routes:
+      tester: "All reviews passed"
+      implementer: "Issues found, needs fixes"
+    decide: |
+      If ALL reviews PASSED → "tester"
+      If ANY review found issues → "implementer"
+```
+
+Teammates run as a Claude Code [agent team](https://code.claude.com/docs/en/agent-teams) — each gets its own context, they can message each other, and results are synthesized before routing to the next step. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.
 
 ## Customization
 
@@ -100,21 +124,17 @@ Or manually create `.claude/agents/my-agent.md`:
 ```markdown
 ---
 name: my-agent
-description: Description of what this agent does.
-tools:
-  - Bash
-  - Read
-  - Edit
+description: >-
+  What this agent does and when Claude should delegate to it.
+tools: Bash, Read, Edit
+model: sonnet
 ---
 
-# My Agent
+When invoked:
+1. Step 1
+2. Step 2
 
-## Responsibilities
-1. Task 1
-2. Task 2
-
-## Output Format
-- Expected output structure
+Output: structured results.
 ```
 
 ### Create Custom Skill
@@ -131,19 +151,20 @@ Or manually create `.claude/skills/my-skill/SKILL.md`:
 ```markdown
 ---
 name: my-skill
-description: When to trigger this skill.
+description: >-
+  When to trigger this skill. Triggers on 'X', 'Y'.
+allowed-tools: Read, Grep, Bash
 ---
 
-# My Skill
+## When to Use
+- Scenario 1
 
-## Steps
+## When NOT to Use
+- Anti-pattern
+
+## Instructions
 1. Step 1
 2. Step 2
-
-## Commands
-\`\`\`bash
-# Example commands
-\`\`\`
 ```
 
 ### Create Custom Chain

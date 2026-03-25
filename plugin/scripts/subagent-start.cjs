@@ -240,6 +240,20 @@ ${busContext}
     } catch (e) {
       log(LOG_FILE, `[BUS] Error: ${e.message}`);
     }
+    if (state?.activeTeam) {
+      const team = state.activeTeam;
+      const myTeammate = team.teammates.find((t) => t.agent === type.toLowerCase());
+      if (myTeammate) {
+        context += `
+## Team Context
+You are part of the **${team.name}** team.
+Your role: **${myTeammate.name}**
+Other teammates: ${team.teammates.filter((t) => t.name !== myTeammate.name).map((t) => t.name).join(", ")}
+
+Focus on your specific review area. Your output will be combined with other teammates' results.
+`;
+      }
+    }
     if (state?.sharedContext) {
       context += `
 ## Shared Context from Previous Agents

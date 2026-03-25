@@ -142,6 +142,31 @@ flow:
 
 Then update the previous agent's routes to point to the new agent.
 
+## Group Agents into Teams
+
+Agents can be grouped into teams that run in parallel within a chain flow. Add a `type: team` node in `.claude/chain-config.yaml`:
+
+```yaml
+flow:
+  parallel-review:
+    type: team
+    teammates:
+      - name: code-quality
+        agent: code-reviewer
+        prompt: "Review code for bugs and quality"
+      - name: security-check
+        agent: security-scan
+        prompt: "Scan for security vulnerabilities"
+    routes:
+      next-agent: "All reviews passed"
+      fallback-agent: "Issues found"
+    decide: |
+      If ALL passed → "next-agent"
+      If ANY failed → "fallback-agent"
+```
+
+Each teammate's `agent` field must reference an existing agent in `.claude/agents/`. The team node replaces a single agent step with parallel execution.
+
 ## Send Messages to Agent
 
 Use Memory Bus:
