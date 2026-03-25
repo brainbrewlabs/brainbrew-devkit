@@ -101,7 +101,7 @@ This helps the workflow decide if more implementation is needed.
     try {
       const { messages, consumed } = subscribe(type, {
         sessionId,
-        chainId: state?.currentChain as string | undefined,
+        chainId: (state as Record<string, unknown> | null)?.currentChain as string | undefined,
         cwd: process.cwd(),
       });
 
@@ -114,7 +114,21 @@ This helps the workflow decide if more implementation is needed.
       log(LOG_FILE, `[BUS] Error: ${(e as Error).message}`);
     }
 
-    // Inject shared state from previous agents
+    if (state?.activeTeam) {
+      const team = state.activeTeam as { name: string; teammates: Array<{ name: string; agent: string; status: string }> };
+      const myTeammate = team.teammates.find(t => t.agent === type.toLowerCase());
+      if (myTeammate) {
+        context += `
+## Team Context
+You are part of the **${team.name}** team.
+Your role: **${myTeammate.name}**
+Other teammates: ${team.teammates.filter(t => t.name !== myTeammate.name).map(t => t.name).join(', ')}
+
+Focus on your specific review area. Your output will be combined with other teammates' results.
+`;
+      }
+    }
+
     if (state?.sharedContext) {
       context += `
 ## Shared Context from Previous Agents

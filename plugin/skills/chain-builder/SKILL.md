@@ -4,7 +4,8 @@ description: >-
   Set up workflow templates and manage chain flows. Trigger when user says:
   "set up a workflow", "create a development workflow", "I need a CI/CD pipeline",
   "set up devops", "bump develop", "bump devops", "add agent to chain",
-  "show chain flow", "edit chain config", "create custom workflow".
+  "show chain flow", "edit chain config", "create custom workflow",
+  "add a team node", "run agents in parallel", "create agent team".
 ---
 
 # Chain Builder
@@ -21,7 +22,7 @@ mcp__brainbrew__template_bump(template: "develop")
 
 | Template | Chain |
 |----------|-------|
-| `develop` | planner → plan-reviewer → implementer → code-reviewer → tester → git-manager |
+| `develop` | planner → plan-reviewer → implementer → **parallel-review** (team) → tester → git-manager |
 | `devops` | code-scanner → security-auditor → test-runner → deployer → monitor |
 | `marketing` | researcher → content-writer → editor → seo-optimizer → publisher |
 | `research` | topic-researcher → source-gatherer → analyzer → synthesizer → report-writer |
@@ -34,22 +35,45 @@ mcp__brainbrew__template_bump(template: "develop")
 
 ## Show Chain Flow
 
-Read directly:
 ```bash
 cat .claude/chain-config.yaml
 ```
 
-## Add Agent to Chain
+## Chain Config Structure
+
+The chain config file (`.claude/chain-config.yaml`) has two sections:
+
+```yaml
+hooks:
+  PostToolUse:
+    - plugin:post-agent.cjs
+  SubagentStart:
+    - plugin:subagent-start.cjs
+  SubagentStop:
+    - plugin:subagent-stop.cjs
+
+flow:
+  agent-name:
+    routes:
+      next-agent: "When to go here"
+    decide: |
+      AI routing rules
+```
+
+### Flow Node Types
+
+There are two node types: **agent** (default) and **team**.
+
+## Add Agent Node
 
 Edit `.claude/chain-config.yaml`:
 
 ```yaml
 flow:
-  # Add new agent
   new-agent:
     routes:
-      next-agent: "Success description"
-      fallback: "Failure description"
+      next-agent: "Success — move forward"
+      fallback: "Failed — try alternative"
     decide: |
       If SUCCESS → "next-agent"
       If FAILED → "fallback"
@@ -57,47 +81,150 @@ flow:
 
 Then update the previous agent's routes to point to the new agent.
 
+### Agent Node Fields
+
+| Field | Required | Purpose |
+|-------|----------|---------|
+| `routes` | Yes | Map of `agent-name: "description"`. Multiple routes allowed |
+| `decide` | No | AI prompt sent to Haiku to pick route based on agent output |
+| `next` | No | Legacy: simple next agent (use `routes` instead) |
+| `on_fail` | No | Legacy: fallback on failure keywords |
+| `on_issues` | No | Legacy: fallback on issue keywords |
+
+### How Routing Works
+
+1. Agent completes → PostToolUse hook fires
+2. If `decide` prompt exists and output > 50 chars → Haiku analyzes output against routing rules
+3. Haiku returns `{"route": "agent-name", "reason": "..."}`
+4. If Haiku fails → fallback to keyword matching (pass/approved/success vs fail/error/issues)
+5. If no match → default to first route
+6. Route `"END"` stops the chain
+
+## Add Agent Team Node
+
+Agent teams run multiple agents **in parallel** at a chain step. Each teammate gets its own context and they can communicate with each other.
+
+```yaml
+flow:
+  parallel-review:
+    type: team
+    teammates:
+      - name: code-quality
+        agent: code-reviewer
+        prompt: "Review code for bugs, quality, and adherence to plan"
+      - name: security-check
+        agent: security-scan
+        prompt: "Scan for security vulnerabilities and exposed secrets"
+    routes:
+      tester: "All reviews passed"
+      implementer: "Issues found, needs fixes"
+    decide: |
+      If ALL reviews PASSED with no issues → "tester"
+      If ANY review found bugs, issues, vulnerabilities → "implementer"
+```
+
+### Team Node Fields
+
+| Field | Required | Purpose |
+|-------|----------|---------|
+| `type` | Yes | Must be `team` |
+| `teammates` | Yes | Array of teammate definitions |
+| `routes` | Yes | Same as agent node — where to go after team completes |
+| `decide` | No | AI routing rules applied to synthesized team output |
+
+### Teammate Fields
+
+| Field | Required | Purpose |
+|-------|----------|---------|
+| `name` | Yes | Unique identifier for this teammate |
+| `agent` | Yes | Agent type to spawn (must exist in `.claude/agents/`) |
+| `prompt` | No | Specific instructions for this teammate's focus area |
+| `model` | No | Override model (sonnet, opus, haiku) |
+
+### How Teams Work
+
+1. Previous agent completes → hook detects next node is `type: team`
+2. Hook emits MANDATORY NEXT STEP instructing Claude to create an agent team
+3. Claude spawns all teammates in parallel using TeamCreate
+4. Each teammate works independently with its own context
+5. After all teammates finish, results are synthesized
+6. Hook routes to next agent based on `decide` rules
+
+### When to Use Teams vs Sequential Agents
+
+| Use Teams | Use Sequential |
+|-----------|---------------|
+| Independent tasks (review + security + tests) | Tasks that depend on each other |
+| Different perspectives on same work | Each step builds on previous output |
+| Speed matters — parallel is faster | Order matters — must be sequential |
+| Teammates don't edit same files | Agents modify shared files |
+
+### Team Examples
+
+**Parallel code review (security + quality + performance):**
+```yaml
+  comprehensive-review:
+    type: team
+    teammates:
+      - name: security
+        agent: security-scan
+        prompt: "Focus on vulnerabilities, injection risks, exposed secrets"
+      - name: quality
+        agent: code-reviewer
+        prompt: "Focus on bugs, logic errors, naming, patterns"
+      - name: performance
+        agent: code-reviewer
+        prompt: "Focus on performance bottlenecks, memory leaks, N+1 queries"
+    routes:
+      tester: "All clear"
+      implementer: "Issues found"
+```
+
+**Parallel research:**
+```yaml
+  parallel-research:
+    type: team
+    teammates:
+      - name: frontend-scout
+        agent: scout
+        prompt: "Explore frontend architecture, components, state management"
+      - name: backend-scout
+        agent: scout
+        prompt: "Explore backend architecture, APIs, database schema"
+      - name: test-scout
+        agent: scout
+        prompt: "Explore test coverage, testing patterns, CI setup"
+    routes:
+      planner: "Research complete, ready to plan"
+```
+
 ## Create Custom Workflow
 
 1. Start with: `mcp__brainbrew__template_bump(template: "minimal")`
-2. Create agents following Anthropic patterns:
+2. Create agents: `.claude/agents/{name}.md`
+3. Create skills: `.claude/skills/{name}/SKILL.md`
+4. Define flow: `.claude/chain-config.yaml`
+5. Restart Claude Code session
 
-### Agent file (`.claude/agents/{name}.md`)
+### Custom Hook Scripts
 
-```yaml
----
-name: agent-name
-description: >-
-  What this agent does. Be specific about when to delegate.
-tools: Read, Grep, Glob, Bash
-model: sonnet
-# Optional: skills, memory, hooks, permissionMode, maxTurns, etc.
----
-
-System prompt with imperative instructions.
-```
-
-### Companion skill (`.claude/skills/{name}/SKILL.md`)
+Add your own hooks alongside built-in ones:
 
 ```yaml
----
-name: skill-name
-description: >-
-  When to use this skill. Include trigger phrases.
-allowed-tools: Read, Grep, Glob
----
-
-## When to Use
-- Scenario 1
-
-## When NOT to Use
-- Scenario where different skill is better
-
-## Instructions
-1. Step-by-step imperative instructions
+hooks:
+  PostToolUse:
+    - plugin:post-agent.cjs
+    - ./my-validator.js
+  SubagentStart:
+    - plugin:subagent-start.cjs
+    - ./inject-context.js
 ```
 
-3. Define flow: Edit `.claude/chain-config.yaml`
+| Prefix | Resolves to |
+|--------|-------------|
+| `plugin:` | Plugin's built-in scripts |
+| `./` | `.claude/hooks/` in project |
+| `/absolute` | Absolute path |
 
 ## After Setup
 
@@ -106,6 +233,7 @@ Tell user:
 Workflow ready! You can:
 - "Create an agent for X"
 - "Create a skill for Y"
+- "Add a team node for parallel review"
 - "Tell implementer to Z" (Memory Bus)
 - "Show the chain flow"
 ```

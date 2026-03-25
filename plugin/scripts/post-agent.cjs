@@ -136,6 +136,7 @@ function parseSimpleYaml(content) {
   let multilineKey = "";
   let multilineValue = "";
   let multilineIndent = 0;
+  let currentTeammate = null;
   const lines = content.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -157,6 +158,7 @@ function parseSimpleYaml(content) {
       currentSection = sectionMatch[1];
       currentAgent = "";
       currentSubSection = "";
+      currentTeammate = null;
       continue;
     }
     if (currentSection === "flow") {
@@ -164,14 +166,43 @@ function parseSimpleYaml(content) {
       if (agentMatch) {
         currentAgent = agentMatch[1];
         currentSubSection = "";
+        currentTeammate = null;
         config.flow[currentAgent] = {};
         continue;
       }
-      const subSectionMatch = line.match(/^    (routes):$/);
+      const subSectionMatch = line.match(/^    (routes|teammates):$/);
       if (subSectionMatch && currentAgent) {
         currentSubSection = subSectionMatch[1];
-        config.flow[currentAgent].routes = {};
+        currentTeammate = null;
+        if (currentSubSection === "routes") {
+          config.flow[currentAgent].routes = {};
+        } else if (currentSubSection === "teammates") {
+          config.flow[currentAgent].teammates = [];
+        }
         continue;
+      }
+      if (currentSubSection === "teammates" && currentAgent) {
+        const arrayItemMatch = line.match(/^      - (\w+):\s*"?([^"]*)"?$/);
+        if (arrayItemMatch) {
+          if (currentTeammate) {
+            config.flow[currentAgent].teammates.push(currentTeammate);
+          }
+          currentTeammate = { name: "", agent: "" };
+          const [, key, value] = arrayItemMatch;
+          currentTeammate[key] = value.trim();
+          continue;
+        }
+        const teammatePropMatch = line.match(/^        (\w+):\s*"?([^"]*)"?$/);
+        if (teammatePropMatch && currentTeammate) {
+          const [, key, value] = teammatePropMatch;
+          currentTeammate[key] = value.trim();
+          continue;
+        }
+        if (currentTeammate && !line.match(/^      /)) {
+          config.flow[currentAgent].teammates.push(currentTeammate);
+          currentTeammate = null;
+          currentSubSection = "";
+        }
       }
       if (currentSubSection === "routes" && currentAgent) {
         const routeMatch = line.match(/^      (\S+):\s*"?([^"]*)"?$/);
@@ -183,6 +214,10 @@ function parseSimpleYaml(content) {
       }
       const multilineMatch = line.match(/^    (\w+):\s*\|$/);
       if (multilineMatch && currentAgent) {
+        if (currentSubSection === "teammates" && currentTeammate) {
+          config.flow[currentAgent].teammates.push(currentTeammate);
+          currentTeammate = null;
+        }
         currentSubSection = "";
         multilineKey = multilineMatch[1];
         multilineValue = "";
@@ -199,6 +234,9 @@ function parseSimpleYaml(content) {
   }
   if (multilineKey && currentAgent && multilineValue) {
     config.flow[currentAgent][multilineKey] = multilineValue;
+  }
+  if (currentTeammate && currentAgent && currentSubSection === "teammates") {
+    config.flow[currentAgent].teammates.push(currentTeammate);
   }
   return config;
 }
@@ -349,9 +387,10 @@ function main() {
     const tokens = p.tool_response?.totalTokens ?? 0;
     const ms = p.tool_response?.totalDurationMs ?? 0;
     const tools = p.tool_response?.totalToolUseCount ?? 0;
-    const transcriptPath = p.transcript_path ?? "";
+    const _transcriptPath = p.transcript_path ?? "";
     const sessionId = p.session_id ?? "";
     const cwd = p.cwd ?? process.cwd();
+    void _transcriptPath;
     const config = loadChainConfig(cwd);
     let text = "";
     if (p.tool_response?.content) {
@@ -428,7 +467,35 @@ Do NOT spawn another agent. Report this to the user with a clear summary of what
     const kTok = (tokens / 1e3).toFixed(1);
     let noti = `Agent ${type} completed | ${secs}s | ${kTok}k tokens | ${tools} tools`;
     if (next) {
-      noti += `
+      const nextFlow = config.flow?.[next];
+      if (nextFlow?.type === "team" && nextFlow.teammates) {
+        const teammates = nextFlow.teammates;
+        const teamInstruction = teammates.map(
+          (t) => `- Teammate "${t.name}" using agent type "${t.agent}"${t.prompt ? `: ${t.prompt}` : ""}${t.model ? ` (model: ${t.model})` : ""}`
+        ).join("\n");
+        const routesList = nextFlow.routes ? Object.entries(nextFlow.routes).map(([agent, desc]) => `- "${agent}" \u2192 ${desc}`).join("\n") : "";
+        noti += `
+
+<system-reminder>
+## MANDATORY NEXT STEP \u2014 AGENT TEAM
+You MUST now create an agent team for the **${next}** step.
+
+Create a team with these teammates:
+${teamInstruction}
+
+Each teammate should work in parallel. After all teammates complete, synthesize their results and continue the chain.
+
+Use the TeamCreate tool to create the team with the above configuration.
+${routesList ? `
+After the team completes, route based on:
+${routesList}` : ""}
+${nextFlow.decide ? `
+Routing rules:
+${nextFlow.decide}` : ""}
+DO NOT ask user. DO NOT skip. Wait for all teammates to finish before proceeding.
+</system-reminder>`;
+      } else {
+        noti += `
 
 <system-reminder>
 ## MANDATORY NEXT STEP
@@ -438,6 +505,7 @@ Command: Use Agent tool with subagent_type="${next}"
 
 DO NOT ask user. DO NOT skip. DO NOT background agents.
 </system-reminder>`;
+      }
     } else {
       noti += `
 

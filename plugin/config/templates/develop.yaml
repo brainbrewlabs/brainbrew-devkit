@@ -26,18 +26,23 @@ flow:
 
   implementer:
     routes:
-      code-reviewer: "Code implemented, ready for review"
+      parallel-review: "Code implemented, ready for review"
 
-  code-reviewer:
+  parallel-review:
+    type: team
+    teammates:
+      - name: code-quality
+        agent: code-reviewer
+        prompt: "Review code for bugs, quality, and adherence to plan"
+      - name: security-check
+        agent: security-scan
+        prompt: "Scan for security vulnerabilities"
     routes:
-      tester: "Code approved, ready for testing"
-      implementer: "Code has issues, needs fixes"
-      security-scan: "Security concerns found"
+      tester: "All reviews passed"
+      implementer: "Issues found, needs fixes"
     decide: |
-      If code is APPROVED with zero issues, clean → "tester"
-      If ANY bugs, issues, mismatches, wrong names, fixes needed → "implementer"
-      If security vulnerabilities, injection risks, exposed secrets → "security-scan"
-      IMPORTANT: Even if some checks pass, if there are ANY issues → "implementer"
+      If ALL reviews PASSED with no issues → "tester"
+      If ANY review found issues, bugs, vulnerabilities → "implementer"
 
   tester:
     routes:
@@ -50,14 +55,6 @@ flow:
   debugger:
     routes:
       implementer: "Bug diagnosed, ready to fix"
-
-  security-scan:
-    routes:
-      implementer: "Security issues found, needs fixes"
-      tester: "Security scan passed"
-    decide: |
-      If security scan PASSED, no vulnerabilities → "tester"
-      If ANY vulnerabilities found → "implementer"
 
   git-manager:
     routes:

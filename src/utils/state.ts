@@ -13,6 +13,11 @@ interface ChainState {
     completedPhases: number;
     phases: string[];
   };
+  activeTeam?: {
+    name: string;
+    teammates: Array<{ name: string; agent: string; status: 'pending' | 'running' | 'complete' }>;
+    startedAt: string;
+  };
 }
 
 function statePath(sessionId: string): string {

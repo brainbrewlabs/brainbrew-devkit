@@ -12,10 +12,18 @@ const MAX_AGENT_LOOPS = 3;
 
 // ─── Flow Config ─────────────────────────────────────────────────────────────
 
+interface TeammateConfig {
+  name: string;
+  agent: string;
+  prompt?: string;
+  model?: string;
+}
+
 interface FlowEntry {
-  routes?: Record<string, string>;  // agent-name → description
-  decide?: string;                   // AI prompt for routing decision
-  // Legacy support
+  type?: 'agent' | 'team';
+  teammates?: TeammateConfig[];
+  routes?: Record<string, string>;
+  decide?: string;
   next?: string | null;
   on_issues?: string;
   on_fail?: string;
@@ -42,23 +50,22 @@ function parseSimpleYaml(content: string): ChainConfig {
   const config: ChainConfig = { flow: {} };
   let currentSection = '';
   let currentAgent = '';
-  let currentSubSection = '';  // 'routes' or ''
+  let currentSubSection = '';
   let multilineKey = '';
   let multilineValue = '';
   let multilineIndent = 0;
+  let currentTeammate: TeammateConfig | null = null;
 
   const lines = content.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Handle multiline continuation (for decide: |)
     if (multilineKey && currentAgent) {
       const lineIndent = line.search(/\S|$/);
       if (lineIndent > multilineIndent || line.trim() === '') {
         multilineValue += (multilineValue ? '\n' : '') + line.trim();
         continue;
       } else {
-        // End multiline, save value
         (config.flow![currentAgent] as Record<string, string>)[multilineKey] = multilineValue;
         multilineKey = '';
         multilineValue = '';
@@ -66,37 +73,65 @@ function parseSimpleYaml(content: string): ChainConfig {
       }
     }
 
-    // Skip comments and empty lines
     if (line.trim().startsWith('#') || !line.trim()) continue;
 
-    // Top-level sections: hooks, flow
     const sectionMatch = line.match(/^(\w+):$/);
     if (sectionMatch) {
       currentSection = sectionMatch[1];
       currentAgent = '';
       currentSubSection = '';
+      currentTeammate = null;
       continue;
     }
 
-    // Agent name in flow section (2 spaces indent)
     if (currentSection === 'flow') {
       const agentMatch = line.match(/^  (\S+):$/);
       if (agentMatch) {
         currentAgent = agentMatch[1];
         currentSubSection = '';
+        currentTeammate = null;
         config.flow![currentAgent] = {};
         continue;
       }
 
-      // Sub-section like "routes:" (4 spaces indent)
-      const subSectionMatch = line.match(/^    (routes):$/);
+      const subSectionMatch = line.match(/^    (routes|teammates):$/);
       if (subSectionMatch && currentAgent) {
         currentSubSection = subSectionMatch[1];
-        config.flow![currentAgent].routes = {};
+        currentTeammate = null;
+        if (currentSubSection === 'routes') {
+          config.flow![currentAgent].routes = {};
+        } else if (currentSubSection === 'teammates') {
+          config.flow![currentAgent].teammates = [];
+        }
         continue;
       }
 
-      // Route entries (6 spaces indent): "      tester: description"
+      if (currentSubSection === 'teammates' && currentAgent) {
+        const arrayItemMatch = line.match(/^      - (\w+):\s*"?([^"]*)"?$/);
+        if (arrayItemMatch) {
+          if (currentTeammate) {
+            config.flow![currentAgent].teammates!.push(currentTeammate);
+          }
+          currentTeammate = { name: '', agent: '' };
+          const [, key, value] = arrayItemMatch;
+          (currentTeammate as unknown as Record<string, string>)[key] = value.trim();
+          continue;
+        }
+
+        const teammatePropMatch = line.match(/^        (\w+):\s*"?([^"]*)"?$/);
+        if (teammatePropMatch && currentTeammate) {
+          const [, key, value] = teammatePropMatch;
+          (currentTeammate as unknown as Record<string, string>)[key] = value.trim();
+          continue;
+        }
+
+        if (currentTeammate && !line.match(/^      /)) {
+          config.flow![currentAgent].teammates!.push(currentTeammate);
+          currentTeammate = null;
+          currentSubSection = '';
+        }
+      }
+
       if (currentSubSection === 'routes' && currentAgent) {
         const routeMatch = line.match(/^      (\S+):\s*"?([^"]*)"?$/);
         if (routeMatch) {
@@ -106,9 +141,12 @@ function parseSimpleYaml(content: string): ChainConfig {
         }
       }
 
-      // Check for multiline start (key: |) at 4 spaces
       const multilineMatch = line.match(/^    (\w+):\s*\|$/);
       if (multilineMatch && currentAgent) {
+        if (currentSubSection === 'teammates' && currentTeammate) {
+          config.flow![currentAgent].teammates!.push(currentTeammate);
+          currentTeammate = null;
+        }
         currentSubSection = '';
         multilineKey = multilineMatch[1];
         multilineValue = '';
@@ -116,7 +154,6 @@ function parseSimpleYaml(content: string): ChainConfig {
         continue;
       }
 
-      // Simple properties at 4 spaces: next, on_issues, on_fail
       const propMatch = line.match(/^    (\w+):\s*(.+)/);
       if (propMatch && currentAgent && !currentSubSection) {
         const [, key, value] = propMatch;
@@ -126,9 +163,12 @@ function parseSimpleYaml(content: string): ChainConfig {
     }
   }
 
-  // Handle trailing multiline
   if (multilineKey && currentAgent && multilineValue) {
     (config.flow![currentAgent] as Record<string, string>)[multilineKey] = multilineValue;
+  }
+
+  if (currentTeammate && currentAgent && currentSubSection === 'teammates') {
+    config.flow![currentAgent].teammates!.push(currentTeammate);
   }
 
   return config;
@@ -368,9 +408,10 @@ function main(): void {
     const tokens = p.tool_response?.totalTokens ?? 0;
     const ms = p.tool_response?.totalDurationMs ?? 0;
     const tools = p.tool_response?.totalToolUseCount ?? 0;
-    const transcriptPath = p.transcript_path ?? '';
+    const _transcriptPath = p.transcript_path ?? '';
     const sessionId = p.session_id ?? '';
     const cwd = p.cwd ?? process.cwd();
+    void _transcriptPath;
 
     // Load chain config from cwd
     const config = loadChainConfig(cwd);
@@ -445,7 +486,35 @@ function main(): void {
     let noti = `Agent ${type} completed | ${secs}s | ${kTok}k tokens | ${tools} tools`;
 
     if (next) {
-      noti += `
+      const nextFlow = config.flow?.[next];
+      if (nextFlow?.type === 'team' && nextFlow.teammates) {
+        const teammates = nextFlow.teammates;
+        const teamInstruction = teammates.map(t =>
+          `- Teammate "${t.name}" using agent type "${t.agent}"${t.prompt ? `: ${t.prompt}` : ''}${t.model ? ` (model: ${t.model})` : ''}`
+        ).join('\n');
+
+        const routesList = nextFlow.routes
+          ? Object.entries(nextFlow.routes).map(([agent, desc]) => `- "${agent}" → ${desc}`).join('\n')
+          : '';
+
+        noti += `
+
+<system-reminder>
+## MANDATORY NEXT STEP — AGENT TEAM
+You MUST now create an agent team for the **${next}** step.
+
+Create a team with these teammates:
+${teamInstruction}
+
+Each teammate should work in parallel. After all teammates complete, synthesize their results and continue the chain.
+
+Use the TeamCreate tool to create the team with the above configuration.
+${routesList ? `\nAfter the team completes, route based on:\n${routesList}` : ''}
+${nextFlow.decide ? `\nRouting rules:\n${nextFlow.decide}` : ''}
+DO NOT ask user. DO NOT skip. Wait for all teammates to finish before proceeding.
+</system-reminder>`;
+      } else {
+        noti += `
 
 <system-reminder>
 ## MANDATORY NEXT STEP
@@ -455,6 +524,7 @@ Command: Use Agent tool with subagent_type="${next}"
 
 DO NOT ask user. DO NOT skip. DO NOT background agents.
 </system-reminder>`;
+      }
     } else {
       noti += `\n\nChain complete. No next agent.`;
     }
