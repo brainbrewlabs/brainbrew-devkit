@@ -142,9 +142,45 @@ flow:
 
 Then update the previous agent's routes to point to the new agent.
 
-## Group Agents into Teams
+## Agent Teams vs Parallel Subagents
 
-Agents can be grouped into teams that run in parallel within a chain flow. Add a `type: team` node in `.claude/chain-config.yaml`:
+**IMPORTANT:** When user wants agents to work in parallel, choose the right pattern:
+
+### Agent Team (TeamCreate) — for complex parallel work
+- Multiple **independent** Claude Code sessions
+- Teammates have their own context, can **message each other**
+- Shared task list with self-coordination
+- Use when: teammates need to discuss, challenge each other, or coordinate
+- Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+
+To create an agent team, use **TeamCreate** tool (NOT the Agent tool):
+```
+TeamCreate(team_name: "review-team", description: "Parallel code review")
+```
+
+Then spawn teammates via Agent tool with `team_name` parameter:
+```
+Agent(subagent_type: "code-reviewer", team_name: "review-team", name: "quality-reviewer")
+Agent(subagent_type: "security-scan", team_name: "review-team", name: "security-reviewer")
+```
+
+When done, shut down teammates via SendMessage, then clean up:
+```
+TeamDelete()
+```
+
+### Parallel Subagents (Agent tool) — for quick independent tasks
+- Run within **one session**, report results back to parent
+- Cannot message each other
+- Use when: tasks are independent and only the result matters
+
+```
+Agent(subagent_type: "code-reviewer", run_in_background: true)
+Agent(subagent_type: "security-scan", run_in_background: true)
+```
+
+### Chain Team Node — for chain workflows
+In `chain-config.yaml`, use `type: team` to automatically trigger TeamCreate:
 
 ```yaml
 flow:
@@ -165,7 +201,19 @@ flow:
       If ANY failed → "fallback-agent"
 ```
 
-Each teammate's `agent` field must reference an existing agent in `.claude/agents/`. The team node replaces a single agent step with parallel execution.
+The chain hook handles TeamCreate/TeamDelete automatically.
+
+### Decision Guide
+
+| User says | Use |
+|---|---|
+| "run review and security in parallel" | **Agent Team** (TeamCreate) |
+| "create a team of agents" | **Agent Team** (TeamCreate) |
+| "agents that collaborate/discuss" | **Agent Team** (TeamCreate) |
+| "quick parallel search" | **Parallel Subagents** (Agent tool) |
+| "add parallel step to chain" | **Chain team node** (type: team) |
+
+**DO NOT** create multiple regular agents via Agent tool when user asks for a "team" — use TeamCreate instead.
 
 ## Send Messages to Agent
 

@@ -158,3 +158,28 @@ skills:
 ```
 
 Or run the skill itself in a subagent by adding `context: fork` and `agent:` to the skill frontmatter.
+
+## Agent Teams vs Parallel Agents
+
+**IMPORTANT:** When creating skills that spawn multiple agents, choose correctly:
+
+| Pattern | Tool | When to use |
+|---|---|---|
+| **Agent Team** | `TeamCreate` + `Agent(team_name)` | Agents need to collaborate, message each other, share tasks |
+| **Parallel subagents** | `Agent(run_in_background)` | Independent tasks, only results matter |
+| **Chain team node** | `type: team` in chain-config.yaml | Parallel step in a chain workflow |
+
+If user says "team", "collaborate", "work together" → use **TeamCreate**, NOT multiple Agent calls.
+
+```yaml
+# WRONG — spawns independent subagents, cannot communicate
+Agent(subagent_type: "reviewer-1", run_in_background: true)
+Agent(subagent_type: "reviewer-2", run_in_background: true)
+
+# RIGHT — creates a team with shared task list and messaging
+TeamCreate(team_name: "review-team")
+Agent(subagent_type: "reviewer", team_name: "review-team", name: "security")
+Agent(subagent_type: "reviewer", team_name: "review-team", name: "quality")
+```
+
+Skills that orchestrate teams should include `TeamCreate` and `TeamDelete` in their workflow, and require `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
