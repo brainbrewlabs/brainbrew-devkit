@@ -15,9 +15,9 @@ Agent workflow is managed by PostToolUse hooks. When a hook emits a **MANDATORY 
 ### Chain Flow
 
 ```
-planner -> plan-reviewer -> implementer -> code-reviewer -> tester -> git-manager
-              | ISSUES        | ISSUES        | FAIL
-            planner        implementer      debugger -> implementer
+planner -> plan-reviewer -> implementer -> parallel-review (team) -> tester -> git-manager
+              | ISSUES        | ISSUES           | ISSUES            | FAIL
+            planner        implementer        implementer        debugger -> implementer
 ```
 
 ### What "follow the hook" means
