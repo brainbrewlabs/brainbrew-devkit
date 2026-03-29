@@ -19,6 +19,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { execSync } from 'child_process';
+import { readActiveChainContent } from '../utils/chain-resolver.js';
 
 // Plugin root from env, fallback to script location
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || dirname(dirname(__filename));
@@ -80,10 +81,9 @@ function loadProjectHooks(event: string, cwd: string): string[] {
   const defaults = DEFAULT_PLUGIN_HOOKS[event] || [];
   hooks.push(...defaults.map(h => join(PLUGIN_SCRIPTS, h)));
 
-  // Add project-specific hooks
-  const configPath = join(cwd, '.claude', 'chain-config.yaml');
-  if (existsSync(configPath)) {
-    const config = parseYamlConfig(readFileSync(configPath, 'utf-8'));
+  const chainContent = readActiveChainContent(cwd);
+  if (chainContent) {
+    const config = parseYamlConfig(chainContent);
     const projectHooks = (config.hooks[event] || []).map(h => resolveScriptPath(h, cwd));
     hooks.push(...projectHooks);
   }

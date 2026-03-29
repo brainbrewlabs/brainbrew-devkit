@@ -2,11 +2,42 @@
 "use strict";
 
 // src/hooks/runner.ts
+var import_fs2 = require("fs");
+var import_path2 = require("path");
+var import_child_process = require("child_process");
+
+// src/utils/chain-resolver.ts
 var import_fs = require("fs");
 var import_path = require("path");
-var import_child_process = require("child_process");
-var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || (0, import_path.dirname)((0, import_path.dirname)(__filename));
-var PLUGIN_SCRIPTS = (0, import_path.join)(PLUGIN_ROOT, "scripts");
+function resolveActiveChain(cwd) {
+  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
+  if (!(0, import_fs.existsSync)(pointerPath)) return null;
+  const content = (0, import_fs.readFileSync)(pointerPath, "utf-8");
+  if (/^(flow|hooks):/m.test(content)) {
+    return { configPath: pointerPath, chainName: "default", isLegacy: true };
+  }
+  const activeMatch = content.match(/^active:\s*(.+)/m);
+  if (!activeMatch) return null;
+  const active = activeMatch[1].trim();
+  const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
+  const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
+  if (active.includes("..") || chainsDir.includes("..")) return null;
+  const chainPath = (0, import_path.join)(cwd, chainsDir, `${active}.yaml`);
+  const resolvedPath = (0, import_path.resolve)(chainPath);
+  const expectedBase = (0, import_path.resolve)((0, import_path.join)(cwd, ".claude"));
+  if (!resolvedPath.startsWith(expectedBase)) return null;
+  if (!(0, import_fs.existsSync)(chainPath)) return null;
+  return { configPath: chainPath, chainName: active, isLegacy: false };
+}
+function readActiveChainContent(cwd) {
+  const resolved = resolveActiveChain(cwd);
+  if (!resolved) return null;
+  return (0, import_fs.readFileSync)(resolved.configPath, "utf-8");
+}
+
+// src/hooks/runner.ts
+var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || (0, import_path2.dirname)((0, import_path2.dirname)(__filename));
+var PLUGIN_SCRIPTS = (0, import_path2.join)(PLUGIN_ROOT, "scripts");
 function parseYamlConfig(content) {
   const config = { hooks: {} };
   let currentEvent = "";
@@ -26,15 +57,15 @@ function parseYamlConfig(content) {
 }
 function resolveScriptPath(script, cwd) {
   if (script.startsWith("plugin:")) {
-    return (0, import_path.join)(PLUGIN_SCRIPTS, script.replace("plugin:", ""));
+    return (0, import_path2.join)(PLUGIN_SCRIPTS, script.replace("plugin:", ""));
   }
   if (script.startsWith("./") || script.startsWith("../")) {
-    return (0, import_path.join)(cwd, ".claude", "hooks", script.replace(/^\.\//, ""));
+    return (0, import_path2.join)(cwd, ".claude", "hooks", script.replace(/^\.\//, ""));
   }
   if (script.startsWith("/")) {
     return script;
   }
-  return (0, import_path.join)(PLUGIN_SCRIPTS, script);
+  return (0, import_path2.join)(PLUGIN_SCRIPTS, script);
 }
 var DEFAULT_PLUGIN_HOOKS = {
   SessionStart: ["session-start.cjs"],
@@ -43,17 +74,17 @@ var DEFAULT_PLUGIN_HOOKS = {
 function loadProjectHooks(event, cwd) {
   const hooks = [];
   const defaults = DEFAULT_PLUGIN_HOOKS[event] || [];
-  hooks.push(...defaults.map((h) => (0, import_path.join)(PLUGIN_SCRIPTS, h)));
-  const configPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
-  if ((0, import_fs.existsSync)(configPath)) {
-    const config = parseYamlConfig((0, import_fs.readFileSync)(configPath, "utf-8"));
+  hooks.push(...defaults.map((h) => (0, import_path2.join)(PLUGIN_SCRIPTS, h)));
+  const chainContent = readActiveChainContent(cwd);
+  if (chainContent) {
+    const config = parseYamlConfig(chainContent);
     const projectHooks = (config.hooks[event] || []).map((h) => resolveScriptPath(h, cwd));
     hooks.push(...projectHooks);
   }
   return hooks;
 }
 function runHook(hookPath, stdin) {
-  if (!(0, import_fs.existsSync)(hookPath)) {
+  if (!(0, import_fs2.existsSync)(hookPath)) {
     console.error(`[runner] Hook not found: ${hookPath}`);
     return {};
   }
@@ -93,7 +124,7 @@ function main() {
   }
   let stdin = "";
   try {
-    stdin = (0, import_fs.readFileSync)(0, "utf-8").trim();
+    stdin = (0, import_fs2.readFileSync)(0, "utf-8").trim();
   } catch {
     process.exit(0);
   }

@@ -36,8 +36,14 @@ mcp__brainbrew__template_bump(template: "develop")
 
 ## Show Chain Flow
 
+List chains and show the active one:
+```
+mcp__brainbrew__chain_list()
+```
+
+View active chain config:
 ```bash
-cat .claude/chain-config.yaml
+cat .claude/chains/$(grep 'active:' .claude/chain-config.yaml | cut -d' ' -f2).yaml
 ```
 
 ## Validate Chain Config
@@ -57,8 +63,22 @@ Returns ✅ PASS or list of ❌/⚠ issues.
 
 ## Chain Config Structure
 
-The chain config file (`.claude/chain-config.yaml`) has two sections:
+The project uses a pointer file + chain directory:
 
+```
+.claude/chain-config.yaml       # pointer to active chain
+.claude/chains/
+  develop.yaml                  # chain definition (hooks + flow)
+  discovery.yaml                # another chain
+```
+
+Pointer file (`.claude/chain-config.yaml`):
+```yaml
+active: develop
+chains_dir: .claude/chains/
+```
+
+Each chain file in `.claude/chains/` has the same format:
 ```yaml
 hooks:
   PostToolUse:
@@ -76,13 +96,29 @@ flow:
       AI routing rules
 ```
 
+## List Chains
+
+```
+mcp__brainbrew__chain_list()
+```
+
+Shows all chains and which is active.
+
+## Switch Active Chain
+
+```
+mcp__brainbrew__chain_switch(chain: "discovery")
+```
+
+Takes effect immediately for subsequent agent runs.
+
 ### Flow Node Types
 
 There are two node types: **agent** (default) and **team**.
 
 ## Add Agent Node
 
-Edit `.claude/chain-config.yaml`:
+Edit the active chain file in `.claude/chains/`:
 
 ```yaml
 flow:
@@ -219,8 +255,9 @@ flow:
 1. Start with: `mcp__brainbrew__template_bump(template: "minimal")`
 2. Create agents: `.claude/agents/{name}.md`
 3. Create skills: `.claude/skills/{name}/SKILL.md`
-4. Define flow: `.claude/chain-config.yaml`
-5. Restart Claude Code session
+4. Edit active chain: `.claude/chains/{name}.yaml`
+5. Switch chains: `mcp__brainbrew__chain_switch(chain: "name")`
+6. Restart Claude Code session
 
 ### Custom Hook Scripts
 

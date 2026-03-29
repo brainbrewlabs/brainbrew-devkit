@@ -11,6 +11,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 import { readFileSync, existsSync, mkdirSync, readdirSync, copyFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
+import { resolveActiveChain, listChains, getActiveChainName, writePointer, migrateToMultiChain } from '../utils/chain-resolver.js';
 
 // Recursive directory copy
 function copyDirRecursive(src: string, dest: string): void {
@@ -24,7 +25,7 @@ function copyDirRecursive(src: string, dest: string): void {
     } else if (stat.isFile()) {
       copyFileSync(srcPath, destPath);
     }
-    // Skip symlinks, sockets, etc.
+
   }
 }
 import { publish, list, clear } from '../memory/bus.js';
@@ -75,6 +76,22 @@ const TOOLS = [
     name: 'chain_validate',
     description: 'Validate the chain config. Checks that all agents in flow exist, team nodes have valid teammates, routes point to valid targets, and detects dead-end nodes.',
     inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'chain_list',
+    description: 'List all available chains in the project and show which is active',
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'chain_switch',
+    description: 'Switch the active chain. Takes effect immediately for subsequent agent runs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        chain: { type: 'string', description: 'Chain name to activate (without .yaml extension)' },
+      },
+      required: ['chain'],
+    },
   },
 
   // ─── Memory Bus Tools ───
@@ -142,6 +159,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // ─── bump_template ───
       case 'template_bump': {
         const template = args?.template as string;
+        if (!/^[a-z0-9_-]+$/.test(template)) {
+          return error('Invalid template name');
+        }
         const templateDir = join(TEMPLATES_DIR, template);
         const templateYaml = join(TEMPLATES_DIR, `${template}.yaml`);
 
@@ -149,11 +169,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           return error(`Template "${template}" not found`);
         }
 
-        // Create directories
-        const dirs = ['.claude/agents', '.claude/skills', '.claude/hooks', '.claude/memory'];
+        const dirs = ['.claude/agents', '.claude/skills', '.claude/hooks', '.claude/memory', '.claude/chains'];
         dirs.forEach(d => mkdirSync(join(cwd, d), { recursive: true }));
 
-        // Copy agents
         const agentsDir = join(templateDir, 'agents');
         let agentCount = 0;
         if (existsSync(agentsDir)) {
@@ -163,7 +181,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           });
         }
 
-        // Copy skills (recursive to handle subdirectories)
         const skillsDir = join(templateDir, 'skills');
         let skillCount = 0;
         if (existsSync(skillsDir)) {
@@ -177,15 +194,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           });
         }
 
-        // Copy chain config
-        copyFileSync(templateYaml, join(cwd, '.claude/chain-config.yaml'));
+        const existingChain = resolveActiveChain(cwd);
+        if (existingChain?.isLegacy) {
+          migrateToMultiChain(cwd);
+        }
 
-        // Read flow for display
+        copyFileSync(templateYaml, join(cwd, '.claude/chains', `${template}.yaml`));
+
+        writePointer(cwd, template);
+
         const config = readFileSync(templateYaml, 'utf-8');
         const flowMatch = config.match(/flow:[\s\S]*/);
         const flow = flowMatch ? flowMatch[0].substring(0, 500) : '';
 
-        return success(`✓ Template "${template}" set up!\n\nAgents: ${agentCount}\nSkills: ${skillCount}\n\n${flow}`);
+        return success(`Template "${template}" set up!\n\nAgents: ${agentCount}\nSkills: ${skillCount}\nActive chain: ${template}\n\n${flow}`);
       }
 
       // ─── list_templates ───
@@ -205,12 +227,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       // ─── chain_validate ───
       case 'chain_validate': {
-        const configPath = join(cwd, '.claude', 'chain-config.yaml');
-        if (!existsSync(configPath)) {
-          return error('No chain config found at .claude/chain-config.yaml');
+        const resolved = resolveActiveChain(cwd);
+        if (!resolved) {
+          return error('No chain config found. Run template_bump to set up a workflow.');
         }
 
-        const content = readFileSync(configPath, 'utf-8');
+        const content = readFileSync(resolved.configPath, 'utf-8');
         const issues: string[] = [];
 
         const installedAgents = new Set<string>();
@@ -314,11 +336,46 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         if (issues.length === 0) {
-          const summary = `✅ Chain config is valid\n\nNodes: ${flowNodes.size}\nAgents installed: ${installedAgents.size}\nTeam nodes: ${[...flowNodes.values()].filter(n => n.isTeam).length}`;
+          const summary = `Chain "${resolved.chainName}" is valid\n\nNodes: ${flowNodes.size}\nAgents installed: ${installedAgents.size}\nTeam nodes: ${[...flowNodes.values()].filter(n => n.isTeam).length}`;
           return success(summary);
         }
 
-        return success(`Chain validation found ${issues.length} issue(s):\n\n${issues.join('\n')}\n\nNodes: ${flowNodes.size} | Agents installed: ${installedAgents.size}`);
+        return success(`Chain "${resolved.chainName}" validation found ${issues.length} issue(s):\n\n${issues.join('\n')}\n\nNodes: ${flowNodes.size} | Agents installed: ${installedAgents.size}`);
+      }
+
+      case 'chain_list': {
+        const chains = listChains(cwd);
+        if (chains.length === 0) {
+          return success('No chains found. Run template_bump to set up a workflow.');
+        }
+        const activeName = getActiveChainName(cwd);
+        const lines = chains.map(c => c === activeName ? `- **${c}** (active)` : `- ${c}`);
+        return success(`Chains:\n\n${lines.join('\n')}`);
+      }
+
+      case 'chain_switch': {
+        const chain = args?.chain as string;
+        const chains = listChains(cwd);
+
+        if (chains.length === 0) {
+          return error('No chains found. Run template_bump first.');
+        }
+
+        if (!chains.includes(chain)) {
+          return error(`Chain "${chain}" not found. Available: ${chains.join(', ')}`);
+        }
+
+        const current = getActiveChainName(cwd);
+        if (current === chain) {
+          return success(`Chain "${chain}" is already active.`);
+        }
+
+        const pointerPath = join(cwd, '.claude', 'chain-config.yaml');
+        const pointerContent = readFileSync(pointerPath, 'utf-8');
+        const dirMatch = pointerContent.match(/^chains_dir:\s*(.+)/m);
+        const existingChainsDir = dirMatch ? dirMatch[1].trim() : '.claude/chains/';
+        writePointer(cwd, chain, existingChainsDir);
+        return success(`Switched active chain to "${chain}".`);
       }
 
       // ─── memory_add ───
@@ -369,7 +426,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return error(`Unknown tool: ${name}`);
     }
   } catch (err) {
-    return error((err as Error).message);
+    return { content: [{ type: 'text' as const, text: 'Error: Chain operation failed' }], isError: true };
   }
 });
 

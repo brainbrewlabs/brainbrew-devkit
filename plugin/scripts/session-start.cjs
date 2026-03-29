@@ -1,17 +1,46 @@
 "use strict";
 
 // src/hooks/session-start.ts
+var import_fs2 = require("fs");
+
+// src/utils/chain-resolver.ts
 var import_fs = require("fs");
 var import_path = require("path");
+function resolveActiveChain(cwd) {
+  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
+  if (!(0, import_fs.existsSync)(pointerPath)) return null;
+  const content = (0, import_fs.readFileSync)(pointerPath, "utf-8");
+  if (/^(flow|hooks):/m.test(content)) {
+    return { configPath: pointerPath, chainName: "default", isLegacy: true };
+  }
+  const activeMatch = content.match(/^active:\s*(.+)/m);
+  if (!activeMatch) return null;
+  const active = activeMatch[1].trim();
+  const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
+  const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
+  if (active.includes("..") || chainsDir.includes("..")) return null;
+  const chainPath = (0, import_path.join)(cwd, chainsDir, `${active}.yaml`);
+  const resolvedPath = (0, import_path.resolve)(chainPath);
+  const expectedBase = (0, import_path.resolve)((0, import_path.join)(cwd, ".claude"));
+  if (!resolvedPath.startsWith(expectedBase)) return null;
+  if (!(0, import_fs.existsSync)(chainPath)) return null;
+  return { configPath: chainPath, chainName: active, isLegacy: false };
+}
+function readActiveChainContent(cwd) {
+  const resolved = resolveActiveChain(cwd);
+  if (!resolved) return null;
+  return (0, import_fs.readFileSync)(resolved.configPath, "utf-8");
+}
+
+// src/hooks/session-start.ts
 function hasTeamNodes(cwd) {
-  const configPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
-  if (!(0, import_fs.existsSync)(configPath)) return false;
-  const content = (0, import_fs.readFileSync)(configPath, "utf-8");
+  const content = readActiveChainContent(cwd);
+  if (!content) return false;
   return /^\s+type:\s*team/m.test(content);
 }
 function main() {
   try {
-    const stdin = (0, import_fs.readFileSync)(0, "utf-8").trim();
+    const stdin = (0, import_fs2.readFileSync)(0, "utf-8").trim();
     if (!stdin) process.exit(0);
     const p = JSON.parse(stdin);
     const cwd = p.cwd ?? process.cwd();

@@ -5,6 +5,7 @@ import { callHaiku } from '../ai/haiku.js';
 import { getState, updateState } from '../utils/state.js';
 import { log, logEvent } from '../utils/logger.js';
 import { TMP_DIR } from '../utils/paths.js';
+import { readActiveChainContent } from '../utils/chain-resolver.js';
 
 const LOG_FILE = join(TMP_DIR, 'agent-output.log');
 const PLANS_DIR = join(homedir(), '.claude', 'plans');
@@ -35,11 +36,9 @@ interface ChainConfig {
 }
 
 function loadChainConfig(cwd: string): ChainConfig {
-  const configPath = join(cwd, '.claude', 'chain-config.yaml');
-  if (!existsSync(configPath)) return {};
-
   try {
-    const content = readFileSync(configPath, 'utf-8');
+    const content = readActiveChainContent(cwd);
+    if (!content) return {};
     return parseSimpleYaml(content);
   } catch {
     return {};
@@ -87,6 +86,9 @@ function parseSimpleYaml(content: string): ChainConfig {
     if (currentSection === 'flow') {
       const agentMatch = line.match(/^  (\S+):$/);
       if (agentMatch) {
+        if (currentTeammate && currentSubSection === 'teammates') {
+          config.flow![currentAgent].teammates!.push(currentTeammate);
+        }
         currentAgent = agentMatch[1];
         currentSubSection = '';
         currentTeammate = null;
@@ -96,6 +98,9 @@ function parseSimpleYaml(content: string): ChainConfig {
 
       const subSectionMatch = line.match(/^    (routes|teammates):$/);
       if (subSectionMatch && currentAgent) {
+        if (currentTeammate && currentSubSection === 'teammates') {
+          config.flow![currentAgent].teammates!.push(currentTeammate);
+        }
         currentSubSection = subSectionMatch[1];
         currentTeammate = null;
         if (currentSubSection === 'routes') {
@@ -184,10 +189,8 @@ function getNextAgent(
     return { next: null, reason: 'No flow defined for this agent' };
   }
 
-  // Build routes map - prefer new 'routes' format, fallback to legacy
   const routes: Record<string, string> = flow.routes ?? {};
   if (!flow.routes) {
-    // Legacy format support
     if (flow.next) routes['next'] = flow.next;
     if (flow.on_fail) routes['on_fail'] = flow.on_fail;
     if (flow.on_issues) routes['on_issues'] = flow.on_issues;
@@ -196,9 +199,7 @@ function getNextAgent(
   const routeNames = Object.keys(routes);
   const defaultNext = flow.next ?? routeNames[0] ?? null;
 
-  // If decide prompt exists and we have routes, use AI to route
   if (flow.decide && output.length > 50 && routeNames.length > 0) {
-    // Build available routes description
     const routesList = routeNames.map(name => {
       const desc = routes[name];
       return `- "${name}" → ${desc || name}`;
@@ -229,22 +230,19 @@ Respond ONLY with JSON: {"route": "<agent-name or END>", "reason": "brief explan
           return { next: null, reason: `[AI] ${reason}` };
         }
 
-        // Check if route is valid agent name
         if (routes[route]) {
           return { next: route, reason: `[AI] ${reason}` };
         }
 
-        // Route might be the target agent name directly
-        if (routeNames.some(r => routes[r] === route)) {
-          return { next: route, reason: `[AI] ${reason}` };
+        const matchedKey = routeNames.find(r => routes[r] === route);
+        if (matchedKey) {
+          return { next: matchedKey, reason: `[AI] ${reason}` };
         }
       }
     } catch {
-      // Fall through to keyword matching
     }
   }
 
-  // Fallback: keyword-based routing
   const outputLower = output.toLowerCase();
   const hasIssues = outputLower.includes('issues') ||
                     outputLower.includes('fail') ||
