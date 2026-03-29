@@ -21201,7 +21201,9 @@ ${info}`);
           const nodeMatch = line.match(/^  (\S+):\s*$/);
           if (nodeMatch) {
             flushNode();
-            currentNode = nodeMatch[1];
+            const candidate = nodeMatch[1];
+            if (!isSafeAgentName(candidate)) continue;
+            currentNode = candidate;
             inTeammates = false;
             inRoutes = false;
             continue;
@@ -21240,14 +21242,16 @@ ${info}`);
             }
             const agentMatch = line.match(/^\s+agent:\s*(.+)/);
             if (agentMatch && currentTm) {
-              currentTm.agent = agentMatch[1].trim();
+              const agentVal = agentMatch[1].trim();
+              if (isSafeAgentName(agentVal)) currentTm.agent = agentVal;
               continue;
             }
           }
           if (inRoutes) {
             const routeMatch = line.match(/^\s{6}(\S+):\s*"[^"]*"\s*$/);
             if (routeMatch) {
-              routes.push(routeMatch[1]);
+              const target = routeMatch[1];
+              if (isSafeAgentName(target) || target === "END") routes.push(target);
               continue;
             }
           }
@@ -21282,19 +21286,97 @@ ${info}`);
             }
           }
         }
+        let agentFormatIssues = 0;
+        const allReferencedAgents = /* @__PURE__ */ new Set();
+        for (const [nodeName, node] of flowNodes) {
+          if (node.isTeam) {
+            for (const tm of node.teammates) {
+              if (tm.agent && isSafeAgentName(tm.agent)) allReferencedAgents.add(tm.agent);
+            }
+          } else if (nodeName !== "END" && isSafeAgentName(nodeName)) {
+            allReferencedAgents.add(nodeName);
+          }
+        }
+        for (const agentName of allReferencedAgents) {
+          const agentPath = (0, import_path3.join)(agentsDir, `${agentName}.md`);
+          if (!(0, import_fs3.existsSync)(agentPath)) continue;
+          const fm = parseFrontmatter(agentPath);
+          if (!fm.valid) {
+            issues.push(`\u274C Agent "${agentName}" has no YAML frontmatter`);
+            agentFormatIssues++;
+            continue;
+          }
+          if (!fm.fields["name"]) {
+            issues.push(`\u274C Agent "${agentName}" frontmatter missing "name" field`);
+            agentFormatIssues++;
+          }
+          if (!fm.fields["description"]) {
+            issues.push(`\u26A0 Agent "${agentName}" frontmatter missing "description" field`);
+            agentFormatIssues++;
+          }
+        }
+        const skillNames = /* @__PURE__ */ new Set();
+        let skillFormatIssues = 0;
+        const skillsDir = (0, import_path3.join)(cwd, ".claude", "skills");
+        if ((0, import_fs3.existsSync)(skillsDir)) {
+          for (const entry of (0, import_fs3.readdirSync)(skillsDir)) {
+            const skillPath = (0, import_path3.join)(skillsDir, entry);
+            if (!(0, import_fs3.statSync)(skillPath).isDirectory()) continue;
+            if (entry === "common") continue;
+            skillNames.add(entry);
+            const candidates = (0, import_fs3.readdirSync)(skillPath).filter((f) => f.toLowerCase() === "skill.md");
+            if (candidates.length === 0) {
+              issues.push(`\u26A0 Skill "${entry}" has no SKILL.md file`);
+              skillFormatIssues++;
+              continue;
+            }
+            const fm = parseFrontmatter((0, import_path3.join)(skillPath, candidates[0]));
+            if (!fm.valid) {
+              issues.push(`\u26A0 Skill "${entry}" SKILL.md has no YAML frontmatter`);
+              skillFormatIssues++;
+              continue;
+            }
+            if (!fm.fields["name"]) {
+              issues.push(`\u26A0 Skill "${entry}" SKILL.md frontmatter missing "name" field`);
+              skillFormatIssues++;
+            }
+            if (!fm.fields["description"]) {
+              issues.push(`\u26A0 Skill "${entry}" SKILL.md frontmatter missing "description" field`);
+              skillFormatIssues++;
+            }
+          }
+        }
+        for (const agentName of allReferencedAgents) {
+          const agentPath = (0, import_path3.join)(agentsDir, `${agentName}.md`);
+          if (!(0, import_fs3.existsSync)(agentPath)) continue;
+          const agentContent = (0, import_fs3.readFileSync)(agentPath, "utf-8");
+          const skillRefs = agentContent.matchAll(/`([a-z][\w-]*)`\s*skills?/gi);
+          for (const ref of skillRefs) {
+            const refName = ref[1];
+            if (!skillNames.has(refName)) {
+              issues.push(`\u26A0 Agent "${agentName}" references skill "${refName}" which was not found in .claude/skills/`);
+            }
+          }
+        }
+        const teamCount = [...flowNodes.values()].filter((n) => n.isTeam).length;
+        const summaryLines = [
+          `Nodes: ${flowNodes.size}`,
+          `Agents installed: ${installedAgents.size}`,
+          `Agent format issues: ${agentFormatIssues}`,
+          `Skills installed: ${skillNames.size}`,
+          `Skill format issues: ${skillFormatIssues}`,
+          `Team nodes: ${teamCount}`
+        ];
         if (issues.length === 0) {
-          const summary = `Chain "${resolved.chainName}" is valid
+          return success2(`Chain "${resolved.chainName}" is valid
 
-Nodes: ${flowNodes.size}
-Agents installed: ${installedAgents.size}
-Team nodes: ${[...flowNodes.values()].filter((n) => n.isTeam).length}`;
-          return success2(summary);
+${summaryLines.join("\n")}`);
         }
         return success2(`Chain "${resolved.chainName}" validation found ${issues.length} issue(s):
 
 ${issues.join("\n")}
 
-Nodes: ${flowNodes.size} | Agents installed: ${installedAgents.size}`);
+${summaryLines.join("\n")}`);
       }
       case "chain_list": {
         const chains = listChains(cwd);
@@ -21371,6 +21453,29 @@ ${output}`);
     return { content: [{ type: "text", text: "Error: Chain operation failed" }], isError: true };
   }
 });
+function isSafeAgentName(name) {
+  return /^[a-zA-Z0-9_-]+$/.test(name);
+}
+function parseFrontmatter(filePath) {
+  const content = (0, import_fs3.readFileSync)(filePath, "utf-8");
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return { valid: false, fields: {} };
+  const fields = {};
+  let currentKey = "";
+  let currentValue = "";
+  for (const line of match[1].split("\n")) {
+    const kvMatch = line.match(/^(\w[\w-]*):\s*(.*)/);
+    if (kvMatch) {
+      if (currentKey) fields[currentKey] = currentValue.trim();
+      currentKey = kvMatch[1];
+      currentValue = kvMatch[2].replace(/^>-?\s*$/, "");
+    } else if (currentKey && line.match(/^\s+/)) {
+      currentValue += " " + line.trim();
+    }
+  }
+  if (currentKey) fields[currentKey] = currentValue.trim();
+  return { valid: true, fields };
+}
 function success2(text) {
   return { content: [{ type: "text", text }] };
 }

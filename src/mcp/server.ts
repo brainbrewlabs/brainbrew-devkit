@@ -268,7 +268,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           const nodeMatch = line.match(/^  (\S+):\s*$/);
           if (nodeMatch) {
             flushNode();
-            currentNode = nodeMatch[1];
+            const candidate = nodeMatch[1];
+            if (!isSafeAgentName(candidate)) continue;
+            currentNode = candidate;
             inTeammates = false; inRoutes = false;
             continue;
           }
@@ -292,12 +294,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               continue;
             }
             const agentMatch = line.match(/^\s+agent:\s*(.+)/);
-            if (agentMatch && currentTm) { currentTm.agent = agentMatch[1].trim(); continue; }
+            if (agentMatch && currentTm) {
+              const agentVal = agentMatch[1].trim();
+              if (isSafeAgentName(agentVal)) currentTm.agent = agentVal;
+              continue;
+            }
           }
 
           if (inRoutes) {
             const routeMatch = line.match(/^\s{6}(\S+):\s*"[^"]*"\s*$/);
-            if (routeMatch) { routes.push(routeMatch[1]); continue; }
+            if (routeMatch) {
+              const target = routeMatch[1];
+              if (isSafeAgentName(target) || target === 'END') routes.push(target);
+              continue;
+            }
           }
         }
         flushNode();
@@ -335,12 +345,100 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
         }
 
-        if (issues.length === 0) {
-          const summary = `Chain "${resolved.chainName}" is valid\n\nNodes: ${flowNodes.size}\nAgents installed: ${installedAgents.size}\nTeam nodes: ${[...flowNodes.values()].filter(n => n.isTeam).length}`;
-          return success(summary);
+        let agentFormatIssues = 0;
+        const allReferencedAgents = new Set<string>();
+        for (const [nodeName, node] of flowNodes) {
+          if (node.isTeam) {
+            for (const tm of node.teammates) {
+              if (tm.agent && isSafeAgentName(tm.agent)) allReferencedAgents.add(tm.agent);
+            }
+          } else if (nodeName !== 'END' && isSafeAgentName(nodeName)) {
+            allReferencedAgents.add(nodeName);
+          }
         }
 
-        return success(`Chain "${resolved.chainName}" validation found ${issues.length} issue(s):\n\n${issues.join('\n')}\n\nNodes: ${flowNodes.size} | Agents installed: ${installedAgents.size}`);
+        for (const agentName of allReferencedAgents) {
+          const agentPath = join(agentsDir, `${agentName}.md`);
+          if (!existsSync(agentPath)) continue;
+          const fm = parseFrontmatter(agentPath);
+          if (!fm.valid) {
+            issues.push(`❌ Agent "${agentName}" has no YAML frontmatter`);
+            agentFormatIssues++;
+            continue;
+          }
+          if (!fm.fields['name']) {
+            issues.push(`❌ Agent "${agentName}" frontmatter missing "name" field`);
+            agentFormatIssues++;
+          }
+          if (!fm.fields['description']) {
+            issues.push(`⚠ Agent "${agentName}" frontmatter missing "description" field`);
+            agentFormatIssues++;
+          }
+        }
+
+        const skillNames = new Set<string>();
+        let skillFormatIssues = 0;
+        const skillsDir = join(cwd, '.claude', 'skills');
+        if (existsSync(skillsDir)) {
+          for (const entry of readdirSync(skillsDir)) {
+            const skillPath = join(skillsDir, entry);
+            if (!statSync(skillPath).isDirectory()) continue;
+            if (entry === 'common') continue;
+
+            skillNames.add(entry);
+
+            const candidates = readdirSync(skillPath).filter(f => f.toLowerCase() === 'skill.md');
+            if (candidates.length === 0) {
+              issues.push(`⚠ Skill "${entry}" has no SKILL.md file`);
+              skillFormatIssues++;
+              continue;
+            }
+
+            const fm = parseFrontmatter(join(skillPath, candidates[0]));
+            if (!fm.valid) {
+              issues.push(`⚠ Skill "${entry}" SKILL.md has no YAML frontmatter`);
+              skillFormatIssues++;
+              continue;
+            }
+            if (!fm.fields['name']) {
+              issues.push(`⚠ Skill "${entry}" SKILL.md frontmatter missing "name" field`);
+              skillFormatIssues++;
+            }
+            if (!fm.fields['description']) {
+              issues.push(`⚠ Skill "${entry}" SKILL.md frontmatter missing "description" field`);
+              skillFormatIssues++;
+            }
+          }
+        }
+
+        for (const agentName of allReferencedAgents) {
+          const agentPath = join(agentsDir, `${agentName}.md`);
+          if (!existsSync(agentPath)) continue;
+          const agentContent = readFileSync(agentPath, 'utf-8');
+          const skillRefs = agentContent.matchAll(/`([a-z][\w-]*)`\s*skills?/gi);
+          for (const ref of skillRefs) {
+            const refName = ref[1];
+            if (!skillNames.has(refName)) {
+              issues.push(`⚠ Agent "${agentName}" references skill "${refName}" which was not found in .claude/skills/`);
+            }
+          }
+        }
+
+        const teamCount = [...flowNodes.values()].filter(n => n.isTeam).length;
+        const summaryLines = [
+          `Nodes: ${flowNodes.size}`,
+          `Agents installed: ${installedAgents.size}`,
+          `Agent format issues: ${agentFormatIssues}`,
+          `Skills installed: ${skillNames.size}`,
+          `Skill format issues: ${skillFormatIssues}`,
+          `Team nodes: ${teamCount}`,
+        ];
+
+        if (issues.length === 0) {
+          return success(`Chain "${resolved.chainName}" is valid\n\n${summaryLines.join('\n')}`);
+        }
+
+        return success(`Chain "${resolved.chainName}" validation found ${issues.length} issue(s):\n\n${issues.join('\n')}\n\n${summaryLines.join('\n')}`);
       }
 
       case 'chain_list': {
@@ -431,6 +529,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function isSafeAgentName(name: string): boolean {
+  return /^[a-zA-Z0-9_-]+$/.test(name);
+}
+
+function parseFrontmatter(filePath: string): { valid: boolean; fields: Record<string, string> } {
+  const content = readFileSync(filePath, 'utf-8');
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return { valid: false, fields: {} };
+
+  const fields: Record<string, string> = {};
+  let currentKey = '';
+  let currentValue = '';
+  for (const line of match[1].split('\n')) {
+    const kvMatch = line.match(/^(\w[\w-]*):\s*(.*)/);
+    if (kvMatch) {
+      if (currentKey) fields[currentKey] = currentValue.trim();
+      currentKey = kvMatch[1];
+      currentValue = kvMatch[2].replace(/^>-?\s*$/, '');
+    } else if (currentKey && line.match(/^\s+/)) {
+      currentValue += ' ' + line.trim();
+    }
+  }
+  if (currentKey) fields[currentKey] = currentValue.trim();
+  return { valid: true, fields };
+}
 
 function success(text: string) {
   return { content: [{ type: 'text' as const, text }] };

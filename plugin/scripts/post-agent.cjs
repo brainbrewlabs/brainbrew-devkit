@@ -474,6 +474,12 @@ The chain will continue automatically when the agent finishes.
 `);
       }
     }
+    const currentFlow = config.flow?.[type.toLowerCase()];
+    if (next && sessionId && currentFlow?.reset_counters === "true") {
+      const state = getState(sessionId) ?? { previousAgents: [] };
+      state.previousAgents = (state.previousAgents ?? []).filter((a) => a.type !== next);
+      updateState(sessionId, state);
+    }
     if (next && sessionId) {
       const state = getState(sessionId) ?? { previousAgents: [] };
       const nextAgentCount = (state.previousAgents ?? []).filter((a) => a.type === next).length;
