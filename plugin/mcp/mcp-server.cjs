@@ -2980,7 +2980,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve.call(this, root, ref);
+      let _sch = resolve2.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
         const { schemaId } = this.opts;
@@ -3007,7 +3007,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve(root, ref) {
+    function resolve2(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3582,7 +3582,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve(baseURI, relativeURI, options) {
+    function resolve2(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -3809,7 +3809,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve,
+      resolve: resolve2,
       resolveComponent,
       equal,
       serialize,
@@ -19565,7 +19565,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+        await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error3) {
@@ -19582,7 +19582,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve2, reject) => {
       const earlyReject = (error3) => {
         reject(error3);
       };
@@ -19660,7 +19660,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve(parseResult.data);
+            resolve2(parseResult.data);
           }
         } catch (error3) {
           reject(error3);
@@ -19921,12 +19921,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve2, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve, interval);
+      const timeoutId = setTimeout(resolve2, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -20796,50 +20796,115 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve) => {
+    return new Promise((resolve2) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve();
+        resolve2();
       } else {
-        this._stdout.once("drain", resolve);
+        this._stdout.once("drain", resolve2);
       }
     });
   }
 };
 
 // src/mcp/server.ts
-var import_fs2 = require("fs");
-var import_path2 = require("path");
+var import_fs3 = require("fs");
+var import_path3 = require("path");
 
-// src/memory/bus.ts
+// src/utils/chain-resolver.ts
 var import_fs = require("fs");
 var import_path = require("path");
+function resolveActiveChain(cwd) {
+  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
+  if (!(0, import_fs.existsSync)(pointerPath)) return null;
+  const content = (0, import_fs.readFileSync)(pointerPath, "utf-8");
+  if (/^(flow|hooks):/m.test(content)) {
+    return { configPath: pointerPath, chainName: "default", isLegacy: true };
+  }
+  const activeMatch = content.match(/^active:\s*(.+)/m);
+  if (!activeMatch) return null;
+  const active = activeMatch[1].trim();
+  const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
+  const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
+  if (active.includes("..") || chainsDir.includes("..")) return null;
+  const chainPath = (0, import_path.join)(cwd, chainsDir, `${active}.yaml`);
+  const resolvedPath = (0, import_path.resolve)(chainPath);
+  const expectedBase = (0, import_path.resolve)((0, import_path.join)(cwd, ".claude"));
+  if (!resolvedPath.startsWith(expectedBase)) return null;
+  if (!(0, import_fs.existsSync)(chainPath)) return null;
+  return { configPath: chainPath, chainName: active, isLegacy: false };
+}
+function listChains(cwd) {
+  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
+  if (!(0, import_fs.existsSync)(pointerPath)) return [];
+  const content = (0, import_fs.readFileSync)(pointerPath, "utf-8");
+  if (/^(flow|hooks):/m.test(content)) {
+    return ["default"];
+  }
+  const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
+  const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
+  if (chainsDir.includes("..")) return ["default"];
+  const fullDir = (0, import_path.join)(cwd, chainsDir);
+  const resolvedDir = (0, import_path.resolve)(fullDir);
+  const expectedBase = (0, import_path.resolve)((0, import_path.join)(cwd, ".claude"));
+  if (!resolvedDir.startsWith(expectedBase)) return ["default"];
+  if (!(0, import_fs.existsSync)(fullDir)) return [];
+  return (0, import_fs.readdirSync)(fullDir).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(".yaml", ""));
+}
+function getActiveChainName(cwd) {
+  const resolved = resolveActiveChain(cwd);
+  return resolved?.chainName ?? null;
+}
+function writePointer(cwd, active, chainsDir = ".claude/chains/") {
+  const validName = /^[a-zA-Z0-9_\-\/.]+$/;
+  if (!validName.test(active) || active.includes("..")) throw new Error("Invalid chain name");
+  if (!validName.test(chainsDir) || chainsDir.includes("..")) throw new Error("Invalid chains directory");
+  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
+  const content = `active: ${active}
+chains_dir: ${chainsDir}
+`;
+  (0, import_fs.writeFileSync)(pointerPath, content);
+}
+function migrateToMultiChain(cwd) {
+  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
+  const chainsDir = (0, import_path.join)(cwd, ".claude", "chains");
+  (0, import_fs.mkdirSync)(chainsDir, { recursive: true });
+  const legacyPath = (0, import_path.join)(chainsDir, "legacy.yaml");
+  const content = (0, import_fs.readFileSync)(pointerPath, "utf-8");
+  (0, import_fs.writeFileSync)(legacyPath, content);
+  writePointer(cwd, "legacy");
+  return "legacy";
+}
+
+// src/memory/bus.ts
+var import_fs2 = require("fs");
+var import_path2 = require("path");
 var import_os = require("os");
 var import_crypto = require("crypto");
-var GLOBAL_STORE_PATH = (0, import_path.join)((0, import_os.homedir)(), ".claude", "memory", "bus.json");
+var GLOBAL_STORE_PATH = (0, import_path2.join)((0, import_os.homedir)(), ".claude", "memory", "bus.json");
 var PROJECT_STORE_FILE = ".claude/memory/bus.json";
 function getProjectStorePath(cwd) {
-  return (0, import_path.join)(cwd, PROJECT_STORE_FILE);
+  return (0, import_path2.join)(cwd, PROJECT_STORE_FILE);
 }
 function ensureDir(filePath) {
-  const dir = (0, import_path.dirname)(filePath);
-  if (!(0, import_fs.existsSync)(dir)) {
-    (0, import_fs.mkdirSync)(dir, { recursive: true });
+  const dir = (0, import_path2.dirname)(filePath);
+  if (!(0, import_fs2.existsSync)(dir)) {
+    (0, import_fs2.mkdirSync)(dir, { recursive: true });
   }
 }
 function loadStore(path) {
-  if (!(0, import_fs.existsSync)(path)) {
+  if (!(0, import_fs2.existsSync)(path)) {
     return { version: 1, messages: [] };
   }
   try {
-    return JSON.parse((0, import_fs.readFileSync)(path, "utf-8"));
+    return JSON.parse((0, import_fs2.readFileSync)(path, "utf-8"));
   } catch {
     return { version: 1, messages: [] };
   }
 }
 function saveStore(path, store) {
   ensureDir(path);
-  (0, import_fs.writeFileSync)(path, JSON.stringify(store, null, 2));
+  (0, import_fs2.writeFileSync)(path, JSON.stringify(store, null, 2));
 }
 function publish(content, options = {}) {
   const path = options.global ? GLOBAL_STORE_PATH : getProjectStorePath(options.cwd || process.cwd());
@@ -20903,20 +20968,20 @@ function clear(options = {}) {
 
 // src/mcp/server.ts
 function copyDirRecursive(src, dest) {
-  (0, import_fs2.mkdirSync)(dest, { recursive: true });
-  for (const entry of (0, import_fs2.readdirSync)(src)) {
-    const srcPath = (0, import_path2.join)(src, entry);
-    const destPath = (0, import_path2.join)(dest, entry);
-    const stat = (0, import_fs2.statSync)(srcPath);
+  (0, import_fs3.mkdirSync)(dest, { recursive: true });
+  for (const entry of (0, import_fs3.readdirSync)(src)) {
+    const srcPath = (0, import_path3.join)(src, entry);
+    const destPath = (0, import_path3.join)(dest, entry);
+    const stat = (0, import_fs3.statSync)(srcPath);
     if (stat.isDirectory()) {
       copyDirRecursive(srcPath, destPath);
     } else if (stat.isFile()) {
-      (0, import_fs2.copyFileSync)(srcPath, destPath);
+      (0, import_fs3.copyFileSync)(srcPath, destPath);
     }
   }
 }
-var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || (0, import_path2.dirname)((0, import_path2.dirname)((0, import_path2.dirname)(__filename)));
-var TEMPLATES_DIR = (0, import_path2.join)(PLUGIN_ROOT, "config", "templates");
+var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || (0, import_path3.dirname)((0, import_path3.dirname)((0, import_path3.dirname)(__filename)));
+var TEMPLATES_DIR = (0, import_path3.join)(PLUGIN_ROOT, "config", "templates");
 var server = new Server(
   {
     name: "brainbrew",
@@ -20954,6 +21019,22 @@ var TOOLS = [
     name: "chain_validate",
     description: "Validate the chain config. Checks that all agents in flow exist, team nodes have valid teammates, routes point to valid targets, and detects dead-end nodes.",
     inputSchema: { type: "object", properties: {} }
+  },
+  {
+    name: "chain_list",
+    description: "List all available chains in the project and show which is active",
+    inputSchema: { type: "object", properties: {} }
+  },
+  {
+    name: "chain_switch",
+    description: "Switch the active chain. Takes effect immediately for subsequent agent runs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        chain: { type: "string", description: "Chain name to activate (without .yaml extension)" }
+      },
+      required: ["chain"]
+    }
   },
   // ─── Memory Bus Tools ───
   {
@@ -21014,49 +21095,58 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // ─── bump_template ───
       case "template_bump": {
         const template = args?.template;
-        const templateDir = (0, import_path2.join)(TEMPLATES_DIR, template);
-        const templateYaml = (0, import_path2.join)(TEMPLATES_DIR, `${template}.yaml`);
-        if (!(0, import_fs2.existsSync)(templateYaml)) {
+        if (!/^[a-z0-9_-]+$/.test(template)) {
+          return error2("Invalid template name");
+        }
+        const templateDir = (0, import_path3.join)(TEMPLATES_DIR, template);
+        const templateYaml = (0, import_path3.join)(TEMPLATES_DIR, `${template}.yaml`);
+        if (!(0, import_fs3.existsSync)(templateYaml)) {
           return error2(`Template "${template}" not found`);
         }
-        const dirs = [".claude/agents", ".claude/skills", ".claude/hooks", ".claude/memory"];
-        dirs.forEach((d) => (0, import_fs2.mkdirSync)((0, import_path2.join)(cwd, d), { recursive: true }));
-        const agentsDir = (0, import_path2.join)(templateDir, "agents");
+        const dirs = [".claude/agents", ".claude/skills", ".claude/hooks", ".claude/memory", ".claude/chains"];
+        dirs.forEach((d) => (0, import_fs3.mkdirSync)((0, import_path3.join)(cwd, d), { recursive: true }));
+        const agentsDir = (0, import_path3.join)(templateDir, "agents");
         let agentCount = 0;
-        if ((0, import_fs2.existsSync)(agentsDir)) {
-          (0, import_fs2.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => {
-            (0, import_fs2.copyFileSync)((0, import_path2.join)(agentsDir, f), (0, import_path2.join)(cwd, ".claude/agents", f));
+        if ((0, import_fs3.existsSync)(agentsDir)) {
+          (0, import_fs3.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => {
+            (0, import_fs3.copyFileSync)((0, import_path3.join)(agentsDir, f), (0, import_path3.join)(cwd, ".claude/agents", f));
             agentCount++;
           });
         }
-        const skillsDir = (0, import_path2.join)(templateDir, "skills");
+        const skillsDir = (0, import_path3.join)(templateDir, "skills");
         let skillCount = 0;
-        if ((0, import_fs2.existsSync)(skillsDir)) {
-          (0, import_fs2.readdirSync)(skillsDir).forEach((skill) => {
-            const src = (0, import_path2.join)(skillsDir, skill);
-            const dest = (0, import_path2.join)(cwd, ".claude/skills", skill);
-            if ((0, import_fs2.statSync)(src).isDirectory()) {
+        if ((0, import_fs3.existsSync)(skillsDir)) {
+          (0, import_fs3.readdirSync)(skillsDir).forEach((skill) => {
+            const src = (0, import_path3.join)(skillsDir, skill);
+            const dest = (0, import_path3.join)(cwd, ".claude/skills", skill);
+            if ((0, import_fs3.statSync)(src).isDirectory()) {
               copyDirRecursive(src, dest);
               skillCount++;
             }
           });
         }
-        (0, import_fs2.copyFileSync)(templateYaml, (0, import_path2.join)(cwd, ".claude/chain-config.yaml"));
-        const config2 = (0, import_fs2.readFileSync)(templateYaml, "utf-8");
+        const existingChain = resolveActiveChain(cwd);
+        if (existingChain?.isLegacy) {
+          migrateToMultiChain(cwd);
+        }
+        (0, import_fs3.copyFileSync)(templateYaml, (0, import_path3.join)(cwd, ".claude/chains", `${template}.yaml`));
+        writePointer(cwd, template);
+        const config2 = (0, import_fs3.readFileSync)(templateYaml, "utf-8");
         const flowMatch = config2.match(/flow:[\s\S]*/);
         const flow = flowMatch ? flowMatch[0].substring(0, 500) : "";
-        return success2(`\u2713 Template "${template}" set up!
+        return success2(`Template "${template}" set up!
 
 Agents: ${agentCount}
 Skills: ${skillCount}
+Active chain: ${template}
 
 ${flow}`);
       }
       // ─── list_templates ───
       case "template_list": {
-        const templates = (0, import_fs2.readdirSync)(TEMPLATES_DIR).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(".yaml", ""));
+        const templates = (0, import_fs3.readdirSync)(TEMPLATES_DIR).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(".yaml", ""));
         const info = templates.map((t) => {
-          const yaml = (0, import_fs2.readFileSync)((0, import_path2.join)(TEMPLATES_DIR, `${t}.yaml`), "utf-8");
+          const yaml = (0, import_fs3.readFileSync)((0, import_path3.join)(TEMPLATES_DIR, `${t}.yaml`), "utf-8");
           const desc = yaml.split("\n").find((l) => l.startsWith("#"))?.replace("#", "").trim() || "";
           return `- **${t}**: ${desc}`;
         }).join("\n");
@@ -21066,16 +21156,16 @@ ${info}`);
       }
       // ─── chain_validate ───
       case "chain_validate": {
-        const configPath = (0, import_path2.join)(cwd, ".claude", "chain-config.yaml");
-        if (!(0, import_fs2.existsSync)(configPath)) {
-          return error2("No chain config found at .claude/chain-config.yaml");
+        const resolved = resolveActiveChain(cwd);
+        if (!resolved) {
+          return error2("No chain config found. Run template_bump to set up a workflow.");
         }
-        const content = (0, import_fs2.readFileSync)(configPath, "utf-8");
+        const content = (0, import_fs3.readFileSync)(resolved.configPath, "utf-8");
         const issues = [];
         const installedAgents = /* @__PURE__ */ new Set();
-        const agentsDir = (0, import_path2.join)(cwd, ".claude", "agents");
-        if ((0, import_fs2.existsSync)(agentsDir)) {
-          (0, import_fs2.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => installedAgents.add(f.replace(".md", "")));
+        const agentsDir = (0, import_path3.join)(cwd, ".claude", "agents");
+        if ((0, import_fs3.existsSync)(agentsDir)) {
+          (0, import_fs3.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => installedAgents.add(f.replace(".md", "")));
         }
         const flowNodes = /* @__PURE__ */ new Map();
         let currentNode = "";
@@ -21193,18 +21283,49 @@ ${info}`);
           }
         }
         if (issues.length === 0) {
-          const summary = `\u2705 Chain config is valid
+          const summary = `Chain "${resolved.chainName}" is valid
 
 Nodes: ${flowNodes.size}
 Agents installed: ${installedAgents.size}
 Team nodes: ${[...flowNodes.values()].filter((n) => n.isTeam).length}`;
           return success2(summary);
         }
-        return success2(`Chain validation found ${issues.length} issue(s):
+        return success2(`Chain "${resolved.chainName}" validation found ${issues.length} issue(s):
 
 ${issues.join("\n")}
 
 Nodes: ${flowNodes.size} | Agents installed: ${installedAgents.size}`);
+      }
+      case "chain_list": {
+        const chains = listChains(cwd);
+        if (chains.length === 0) {
+          return success2("No chains found. Run template_bump to set up a workflow.");
+        }
+        const activeName = getActiveChainName(cwd);
+        const lines = chains.map((c) => c === activeName ? `- **${c}** (active)` : `- ${c}`);
+        return success2(`Chains:
+
+${lines.join("\n")}`);
+      }
+      case "chain_switch": {
+        const chain = args?.chain;
+        const chains = listChains(cwd);
+        if (chains.length === 0) {
+          return error2("No chains found. Run template_bump first.");
+        }
+        if (!chains.includes(chain)) {
+          return error2(`Chain "${chain}" not found. Available: ${chains.join(", ")}`);
+        }
+        const current = getActiveChainName(cwd);
+        if (current === chain) {
+          return success2(`Chain "${chain}" is already active.`);
+        }
+        const pointerPath = (0, import_path3.join)(cwd, ".claude", "chain-config.yaml");
+        const pointerContent = (0, import_fs3.readFileSync)(pointerPath, "utf-8");
+        const dirMatch = pointerContent.match(/^chains_dir:\s*(.+)/m);
+        const existingChainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
+        writePointer(cwd, chain, existingChainsDir);
+        return success2(`Switched active chain to "${chain}".`);
       }
       // ─── memory_add ───
       case "memory_add": {
@@ -21247,7 +21368,7 @@ ${output}`);
         return error2(`Unknown tool: ${name}`);
     }
   } catch (err) {
-    return error2(err.message);
+    return { content: [{ type: "text", text: "Error: Chain operation failed" }], isError: true };
   }
 });
 function success2(text) {

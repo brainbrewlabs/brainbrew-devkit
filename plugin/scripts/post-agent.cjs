@@ -1,8 +1,8 @@
 "use strict";
 
 // src/hooks/post-agent.ts
-var import_fs4 = require("fs");
-var import_path5 = require("path");
+var import_fs5 = require("fs");
+var import_path6 = require("path");
 var import_os2 = require("os");
 
 // src/ai/haiku.ts
@@ -114,15 +114,43 @@ function logEvent(data) {
   (0, import_fs3.appendFileSync)(CHAIN_EVENTS_LOG, JSON.stringify(entry) + "\n");
 }
 
+// src/utils/chain-resolver.ts
+var import_fs4 = require("fs");
+var import_path5 = require("path");
+function resolveActiveChain(cwd) {
+  const pointerPath = (0, import_path5.join)(cwd, ".claude", "chain-config.yaml");
+  if (!(0, import_fs4.existsSync)(pointerPath)) return null;
+  const content = (0, import_fs4.readFileSync)(pointerPath, "utf-8");
+  if (/^(flow|hooks):/m.test(content)) {
+    return { configPath: pointerPath, chainName: "default", isLegacy: true };
+  }
+  const activeMatch = content.match(/^active:\s*(.+)/m);
+  if (!activeMatch) return null;
+  const active = activeMatch[1].trim();
+  const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
+  const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
+  if (active.includes("..") || chainsDir.includes("..")) return null;
+  const chainPath = (0, import_path5.join)(cwd, chainsDir, `${active}.yaml`);
+  const resolvedPath = (0, import_path5.resolve)(chainPath);
+  const expectedBase = (0, import_path5.resolve)((0, import_path5.join)(cwd, ".claude"));
+  if (!resolvedPath.startsWith(expectedBase)) return null;
+  if (!(0, import_fs4.existsSync)(chainPath)) return null;
+  return { configPath: chainPath, chainName: active, isLegacy: false };
+}
+function readActiveChainContent(cwd) {
+  const resolved = resolveActiveChain(cwd);
+  if (!resolved) return null;
+  return (0, import_fs4.readFileSync)(resolved.configPath, "utf-8");
+}
+
 // src/hooks/post-agent.ts
-var LOG_FILE = (0, import_path5.join)(TMP_DIR, "agent-output.log");
-var PLANS_DIR = (0, import_path5.join)((0, import_os2.homedir)(), ".claude", "plans");
+var LOG_FILE = (0, import_path6.join)(TMP_DIR, "agent-output.log");
+var PLANS_DIR = (0, import_path6.join)((0, import_os2.homedir)(), ".claude", "plans");
 var MAX_AGENT_LOOPS = 3;
 function loadChainConfig(cwd) {
-  const configPath = (0, import_path5.join)(cwd, ".claude", "chain-config.yaml");
-  if (!(0, import_fs4.existsSync)(configPath)) return {};
   try {
-    const content = (0, import_fs4.readFileSync)(configPath, "utf-8");
+    const content = readActiveChainContent(cwd);
+    if (!content) return {};
     return parseSimpleYaml(content);
   } catch {
     return {};
@@ -164,6 +192,9 @@ function parseSimpleYaml(content) {
     if (currentSection === "flow") {
       const agentMatch = line.match(/^  (\S+):$/);
       if (agentMatch) {
+        if (currentTeammate && currentSubSection === "teammates") {
+          config.flow[currentAgent].teammates.push(currentTeammate);
+        }
         currentAgent = agentMatch[1];
         currentSubSection = "";
         currentTeammate = null;
@@ -172,6 +203,9 @@ function parseSimpleYaml(content) {
       }
       const subSectionMatch = line.match(/^    (routes|teammates):$/);
       if (subSectionMatch && currentAgent) {
+        if (currentTeammate && currentSubSection === "teammates") {
+          config.flow[currentAgent].teammates.push(currentTeammate);
+        }
         currentSubSection = subSectionMatch[1];
         currentTeammate = null;
         if (currentSubSection === "routes") {
@@ -283,8 +317,9 @@ Respond ONLY with JSON: {"route": "<agent-name or END>", "reason": "brief explan
         if (routes[route]) {
           return { next: route, reason: `[AI] ${reason}` };
         }
-        if (routeNames.some((r) => routes[r] === route)) {
-          return { next: route, reason: `[AI] ${reason}` };
+        const matchedKey = routeNames.find((r) => routes[r] === route);
+        if (matchedKey) {
+          return { next: matchedKey, reason: `[AI] ${reason}` };
         }
       }
     } catch {
@@ -326,12 +361,12 @@ function findRecentPlan(sessionId) {
   const state = getState(sessionId);
   if (state?.phaseTracking) {
     const pt = state.phaseTracking;
-    if (pt.planFile && (0, import_fs4.existsSync)(pt.planFile)) return pt.planFile;
+    if (pt.planFile && (0, import_fs5.existsSync)(pt.planFile)) return pt.planFile;
   }
-  if (!(0, import_fs4.existsSync)(PLANS_DIR)) return null;
-  const files = (0, import_fs4.readdirSync)(PLANS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({
-    path: (0, import_path5.join)(PLANS_DIR, f),
-    mtime: (0, import_fs4.statSync)((0, import_path5.join)(PLANS_DIR, f)).mtime
+  if (!(0, import_fs5.existsSync)(PLANS_DIR)) return null;
+  const files = (0, import_fs5.readdirSync)(PLANS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({
+    path: (0, import_path6.join)(PLANS_DIR, f),
+    mtime: (0, import_fs5.statSync)((0, import_path6.join)(PLANS_DIR, f)).mtime
   })).sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
   return files[0]?.path ?? null;
 }
@@ -343,7 +378,7 @@ function checkPhaseProgress(sessionId) {
     const planFile = findRecentPlan(sessionId);
     if (!planFile) return { hasMore: false };
     try {
-      const planContent = (0, import_fs4.readFileSync)(planFile, "utf-8");
+      const planContent = (0, import_fs5.readFileSync)(planFile, "utf-8");
       const phases = extractPhases(planContent);
       if (phases.length <= 1) return { hasMore: false };
       tracking = {
@@ -379,7 +414,7 @@ function checkPhaseProgress(sessionId) {
 }
 function main() {
   try {
-    const stdin = (0, import_fs4.readFileSync)(0, "utf-8").trim();
+    const stdin = (0, import_fs5.readFileSync)(0, "utf-8").trim();
     if (!stdin) process.exit(0);
     const p = JSON.parse(stdin);
     const type = p.tool_input?.subagent_type ?? "agent";
@@ -403,8 +438,8 @@ function main() {
     }
     const isBackgrounded = tokens === 0 && ms === 0 && text.length === 0;
     if (isBackgrounded) {
-      const dir = (0, import_path5.dirname)(LOG_FILE);
-      if (!(0, import_fs4.existsSync)(dir)) (0, import_fs4.mkdirSync)(dir, { recursive: true });
+      const dir = (0, import_path6.dirname)(LOG_FILE);
+      if (!(0, import_fs5.existsSync)(dir)) (0, import_fs5.mkdirSync)(dir, { recursive: true });
       log(LOG_FILE, `
 [${(/* @__PURE__ */ new Date()).toISOString()}] ${type}:${id} BACKGROUNDED (waiting)
 `);

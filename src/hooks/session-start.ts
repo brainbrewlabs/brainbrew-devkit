@@ -1,10 +1,9 @@
-import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'fs';
+import { readActiveChainContent } from '../utils/chain-resolver.js';
 
 function hasTeamNodes(cwd: string): boolean {
-  const configPath = join(cwd, '.claude', 'chain-config.yaml');
-  if (!existsSync(configPath)) return false;
-  const content = readFileSync(configPath, 'utf-8');
+  const content = readActiveChainContent(cwd);
+  if (!content) return false;
   return /^\s+type:\s*team/m.test(content);
 }
 
