@@ -1,0 +1,18 @@
+{
+  "name": "brainbrew",
+  "version": "1.0.0",
+  "description": "BrainBrew DevKit — agent chains, skills, and workflow orchestration for OpenCode",
+  "brainbrew": {
+    "routingModel": "",
+    "_comment": "Set routingModel to your preferred fast/cheap model for chain routing, e.g. 'openai/gpt-4o-mini', 'google/gemini-flash-2.0', 'anthropic/claude-haiku-4-5'. Leave empty to use keyword-only routing (no AI call)."
+  },
+  "mcp": {
+    "brainbrew": {
+      "type": "local",
+      "command": ["node", "${OPENCODE_PLUGIN_ROOT}/mcp/mcp-server.cjs"],
+      "environment": {
+        "OPENCODE_PLUGIN_ROOT": "${OPENCODE_PLUGIN_ROOT}"
+      }
+    }
+  }
+}

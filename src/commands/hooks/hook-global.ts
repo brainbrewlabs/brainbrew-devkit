@@ -14,7 +14,7 @@ export function hookList(): void {
     return;
   }
 
-  console.log('Global hooks (~/.claude/hooks/chains/):\n');
+  console.log(`Global hooks (${HOOKS_DIR}):\n`);
   for (const [event, hooks] of Object.entries(config.hooks)) {
     if (hooks.length === 0) continue;
     console.log(`  ${event}:`);

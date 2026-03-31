@@ -1,6 +1,6 @@
 import { readFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { callHaiku } from '../ai/haiku.js';
+import { callRoutingAI as callHaiku } from '../ai/router-opencode.js';
 import { getState, updateState } from '../utils/state.js';
 import { log, logEvent } from '../utils/logger.js';
 import { TMP_DIR, CLAUDE_DIR } from '../utils/paths.js';

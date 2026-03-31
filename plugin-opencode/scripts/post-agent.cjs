@@ -1,25 +1,52 @@
 "use strict";
 
-// src/hooks/post-agent.ts
+// src/hooks/post-agent-opencode.ts
 var import_fs6 = require("fs");
 var import_path7 = require("path");
 
-// src/ai/haiku.ts
+// src/ai/router-opencode.ts
 var import_child_process = require("child_process");
 var import_fs = require("fs");
 var import_path = require("path");
-var CLAUDE_MODEL = "claude-haiku-4-5";
+var import_os = require("os");
 var AI_TIMEOUT = 3e4;
-function callHaiku(prompt, logFn = () => {
+var VALID_MODEL = /^[a-zA-Z0-9_\-\/:.@]+$/;
+function readRoutingModel(cwd) {
+  const candidates = [
+    (0, import_path.join)(cwd, "opencode.json"),
+    (0, import_path.join)((0, import_os.homedir)(), ".config", "opencode", "opencode.json")
+  ];
+  for (const configPath of candidates) {
+    if (!(0, import_fs.existsSync)(configPath)) continue;
+    try {
+      const parsed = JSON.parse((0, import_fs.readFileSync)(configPath, "utf-8"));
+      const model = parsed?.brainbrew?.routingModel;
+      if (model && typeof model === "string" && model.trim() !== "") {
+        return model.trim();
+      }
+    } catch {
+    }
+  }
+  return null;
+}
+function callRoutingAI(prompt, logFn = () => {
 }) {
+  const model = readRoutingModel(process.cwd());
+  if (!model) {
+    return { error: "no_model", message: "routingModel not set in opencode.json brainbrew section" };
+  }
+  if (!VALID_MODEL.test(model)) {
+    logFn(`[ROUTER] Invalid routingModel: "${model}"`);
+    return { error: "invalid_model", message: `Invalid routingModel: "${model}"` };
+  }
   const tmpDir = (0, import_fs.mkdtempSync)((0, import_path.join)("/tmp", "ai-call-"));
   const tmpFile = (0, import_path.join)(tmpDir, "prompt.txt");
   try {
     (0, import_fs.writeFileSync)(tmpFile, prompt, { mode: 384 });
     const cleanEnv = { ...process.env };
-    delete cleanEnv["CLAUDECODE"];
     delete cleanEnv["OPENCODE"];
-    const aiOutput = (0, import_child_process.execSync)(`cat "${tmpFile}" | claude -p --model ${CLAUDE_MODEL}`, {
+    delete cleanEnv["OPENCODE_PLUGIN_ROOT"];
+    const aiOutput = (0, import_child_process.execSync)(`cat "${tmpFile}" | opencode run --model ${model}`, {
       timeout: AI_TIMEOUT,
       encoding: "utf8",
       shell: "/bin/bash",
@@ -44,9 +71,9 @@ function callHaiku(prompt, logFn = () => {
     } catch {
     }
     const error = err;
-    logFn(`[AI ERROR] ${error.message}`);
+    logFn(`[ROUTER ERROR] ${error.message}`);
     if (error.killed) {
-      return { error: "timeout", message: "AI verification timed out" };
+      return { error: "timeout", message: "Routing AI timed out" };
     }
     return { error: "call_failed", message: error.message };
   }
@@ -57,11 +84,11 @@ var import_fs3 = require("fs");
 var import_path4 = require("path");
 
 // src/utils/paths.ts
-var import_os2 = require("os");
+var import_os3 = require("os");
 var import_path3 = require("path");
 
 // src/utils/platform.ts
-var import_os = require("os");
+var import_os2 = require("os");
 var import_fs2 = require("fs");
 var import_path2 = require("path");
 var _platform = null;
@@ -71,7 +98,7 @@ function detectPlatform() {
   if (override === "claude") return "claude";
   if (process.env.OPENCODE_PLUGIN_ROOT || process.env.OPENCODE) return "opencode";
   if (process.env.CLAUDE_PLUGIN_ROOT || process.env.CLAUDECODE) return "claude";
-  const home = (0, import_os.homedir)();
+  const home = (0, import_os2.homedir)();
   const opencodeDir = (0, import_path2.join)(home, ".config", "opencode");
   const claudeDir = (0, import_path2.join)(home, ".claude");
   if ((0, import_fs2.existsSync)(opencodeDir) && !(0, import_fs2.existsSync)(claudeDir)) return "opencode";
@@ -84,7 +111,7 @@ function getPlatform() {
   return _platform;
 }
 function getBaseDir() {
-  const home = (0, import_os.homedir)();
+  const home = (0, import_os2.homedir)();
   return getPlatform() === "opencode" ? (0, import_path2.join)(home, ".config", "opencode") : (0, import_path2.join)(home, ".claude");
 }
 function getProjectConfigDir(cwd) {
@@ -94,7 +121,7 @@ function getProjectConfigDir(cwd) {
 }
 
 // src/utils/paths.ts
-var HOME = (0, import_os2.homedir)();
+var HOME = (0, import_os3.homedir)();
 var BASE = getBaseDir();
 var CLAUDE_DIR = BASE;
 var CHAINS_DIR = (0, import_path3.join)(BASE, "chains");
@@ -198,7 +225,7 @@ function normalizePostToolUse(raw) {
   };
 }
 
-// src/hooks/post-agent.ts
+// src/hooks/post-agent-opencode.ts
 var LOG_FILE = (0, import_path7.join)(TMP_DIR, "agent-output.log");
 var PLANS_DIR = (0, import_path7.join)(CLAUDE_DIR, "plans");
 var MAX_AGENT_LOOPS = 0;
@@ -362,7 +389,7 @@ ${output.substring(0, 2e3)}
 Based on the routing rules and output, which route should be taken?
 Respond ONLY with JSON: {"route": "<agent-name or END>", "reason": "brief explanation"}`;
     try {
-      const result = callHaiku(prompt);
+      const result = callRoutingAI(prompt);
       if (result && !result["error"]) {
         const route = result["route"] || "";
         const reason = result["reason"] || "AI decision";

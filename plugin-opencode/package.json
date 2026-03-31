@@ -1,0 +1,38 @@
+{
+  "name": "brainbrew-opencode",
+  "version": "1.0.0",
+  "description": "Brainbrew DevKit — agent chains, skills, and workflow orchestration for OpenCode",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "scripts/runner.cjs",
+    "mcp/mcp-server.cjs",
+    "opencode.json",
+    "hooks/hooks.json",
+    "config",
+    "skills",
+    "agents",
+    "AGENTS.md"
+  ],
+  "scripts": {
+    "prepublishOnly": "node -e \"require('fs').existsSync('scripts/runner.cjs') || (console.error('Run npm run build from repo root first'), process.exit(1))\""
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "opencode",
+    "brainbrew",
+    "agent",
+    "chain",
+    "workflow",
+    "mcp"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brainbrewlabs/brainbrew-devkit"
+  },
+  "homepage": "https://brainbrewlabs.github.io/brainbrew-devkit/guide/opencode"
+}

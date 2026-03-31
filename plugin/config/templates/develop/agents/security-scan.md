@@ -3,11 +3,7 @@ name: security-scan
 description: >-
   Scan code for security vulnerabilities during development.
   Use when code-reviewer finds potential security issues.
-tools:
-  - Bash
-  - Read
-  - Grep
-  - Glob
+tools: Bash, Read, Grep, Glob
 ---
 
 # Security Scan Agent

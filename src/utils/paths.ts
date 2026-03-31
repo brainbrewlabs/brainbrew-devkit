@@ -1,21 +1,25 @@
 import { homedir } from 'os';
 import { join } from 'path';
+import { getBaseDir } from './platform.js';
+
+export { getProjectConfigDir } from './platform.js';
 
 const HOME = homedir();
+const BASE = getBaseDir();
 
-// Base directories
-export const CLAUDE_DIR = join(HOME, '.claude');
-export const CHAINS_DIR = join(CLAUDE_DIR, 'chains');
+// Base directories (platform-aware: ~/.claude or ~/.config/opencode)
+export const CLAUDE_DIR = BASE;
+export const CHAINS_DIR = join(BASE, 'chains');
 export const BACKUP_DIR = join(CHAINS_DIR, '.backup');
-export const AGENTS_DIR = join(CLAUDE_DIR, 'agents');
-export const SKILLS_DIR = join(CLAUDE_DIR, 'skills');
-export const HOOKS_DIR = join(CLAUDE_DIR, 'hooks', 'chains');
+export const AGENTS_DIR = join(BASE, 'agents');
+export const SKILLS_DIR = join(BASE, 'skills');
+export const HOOKS_DIR = join(BASE, 'hooks', 'chains');
 export const CUSTOM_HOOKS_DIR = join(HOOKS_DIR, 'custom');
-export const TMP_DIR = join(CLAUDE_DIR, 'tmp');
-export const PROJECTS_DIR = join(CLAUDE_DIR, 'projects');
+export const TMP_DIR = join(BASE, 'tmp');
+export const PROJECTS_DIR = join(BASE, 'projects');
 
 // Config files
-export const SETTINGS_FILE = join(CLAUDE_DIR, 'settings.json');
+export const SETTINGS_FILE = join(BASE, 'settings.json');
 export const CHAIN_CONFIG_FILE = join(HOOKS_DIR, 'chain-config.json');
 export const VERIFICATION_RULES_FILE = join(HOOKS_DIR, 'verification-rules.json');
 export const HOOKS_CONFIG_FILE = join(HOOKS_DIR, 'hooks-config.yaml');
@@ -42,3 +46,6 @@ export function getProjectHooksDir(cwd: string): string {
 export function getProjectChainConfig(cwd: string): string {
   return join(getProjectDir(cwd), 'chain-config.yaml');
 }
+
+// Suppress unused-variable warning for HOME (kept for potential callers)
+void HOME;

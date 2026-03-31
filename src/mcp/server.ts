@@ -9,7 +9,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { readFileSync, existsSync, mkdirSync, readdirSync, copyFileSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, copyFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { resolveActiveChain, listChains, getActiveChainName, writePointer, migrateToMultiChain } from '../utils/chain-resolver.js';
 
@@ -28,11 +28,67 @@ function copyDirRecursive(src: string, dest: string): void {
 
   }
 }
+// Named color → hex for OpenCode (which requires hex or theme names)
+const COLOR_HEX: Record<string, string> = {
+  blue:   '#3b82f6',
+  cyan:   '#06b6d4',
+  green:  '#22c55e',
+  red:    '#ef4444',
+  yellow: '#eab308',
+  white:  '#f8fafc',
+  orange: '#f97316',
+  purple: '#a855f7',
+  gray:   '#6b7280',
+};
+
+// Transform agent .md frontmatter from Claude Code format to OpenCode format:
+//   color: blue         → color: "#3b82f6"
+//   tools: Read, Write  → tools:\n  read: true\n  write: true
+function transformAgentForOpenCode(content: string): string {
+  const fmMatch = content.match(/^(---\n)([\s\S]*?)(\n---)([\s\S]*)$/);
+  if (!fmMatch) return content;
+  const [, open, fm, close, body] = fmMatch;
+
+  let transformed = fm;
+
+  // Fix color
+  transformed = transformed.replace(/^(color:\s*)([a-z]+)$/m, (_m, prefix, name) => {
+    const hex = COLOR_HEX[name];
+    return hex ? `${prefix}"${hex}"` : `${prefix}${name}`;
+  });
+
+  // Fix tools: comma string → YAML record  e.g. "tools: Read, Write"
+  transformed = transformed.replace(/^(tools:\s*)(.+)$/m, (_m, _prefix, toolsStr) => {
+    const entries = toolsStr
+      .split(',')
+      .map((t: string) => t.trim())
+      .filter(Boolean)
+      .map((t: string) => `  ${t.charAt(0).toLowerCase()}${t.slice(1)}: true`)
+      .join('\n');
+    return entries ? `tools:\n${entries}` : 'tools: {}';
+  });
+
+  // Fix tools: YAML array → YAML record  e.g. "tools:\n  - Read\n  - Write"
+  transformed = transformed.replace(/^tools:\s*\n((?:  - .+\n?)+)/m, (_m, arrayBlock) => {
+    const entries = arrayBlock
+      .split('\n')
+      .map((line: string) => line.replace(/^\s*-\s*/, '').trim())
+      .filter(Boolean)
+      .map((t: string) => `  ${t.charAt(0).toLowerCase()}${t.slice(1)}: true`)
+      .join('\n');
+    return entries ? `tools:\n${entries}` : 'tools: {}';
+  });
+
+  return open + transformed + close + body;
+}
+
 import { publish, list, clear } from '../memory/bus.js';
 import { MessageTarget, MessagePersistence, MessagePriority } from '../memory/types.js';
 
-// Plugin root from env
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || dirname(dirname(dirname(__filename)));
+// Plugin root from env — check OpenCode first, then Claude Code, then script location
+const PLUGIN_ROOT = process.env.OPENCODE_PLUGIN_ROOT
+  || process.env.CLAUDE_PLUGIN_ROOT
+  || dirname(dirname(dirname(__filename)));
 const TEMPLATES_DIR = join(PLUGIN_ROOT, 'config', 'templates');
 
 const server = new Server(
@@ -169,14 +225,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           return error(`Template "${template}" not found`);
         }
 
-        const dirs = ['.claude/agents', '.claude/skills', '.claude/hooks', '.claude/memory', '.claude/chains'];
+        const { getProjectConfigDir } = await import('../utils/platform.js');
+        const configDir = getProjectConfigDir(cwd);
+
+        const dirs = [`${configDir}/agents`, `${configDir}/skills`, `${configDir}/hooks`, `${configDir}/memory`, `${configDir}/chains`];
         dirs.forEach(d => mkdirSync(join(cwd, d), { recursive: true }));
 
         const agentsDir = join(templateDir, 'agents');
+        const isOpenCode = !!process.env.OPENCODE_PLUGIN_ROOT;
         let agentCount = 0;
         if (existsSync(agentsDir)) {
-          readdirSync(agentsDir).filter(f => f.endsWith('.md')).forEach(f => {
-            copyFileSync(join(agentsDir, f), join(cwd, '.claude/agents', f));
+          readdirSync(agentsDir).filter((f: string) => f.endsWith('.md')).forEach((f: string) => {
+            const srcPath = join(agentsDir, f);
+            const destPath = join(cwd, configDir, 'agents', f);
+            if (isOpenCode) {
+              writeFileSync(destPath, transformAgentForOpenCode(readFileSync(srcPath, 'utf-8')), 'utf-8');
+            } else {
+              copyFileSync(srcPath, destPath);
+            }
             agentCount++;
           });
         }
@@ -184,9 +250,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const skillsDir = join(templateDir, 'skills');
         let skillCount = 0;
         if (existsSync(skillsDir)) {
-          readdirSync(skillsDir).forEach(skill => {
+          readdirSync(skillsDir).forEach((skill: string) => {
             const src = join(skillsDir, skill);
-            const dest = join(cwd, '.claude/skills', skill);
+            const dest = join(cwd, configDir, 'skills', skill);
             if (statSync(src).isDirectory()) {
               copyDirRecursive(src, dest);
               skillCount++;
@@ -199,7 +265,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           migrateToMultiChain(cwd);
         }
 
-        copyFileSync(templateYaml, join(cwd, '.claude/chains', `${template}.yaml`));
+        copyFileSync(templateYaml, join(cwd, configDir, 'chains', `${template}.yaml`));
 
         writePointer(cwd, template);
 
@@ -235,8 +301,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const content = readFileSync(resolved.configPath, 'utf-8');
         const issues: string[] = [];
 
+        const { getProjectConfigDir: getConfigDir } = await import('../utils/platform.js');
+        const chainConfigDir = getConfigDir(cwd);
         const installedAgents = new Set<string>();
-        const agentsDir = join(cwd, '.claude', 'agents');
+        const agentsDir = join(cwd, chainConfigDir, 'agents');
         if (existsSync(agentsDir)) {
           readdirSync(agentsDir)
             .filter(f => f.endsWith('.md'))
@@ -378,7 +446,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const skillNames = new Set<string>();
         let skillFormatIssues = 0;
-        const skillsDir = join(cwd, '.claude', 'skills');
+        const skillsDir = join(cwd, chainConfigDir, 'skills');
         if (existsSync(skillsDir)) {
           for (const entry of readdirSync(skillsDir)) {
             const skillPath = join(skillsDir, entry);
@@ -468,7 +536,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           return success(`Chain "${chain}" is already active.`);
         }
 
-        const pointerPath = join(cwd, '.claude', 'chain-config.yaml');
+        const { getProjectConfigDir: getPCDir } = await import('../utils/platform.js');
+        const pointerPath = join(cwd, getPCDir(cwd), 'chain-config.yaml');
         const pointerContent = readFileSync(pointerPath, 'utf-8');
         const dirMatch = pointerContent.match(/^chains_dir:\s*(.+)/m);
         const existingChainsDir = dirMatch ? dirMatch[1].trim() : '.claude/chains/';

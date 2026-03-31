@@ -4,7 +4,6 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { homedir } from 'os';
 import { randomUUID } from 'crypto';
 import {
   Message,
@@ -17,11 +16,11 @@ import {
 } from './types.js';
 
 // Storage paths
-const GLOBAL_STORE_PATH = join(homedir(), '.claude', 'memory', 'bus.json');
-const PROJECT_STORE_FILE = '.claude/memory/bus.json';
+import { CLAUDE_DIR, getProjectConfigDir } from '../utils/paths.js';
+const GLOBAL_STORE_PATH = join(CLAUDE_DIR, 'memory', 'bus.json');
 
 function getProjectStorePath(cwd: string): string {
-  return join(cwd, PROJECT_STORE_FILE);
+  return join(cwd, getProjectConfigDir(cwd), 'memory', 'bus.json');
 }
 
 function ensureDir(filePath: string): void {

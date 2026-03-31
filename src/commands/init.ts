@@ -1,14 +1,8 @@
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import {
-  CLAUDE_DIR,
-  HOOKS_DIR,
-  CUSTOM_HOOKS_DIR,
-  CHAINS_DIR,
-  SETTINGS_FILE,
-  HOOKS_CONFIG_FILE,
-} from '../utils/paths.js';
+import { homedir } from 'os';
+import { getPlatform, type Platform } from '../utils/platform.js';
 
 // Resolve dist/hooks/ from this CLI's package location
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -21,11 +15,37 @@ const BUILT_IN_HOOKS = [
   { src: 'runner.cjs', dest: 'runner.js', event: null },
 ];
 
+/** Compute all init-relevant paths for a given platform (always fresh, ignores module cache). */
+function getPaths(platform: Platform) {
+  const home = homedir();
+  const base = platform === 'opencode'
+    ? join(home, '.config', 'opencode')
+    : join(home, '.claude');
+
+  const hooksDir = join(base, 'hooks', 'chains');
+  return {
+    baseDir: base,
+    hooksDir,
+    customHooksDir: join(hooksDir, 'custom'),
+    chainsDir: join(base, 'chains'),
+    settingsFile: join(base, 'settings.json'),
+    hooksConfigFile: join(hooksDir, 'hooks-config.yaml'),
+  };
+}
+
 export function initCommand(flags: Record<string, string>): void {
-  console.log('Initializing brainbrew...\n');
+  // Determine platform — explicit flag wins over auto-detection
+  const platformFlag = flags['platform'] as Platform | undefined;
+  const platform: Platform = (platformFlag === 'opencode' || platformFlag === 'claude')
+    ? platformFlag
+    : getPlatform();
+
+  const P = getPaths(platform);
+
+  console.log(`Initializing brainbrew for ${platform}...\n`);
 
   // 1. Create directories
-  const dirs = [CLAUDE_DIR, HOOKS_DIR, CUSTOM_HOOKS_DIR, CHAINS_DIR];
+  const dirs = [P.baseDir, P.hooksDir, P.customHooksDir, P.chainsDir];
   for (const dir of dirs) {
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
@@ -33,11 +53,11 @@ export function initCommand(flags: Record<string, string>): void {
     }
   }
 
-  // 2. Copy compiled hooks from this CLI package → ~/.claude/hooks/chains/
+  // 2. Copy compiled hooks from this CLI package → hooks/chains/
   let installed = 0;
   for (const hook of BUILT_IN_HOOKS) {
     const src = join(DIST_HOOKS, hook.src);
-    const dest = join(HOOKS_DIR, hook.dest);
+    const dest = join(P.hooksDir, hook.dest);
 
     if (existsSync(src)) {
       copyFileSync(src, dest);
@@ -50,21 +70,28 @@ export function initCommand(flags: Record<string, string>): void {
   console.log(`  ${installed}/${BUILT_IN_HOOKS.length} hooks installed`);
 
   // 3. Generate hooks-config.yaml (preserve existing custom hooks)
-  const existingCustom = existsSync(HOOKS_CONFIG_FILE)
-    ? parseExistingCustomHooks(readFileSync(HOOKS_CONFIG_FILE, 'utf-8'))
+  const existingCustom = existsSync(P.hooksConfigFile)
+    ? parseExistingCustomHooks(readFileSync(P.hooksConfigFile, 'utf-8'))
     : {};
 
   const config = generateConfig(existingCustom);
-  writeFileSync(HOOKS_CONFIG_FILE, config);
+  writeFileSync(P.hooksConfigFile, config);
   console.log(`  Written: hooks-config.yaml`);
 
-  // 4. Update ~/.claude/settings.json
-  if (flags['skip-settings'] !== 'true') {
-    updateSettings();
+  // 4. Register hooks with the active platform
+  if (platform === 'opencode') {
+    installOpenCodePlugin(P.hooksDir);
+  } else {
+    if (flags['skip-settings'] !== 'true') {
+      updateSettings(P.settingsFile, P.hooksDir, P.hooksConfigFile);
+    }
   }
 
-  console.log('\nDone. Hooks are ready at ~/.claude/hooks/chains/');
-  console.log('\nAll 22 Claude Code events supported.');
+  // 5. Register MCP server
+  registerMCPServer(platform, P.baseDir);
+
+  console.log(`\nDone. Hooks are ready at ${P.hooksDir}`);
+  console.log('\nAll 22 hook events supported.');
   console.log('Add custom hooks: brainbrew hook scaffold --name <name> --event <event>');
 }
 
@@ -124,14 +151,16 @@ function parseExistingCustomHooks(content: string): Record<string, string[]> {
   return result;
 }
 
-function updateSettings(): void {
-  if (!existsSync(SETTINGS_FILE)) {
-    console.log('\n  Warning: ~/.claude/settings.json not found. Skipping.');
+// ─── Claude Code: patch settings.json ────────────────────────────────────────
+
+function updateSettings(settingsFile: string, hooksDir: string, hooksConfigFile: string): void {
+  if (!existsSync(settingsFile)) {
+    console.log('\n  Warning: settings.json not found. Skipping.');
     return;
   }
 
-  const settings = JSON.parse(readFileSync(SETTINGS_FILE, 'utf-8'));
-  const runnerPath = join(HOOKS_DIR, 'runner.js');
+  const settings = JSON.parse(readFileSync(settingsFile, 'utf-8'));
+  const runnerPath = join(hooksDir, 'runner.js');
 
   // Remove old hooks (ours or legacy)
   const isOurHook = (h: any) =>
@@ -145,7 +174,7 @@ function updateSettings(): void {
   settings.hooks = settings.hooks || {};
 
   // Read config to know which events have hooks
-  const configContent = existsSync(HOOKS_CONFIG_FILE) ? readFileSync(HOOKS_CONFIG_FILE, 'utf-8') : '';
+  const configContent = existsSync(hooksConfigFile) ? readFileSync(hooksConfigFile, 'utf-8') : '';
   const events = [...configContent.matchAll(/^\s{2}(\S+):$/gm)].map(m => m[1]);
 
   for (const event of events) {
@@ -160,6 +189,130 @@ function updateSettings(): void {
     settings.hooks[event] = existing;
   }
 
-  writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-  console.log(`  Updated: ~/.claude/settings.json (${events.length} events)`);
+  writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
+  console.log(`  Updated: ${settingsFile} (${events.length} events)`);
+}
+
+// ─── OpenCode: generate plugin file ──────────────────────────────────────────
+
+function installOpenCodePlugin(hooksDir: string): void {
+  const pluginDir = join(homedir(), '.config', 'opencode', 'plugins');
+  const pluginFile = join(pluginDir, 'brainbrew.js');
+  const runnerPath = join(hooksDir, 'runner.js');
+
+  if (!existsSync(pluginDir)) {
+    mkdirSync(pluginDir, { recursive: true });
+  }
+
+  // Generate a JS plugin that invokes the runner script for each hook event.
+  // OpenCode plugins export a hooks object with event handler functions.
+  // Each handler invokes the brainbrew runner via Node child_process,
+  // passing the event name as an argument (same pattern as Claude Code's
+  // settings.json hook commands).
+  //
+  // NOTE: Verify the exact OpenCode plugin export shape against
+  // https://opencode.ai/docs/plugins/ if hook events are not firing.
+  const pluginContent = `/**
+ * Brainbrew DevKit - OpenCode Plugin
+ * Auto-generated by: brainbrew init --platform opencode
+ *
+ * Invokes the brainbrew runner script for each hook event.
+ * Runner path: ${runnerPath}
+ */
+
+import { execSync } from 'child_process';
+
+function runBrainbrew(event, payload) {
+  try {
+    execSync(\`node "${runnerPath}" \${event}\`, {
+      input: JSON.stringify(payload),
+      encoding: 'utf-8',
+      stdio: ['pipe', 'inherit', 'inherit'],
+      timeout: 90000,
+    });
+  } catch {
+    // Non-zero exit from hooks is handled by runner.cjs internally
+  }
+}
+
+export const id = 'brainbrew';
+
+export const hooks = {
+  postToolUse: (payload) => runBrainbrew('PostToolUse', payload),
+  subagentStart: (payload) => runBrainbrew('SubagentStart', payload),
+  subagentStop: (payload) => runBrainbrew('SubagentStop', payload),
+  sessionStart: (payload) => runBrainbrew('SessionStart', payload),
+  sessionEnd: (payload) => runBrainbrew('SessionEnd', payload),
+};
+`;
+
+  writeFileSync(pluginFile, pluginContent);
+  console.log(`  Created: ${pluginFile}`);
+}
+
+// ─── MCP server registration (both platforms) ─────────────────────────────────
+
+function registerMCPServer(platform: Platform, baseDir: string): void {
+  // Resolve MCP server binary from this CLI's dist/ directory
+  const mcpServerPath = join(__dirname, '..', 'mcp', 'mcp-server.cjs');
+  if (!existsSync(mcpServerPath)) {
+    console.log('  Warning: mcp-server.cjs not found — skipping MCP registration');
+    return;
+  }
+
+  if (platform === 'opencode') {
+    registerOpenCodeMCP(mcpServerPath);
+  } else {
+    registerClaudeCodeMCP(mcpServerPath, baseDir);
+  }
+}
+
+function registerClaudeCodeMCP(mcpServerPath: string, baseDir: string): void {
+  const mcpConfigPath = join(baseDir, 'mcp.json');
+
+  let existing: Record<string, unknown> = {};
+  if (existsSync(mcpConfigPath)) {
+    try {
+      existing = JSON.parse(readFileSync(mcpConfigPath, 'utf-8'));
+    } catch { /* use empty object */ }
+  }
+
+  const servers = (existing.mcpServers ?? {}) as Record<string, unknown>;
+  servers['brainbrew'] = {
+    command: 'node',
+    args: [mcpServerPath],
+  };
+  existing.mcpServers = servers;
+
+  writeFileSync(mcpConfigPath, JSON.stringify(existing, null, 2));
+  console.log(`  Updated MCP config: ${mcpConfigPath}`);
+}
+
+function registerOpenCodeMCP(mcpServerPath: string): void {
+  const opencodeConfigPath = join(homedir(), '.config', 'opencode', 'opencode.json');
+
+  let existing: Record<string, unknown> = {};
+  if (existsSync(opencodeConfigPath)) {
+    try {
+      existing = JSON.parse(readFileSync(opencodeConfigPath, 'utf-8'));
+    } catch { /* use empty object */ }
+  }
+
+  // Deep-merge into mcp — non-destructive, preserves existing entries
+  // OpenCode MCP format: mcp.{name} (no servers nesting), command is array, environment not env
+  const mcp = (existing.mcp ?? {}) as Record<string, unknown>;
+  mcp['brainbrew'] = {
+    type: 'local',
+    command: ['node', mcpServerPath],
+    environment: {
+      OPENCODE_PLUGIN_ROOT: dirname(mcpServerPath),
+    },
+  };
+  existing.mcp = mcp;
+
+  const dir = dirname(opencodeConfigPath);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+
+  writeFileSync(opencodeConfigPath, JSON.stringify(existing, null, 2));
+  console.log(`  Updated MCP config: ${opencodeConfigPath}`);
 }

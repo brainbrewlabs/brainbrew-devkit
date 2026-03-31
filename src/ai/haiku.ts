@@ -2,12 +2,14 @@ import { execSync } from 'child_process';
 import { mkdtempSync, writeFileSync, unlinkSync, rmdirSync } from 'fs';
 import { join } from 'path';
 
-export const AI_MODEL = 'claude-haiku-4-5';
+export const CLAUDE_MODEL = 'claude-haiku-4-5';
+export const AI_MODEL = CLAUDE_MODEL; // backward-compatible alias
 export const AI_TIMEOUT = 30000;
 
 /**
- * Call Haiku with a prompt, return parsed JSON response.
+ * Call Claude Haiku with a prompt, return parsed JSON response.
  * Writes prompt to a private temp file to avoid shell escaping issues.
+ * Claude Code plugin only — OpenCode uses router-opencode.ts instead.
  */
 export function callHaiku(
   prompt: string,
@@ -21,8 +23,9 @@ export function callHaiku(
 
     const cleanEnv = { ...process.env };
     delete cleanEnv['CLAUDECODE'];
+    delete cleanEnv['OPENCODE'];
 
-    const aiOutput = execSync(`cat "${tmpFile}" | claude -p --model ${AI_MODEL}`, {
+    const aiOutput = execSync(`cat "${tmpFile}" | claude -p --model ${CLAUDE_MODEL}`, {
       timeout: AI_TIMEOUT,
       encoding: 'utf8',
       shell: '/bin/bash',

@@ -1,0 +1,65 @@
+{
+  "description": "BrainBrew DevKit - Agent chain engine hooks for OpenCode",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${OPENCODE_PLUGIN_ROOT}/scripts/runner.cjs\" PostToolUse",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${OPENCODE_PLUGIN_ROOT}/scripts/runner.cjs\" SubagentStart",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${OPENCODE_PLUGIN_ROOT}/scripts/runner.cjs\" SubagentStop",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${OPENCODE_PLUGIN_ROOT}/scripts/runner.cjs\" SessionStart",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${OPENCODE_PLUGIN_ROOT}/scripts/runner.cjs\" SessionEnd",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

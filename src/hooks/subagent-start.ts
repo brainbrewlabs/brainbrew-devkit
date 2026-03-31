@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { getState } from '../utils/state.js';
+import { normalizeSubagentStart } from '../utils/payload-adapter.js';
 import { log, logEvent } from '../utils/logger.js';
 import { CHAIN_CONFIG_FILE, VERIFICATION_RULES_FILE, TMP_DIR } from '../utils/paths.js';
 import { subscribe, formatForContext } from '../memory/bus.js';
@@ -41,17 +42,12 @@ function main(): void {
     const stdin = readFileSync(0, 'utf-8').trim();
     if (!stdin) process.exit(0);
 
-    const p = JSON.parse(stdin) as {
-      agent_type?: string;
-      agent_id?: string;
-      transcript_path?: string;
-      session_id?: string;
-    };
+    const p = normalizeSubagentStart(JSON.parse(stdin));
 
-    const type = p.agent_type ?? '';
-    const id = p.agent_id ?? '';
-    const transcriptPath = p.transcript_path ?? '';
-    const sessionId = p.session_id ?? '';
+    const type = p.agent_type;
+    const id = p.agent_id;
+    const transcriptPath = p.transcript_path;
+    const sessionId = p.session_id;
 
     log(LOG_FILE, `START ${type}:${id}`);
     logEvent({ event: 'start', agent: type, id, session: sessionId });

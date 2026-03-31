@@ -20,9 +20,12 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { execSync } from 'child_process';
 import { readActiveChainContent } from '../utils/chain-resolver.js';
+import { getProjectConfigDir } from '../utils/platform.js';
 
-// Plugin root from env, fallback to script location
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || dirname(dirname(__filename));
+// Plugin root from env — check OpenCode first, then Claude Code, then script location
+const PLUGIN_ROOT = process.env.OPENCODE_PLUGIN_ROOT
+  || process.env.CLAUDE_PLUGIN_ROOT
+  || dirname(dirname(__filename));
 const PLUGIN_SCRIPTS = join(PLUGIN_ROOT, 'scripts');
 
 interface HookConfig {
@@ -56,7 +59,8 @@ function resolveScriptPath(script: string, cwd: string): string {
 
   // Local scripts: "./foo.js" or "../foo.js"
   if (script.startsWith('./') || script.startsWith('../')) {
-    return join(cwd, '.claude', 'hooks', script.replace(/^\.\//, ''));
+    const configDir = getProjectConfigDir(cwd);
+    return join(cwd, configDir, 'hooks', script.replace(/^\.\//, ''));
   }
 
   // Absolute paths: as-is

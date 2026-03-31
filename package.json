@@ -8,7 +8,9 @@
   },
   "files": [
     "dist",
-    "plugin"
+    "plugin",
+    "plugin-opencode",
+    "scripts"
   ],
   "scripts": {
     "build": "tsup",
@@ -17,6 +19,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "clean": "rm -rf dist",
+    "setup": "sh scripts/setup-opencode-plugin.sh",
+    "postinstall": "sh scripts/setup-opencode-plugin.sh || true",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"

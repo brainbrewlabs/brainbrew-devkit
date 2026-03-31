@@ -1,6 +1,7 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { verify, getRetries, setRetries, clearRetries, MAX_RETRIES } from '../ai/verifier.js';
+import { normalizeSubagentStop } from '../utils/payload-adapter.js';
 import { log, logEvent } from '../utils/logger.js';
 import { TMP_DIR } from '../utils/paths.js';
 
@@ -13,22 +14,16 @@ function main(): void {
     const stdin = readFileSync(0, 'utf-8').trim();
     if (!stdin) process.exit(0);
 
-    const payload = JSON.parse(stdin) as {
-      stop_hook_active?: boolean;
-      agent_type?: string;
-      subagent_type?: string;
-      agent_id?: string;
-      last_assistant_message?: string;
-    };
+    const payload = normalizeSubagentStop(JSON.parse(stdin));
 
     if (payload.stop_hook_active) {
       log(LOG_FILE, `[SKIP] stop_hook_active`);
       process.exit(0);
     }
 
-    const agentType = payload.agent_type ?? payload.subagent_type ?? '';
-    const agentId = payload.agent_id ?? 'x';
-    const output = payload.last_assistant_message ?? '';
+    const agentType = payload.agent_type;
+    const agentId = payload.agent_id;
+    const output = payload.last_assistant_message;
 
     // Check retries
     const retries = getRetries(agentId);

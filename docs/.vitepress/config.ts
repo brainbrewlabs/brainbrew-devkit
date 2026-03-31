@@ -21,7 +21,8 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
-            { text: 'Quick Start', link: '/guide/quick-start' }
+            { text: 'Quick Start', link: '/guide/quick-start' },
+            { text: 'OpenCode', link: '/guide/opencode' }
           ]
         },
         {
