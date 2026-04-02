@@ -57,11 +57,6 @@
             "type": "command",
             "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; node \"$_R/scripts/runner.cjs\" Stop",
             "timeout": 60
-          },
-          {
-            "type": "command",
-            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; \"$_R/hooks/scripts/allow-sleep.sh\"",
-            "timeout": 5
           }
         ]
       }
@@ -74,11 +69,6 @@
             "type": "command",
             "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; node \"$_R/scripts/runner.cjs\" UserPromptSubmit",
             "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "_R=\"${CLAUDE_PLUGIN_ROOT}\"; \"$_R/hooks/scripts/prevent-sleep.sh\"",
-            "timeout": 5
           }
         ]
       }
