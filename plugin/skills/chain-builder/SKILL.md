@@ -260,32 +260,28 @@ flow:
 5. Switch chains: `mcp__brainbrew__chain_switch(chain: "name")`
 6. Restart Claude Code session
 
-### Hook System (3 Layers)
+### Hook System (2 Layers)
 
-Hooks run in order through 3 layers:
+Hooks run in order through 2 layers:
 
 | Layer | Source | When |
 |-------|--------|------|
-| 1. Built-in | Hardcoded in `runner.cjs` | Always (empty by default) |
-| 2. User hooks | `.claude/hooks.yaml` | If file exists |
-| 3. Chain hooks | `.claude/chains/{name}.yaml` → `hooks:` section | Only when chain is active |
+| 1. User hooks | `.claude/hooks.yaml` | If file exists |
+| 2. Chain hooks | `.claude/chains/{name}.yaml` → `hooks:` section | Only when chain is active |
 
 **User hooks** — create `.claude/hooks.yaml` to add hooks at any lifecycle stage:
 
 ```yaml
-# Safety guards
 PreToolUse:
   - plugin:safety-guard.cjs
   - ./my-linter.js
 
-# Session lifecycle
 SessionStart:
   - plugin:session-start.cjs
   - ./setup-env.js
 SessionEnd:
   - plugin:session-end.cjs
 
-# Agent lifecycle
 PostToolUse:
   - ./my-logger.js
 SubagentStart:
@@ -293,7 +289,6 @@ SubagentStart:
 SubagentStop:
   - ./my-validator.js
 
-# Other events
 UserPromptSubmit:
   - ./my-prompt-filter.js
 Stop:
@@ -308,7 +303,7 @@ Return `{"decision": "block", "reason": "..."}` to block, or exit 0 to pass thro
 
 **Available lifecycle events:** `PreToolUse`, `PostToolUse`, `SubagentStart`, `SubagentStop`, `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `Stop`, `Notification`
 
-**Built-in scripts** (shipped with plugin, opt-in via `plugin:` prefix):
+**Plugin scripts** (opt-in via `plugin:` prefix in hooks.yaml):
 
 | Script | Purpose |
 |--------|---------|
