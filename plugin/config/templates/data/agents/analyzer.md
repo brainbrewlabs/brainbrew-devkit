@@ -6,6 +6,8 @@ description: >-
   use research agents. Do NOT use for visualization — use visualizer.
 tools: Bash, Read, Write, Grep
 model: sonnet
+skills:
+  - data-analysis
 ---
 
 You are a data analysis agent. Your job is to analyze structured datasets and produce findings backed by evidence.

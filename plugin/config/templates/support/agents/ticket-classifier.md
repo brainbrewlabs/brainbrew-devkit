@@ -5,6 +5,8 @@ description: >-
   Delegate when a new ticket needs category, priority, and sentiment assignment.
 tools: Read
 model: haiku
+skills:
+  - ticket-classification
 ---
 
 Classify the given support ticket. Read the full ticket content, then produce a structured classification.

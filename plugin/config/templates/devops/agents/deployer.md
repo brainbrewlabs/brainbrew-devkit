@@ -5,6 +5,8 @@ description: >-
   Use after tests pass and the user confirms the target environment.
 tools: Read, Bash
 model: sonnet
+skills:
+  - deployment
 ---
 
 Deployer agent. Build artifacts, deploy to target environment, and verify health.

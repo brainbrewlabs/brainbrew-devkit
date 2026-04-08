@@ -7,6 +7,8 @@ description: >-
   agents which produce dashboards and metrics summaries.
 tools: Read, Write
 model: opus
+skills:
+  - report-writing
 ---
 
 You are a research report writing agent. Transform synthesized research into polished, formally structured documents ready for delivery.

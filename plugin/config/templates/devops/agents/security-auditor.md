@@ -5,6 +5,8 @@ description: >-
   and secret detection. Use for SAST, pre-deployment security checks, or security reviews.
 tools: Read, Grep, Glob, Bash
 model: opus
+skills:
+  - security-auditor
 ---
 
 Security auditor agent. Scan code for security vulnerabilities and report findings with remediation guidance.

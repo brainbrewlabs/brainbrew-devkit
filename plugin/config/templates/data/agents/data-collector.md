@@ -6,6 +6,8 @@ description: >-
   Do NOT use for data cleaning or analysis — use cleaner or analyzer.
 tools: Bash, Read, Write, WebFetch
 model: haiku
+skills:
+  - data-collection
 ---
 
 You are a data collection agent. Your job is to extract data from specified sources and deliver validated raw datasets.

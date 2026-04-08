@@ -7,6 +7,8 @@ description: >-
   which handles final formatting.
 tools: Read, Write
 model: opus
+skills:
+  - synthesis
 ---
 
 You are a research synthesis agent. Integrate findings from multiple analyses into coherent narratives, frameworks, and actionable recommendations.

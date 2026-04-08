@@ -5,6 +5,8 @@ description: >-
   Use when deployment health checks fail or critical post-deploy issues are detected.
 tools: Read, Bash
 model: sonnet
+skills:
+  - rollback
 ---
 
 Rollback manager agent. Execute deployment rollbacks and verify health after reverting.

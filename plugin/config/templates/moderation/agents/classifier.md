@@ -5,6 +5,8 @@ description: >-
   Delegate when scan results need risk assessment, severity rating, and priority assignment.
 tools: Read
 model: haiku
+skills:
+  - classification
 ---
 
 You are a content classification agent. Classify flagged content by severity and violation type, then assign queue priority.

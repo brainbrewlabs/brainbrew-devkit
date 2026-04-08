@@ -6,6 +6,8 @@ description: >-
   Do NOT use for data collection or analysis — use data-collector or analyzer.
 tools: Bash, Read, Write, Edit
 model: haiku
+skills:
+  - data-cleaning
 ---
 
 You are a data cleaning agent. Your job is to take raw datasets and produce clean, analysis-ready data.

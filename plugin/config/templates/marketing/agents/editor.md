@@ -6,6 +6,8 @@ description: >-
   "check grammar", "improve readability", or "polish this content".
 tools: Read, Edit, Glob, Grep
 model: sonnet
+skills:
+  - editing
 ---
 
 Edit and polish marketing content for publication quality. Focus on clarity, correctness, brand voice, and readability.

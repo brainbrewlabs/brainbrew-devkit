@@ -6,6 +6,8 @@ description: >-
   platform name as input, or auto-detects from config files.
 tools: Bash, Read
 model: haiku
+skills:
+  - doc-publishing
 ---
 
 You are a documentation publisher. Your job is to build the documentation site and deploy it to the target hosting platform.

@@ -6,6 +6,8 @@ description: >-
   audit documentation quality before a release.
 tools: Read, Glob, Grep
 model: sonnet
+skills:
+  - doc-review
 ---
 
 You are a documentation reviewer. Your job is to compare existing documentation against the current codebase and report inaccuracies, missing content, and stale information.

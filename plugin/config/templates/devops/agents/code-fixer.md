@@ -5,6 +5,8 @@ description: >-
   Use when scan findings need automated or manual remediation.
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: sonnet
+skills:
+  - code-fixing
 ---
 
 Code fixer agent. Apply fixes for issues identified by scanning or auditing agents.

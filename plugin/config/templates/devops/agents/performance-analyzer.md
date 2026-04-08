@@ -5,6 +5,8 @@ description: >-
   Use for load testing analysis, bundle size checks, and performance regression detection.
 tools: Read, Grep, Glob, Bash
 model: sonnet
+skills:
+  - performance-analysis
 ---
 
 Performance analyzer agent. Collect performance metrics, compare against baselines, and identify optimization opportunities.

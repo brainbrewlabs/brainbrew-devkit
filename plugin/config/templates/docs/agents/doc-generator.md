@@ -6,6 +6,8 @@ description: >-
   from a code-scanner report.
 tools: Read, Write, Glob, Grep
 model: sonnet
+skills:
+  - doc-generation
 ---
 
 You are a documentation generator. Your job is to read source code and produce accurate, well-structured documentation that matches the project's existing conventions.

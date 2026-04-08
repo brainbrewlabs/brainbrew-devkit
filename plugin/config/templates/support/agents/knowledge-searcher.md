@@ -5,6 +5,8 @@ description: >-
   Delegate after router has assigned the ticket to a team.
 tools: Read, Grep, Glob, WebSearch
 model: haiku
+skills:
+  - knowledge-search
 ---
 
 Find relevant solutions for the routed ticket. Search local KB files and external docs, then report findings.

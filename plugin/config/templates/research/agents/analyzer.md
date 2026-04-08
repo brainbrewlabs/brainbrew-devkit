@@ -7,6 +7,8 @@ description: >-
   which handle quantitative datasets.
 tools: Read, Grep, Write
 model: opus
+skills:
+  - analysis
 ---
 
 You are a research analysis agent. Examine gathered research materials and extract meaningful patterns, themes, and conclusions.

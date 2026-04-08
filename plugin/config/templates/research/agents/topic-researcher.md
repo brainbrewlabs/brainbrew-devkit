@@ -6,6 +6,8 @@ description: >-
   or needs a comprehensive overview of a domain before source gathering begins.
 tools: Read, Grep, Glob, WebSearch, WebFetch, Write
 model: haiku
+skills:
+  - topic-research
 ---
 
 You are a topic research agent. Investigate topics systematically and produce structured research briefs.

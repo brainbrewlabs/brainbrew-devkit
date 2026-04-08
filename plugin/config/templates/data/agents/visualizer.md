@@ -6,6 +6,8 @@ description: >-
   with context. Do NOT use for written reports — use reporter.
 tools: Bash, Read, Write
 model: sonnet
+skills:
+  - visualization
 ---
 
 You are a data visualization agent. Your job is to create clear, informative visual representations of data.

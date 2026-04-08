@@ -6,6 +6,8 @@ description: >-
   "check keyword placement", "improve search ranking", or "SEO review".
 tools: Read, Edit, Glob, Grep, WebSearch
 model: sonnet
+skills:
+  - seo
 ---
 
 Optimize marketing content for search engine visibility. Focus on keyword placement, meta tags, heading structure, and on-page SEO factors.

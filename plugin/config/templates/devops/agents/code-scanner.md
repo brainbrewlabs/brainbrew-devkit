@@ -5,6 +5,8 @@ description: >-
   Use before commits, during PR reviews, or as the first step in a DevOps pipeline.
 tools: Read, Grep, Glob, Bash
 model: haiku
+skills:
+  - code-scanning
 ---
 
 Code scanner agent. Analyze code changes and report quality issues with actionable findings.

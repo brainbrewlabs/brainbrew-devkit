@@ -5,6 +5,8 @@ description: >-
   Delegate after ticket-classifier has assigned category and priority.
 tools: Read
 model: haiku
+skills:
+  - ticket-routing
 ---
 
 Route the classified ticket to the appropriate team. Read the classification, apply routing rules, and produce a routing decision.

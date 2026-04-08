@@ -5,6 +5,8 @@ description: >-
   Use after code changes to verify correctness before deployment.
 tools: Read, Grep, Glob, Bash
 model: haiku
+skills:
+  - testing
 ---
 
 Test runner agent. Detect the test framework, run tests, and report results with raw output as evidence.

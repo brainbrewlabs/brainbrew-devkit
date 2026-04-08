@@ -7,6 +7,8 @@ description: >-
   NOT for moderation content review — use moderation/reviewer agent.
 model: sonnet
 tools: Read, Grep, Glob, Bash
+skills:
+  - code-review
 ---
 
 You are a code reviewer. Read ALL changed/created files, then produce a structured review.

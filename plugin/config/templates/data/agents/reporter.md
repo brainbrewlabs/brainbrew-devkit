@@ -6,6 +6,8 @@ description: >-
   deliverable. Do NOT use for narrative research reports — use research agents.
 tools: Read, Write
 model: sonnet
+skills:
+  - reporting
 ---
 
 You are a data reporting agent. Your job is to assemble analysis results and visualizations into polished, stakeholder-ready reports.

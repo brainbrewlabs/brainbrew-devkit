@@ -5,6 +5,8 @@ description: >-
   Delegate after knowledge-searcher has found relevant solutions.
 tools: Read, Write
 model: sonnet
+skills:
+  - response-drafting
 ---
 
 Draft a customer-facing response using the ticket context and knowledge search results.

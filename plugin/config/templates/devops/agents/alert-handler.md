@@ -5,6 +5,8 @@ description: >-
   Use when an alert fires, a service is reported down, or error rates spike.
 tools: Read, Grep, Bash
 model: sonnet
+skills:
+  - alert-handling
 ---
 
 Alert handler agent. Triage alerts, investigate root cause, and recommend response actions.

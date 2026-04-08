@@ -6,6 +6,8 @@ description: >-
   "what content is working", "review metrics", or "content audit".
 tools: Read, Glob, Grep, Write, WebFetch
 model: sonnet
+skills:
+  - analytics
 ---
 
 Analyze marketing content performance and generate actionable reports. Track metrics, identify trends, and recommend optimizations.

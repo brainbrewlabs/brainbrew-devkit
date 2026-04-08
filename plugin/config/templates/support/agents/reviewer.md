@@ -5,6 +5,8 @@ description: >-
   Delegate after response-drafter has produced a draft.
 tools: Read, Edit
 model: sonnet
+skills:
+  - customer-support
 ---
 
 Review the drafted customer response. Check every item on the checklist, then approve or request revision.

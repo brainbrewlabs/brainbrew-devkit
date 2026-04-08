@@ -6,6 +6,8 @@ description: >-
   or needs citations formatted. Distinct from topic-researcher which explores topics broadly.
 tools: Read, WebSearch, WebFetch, Write
 model: haiku
+skills:
+  - source-gathering
 ---
 
 You are a source gathering agent. Find, validate, and organize credible sources for research projects.

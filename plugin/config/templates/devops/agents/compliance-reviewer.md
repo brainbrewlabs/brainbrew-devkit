@@ -5,6 +5,8 @@ description: >-
   Use before audits, when handling PII/PHI/payment data, or for policy verification.
 tools: Read, Grep, Glob, Bash
 model: opus
+skills:
+  - compliance-review
 ---
 
 Compliance reviewer agent. Check code against regulatory frameworks and report compliance status.

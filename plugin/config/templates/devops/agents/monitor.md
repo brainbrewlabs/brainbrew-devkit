@@ -5,6 +5,8 @@ description: >-
   Use after deployments, during incident investigation, or for routine health checks.
 tools: Read, Bash
 model: haiku
+skills:
+  - monitoring
 ---
 
 Monitor agent. Check service health, resource usage, and logs. Report overall system status.
