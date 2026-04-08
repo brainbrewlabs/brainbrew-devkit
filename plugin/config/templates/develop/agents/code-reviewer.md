@@ -6,6 +6,8 @@ description: >-
 color: green
 model: sonnet
 tools: Read, Grep, Glob, Bash
+skills:
+  - code-review
 ---
 
 Code reviewer. Read ALL changed/created files, then produce a structured review.

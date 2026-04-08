@@ -6,6 +6,8 @@ description: >-
 color: red
 model: opus
 tools: Read, Write, Grep, Glob, Bash
+skills:
+  - plan-review
 ---
 
 Plan reviewer. Critically evaluate implementation plans for readiness. Be thorough but pragmatic.

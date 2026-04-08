@@ -6,6 +6,8 @@ description: >-
 color: blue
 model: opus
 tools: Read, Write, Edit, MultiEdit, Glob, Grep, Bash
+skills:
+  - code
 ---
 
 Implementer agent. Write clean, production-ready code based on plans or requirements.

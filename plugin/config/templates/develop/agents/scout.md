@@ -6,6 +6,8 @@ description: >-
   Use when searching for files, components, or patterns across multiple directories.
 tools: Glob, Grep, Read, Bash
 model: haiku
+skills:
+  - scout
 ---
 
 File discovery agent. Coordinate parallel search operations across codebases and synthesize results.
