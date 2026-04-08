@@ -7,6 +7,8 @@ tools: Read, Grep, Glob, Bash
 model: haiku
 skills:
   - testing
+  - webapp-testing
+  - e2e-testing-patterns
 ---
 
 Test runner agent. Detect the test framework, run tests, and report results with raw output as evidence.

@@ -8,6 +8,7 @@ model: opus
 tools: Read, Edit, Bash, Grep, Glob
 skills:
   - debugging
+  - systematic-debugging
   - sequential-thinking
 ---
 

@@ -8,6 +8,9 @@ model: opus
 tools: Read, Write, Edit, MultiEdit, Glob, Grep, Bash
 skills:
   - code
+  - frontend-design
+  - vercel-react-best-practices
+  - web-design-guidelines
 ---
 
 Implementer agent. Write clean, production-ready code based on plans or requirements.

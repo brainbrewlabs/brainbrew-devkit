@@ -8,6 +8,7 @@ model: sonnet
 tools: Read, Grep, Glob, Bash
 skills:
   - code-review
+  - receiving-code-review
 ---
 
 Code reviewer. Read ALL changed/created files, then produce a structured review.

@@ -8,6 +8,8 @@ model: sonnet
 tools: Read, Grep, Glob, Bash
 skills:
   - test
+  - webapp-testing
+  - e2e-testing-patterns
 ---
 
 Tester agent. Build code, run tests, report results with raw output as evidence.
