@@ -253,45 +253,57 @@ function main() {
                   const blockCount = (state.chainBlockCount ?? 0) + 1;
                   updateState(sessionId, { chainBlockCount: blockCount });
                   logToProject(cwd, `PreToolUse BLOCKED ${toolName} | pending=${next} | count=${blockCount} | session=${sessionId}`);
-                  let reason = `<system-reminder>
+                  let reason;
+                  if (blockCount >= 3) {
+                    updateState(sessionId, { currentAgent: void 0, chainBlockCount: 0 });
+                    reason = `<system-reminder>
+Hook blocked ${blockCount} times \u2014 releasing. Just spawn **${next}** to satisfy the chain. If work is already done, the agent will finish quickly.
+
+Command: Use Agent tool with subagent_type="${next}"
+
+Or if the user said to skip: proceed normally.
+</system-reminder>`;
+                    console.log(JSON.stringify({ continue: true, hookSpecificOutput: { hookEventName: "PreToolUse", additionalContext: reason } }));
+                    process.exit(0);
+                  } else {
+                    reason = `<system-reminder>
 Chain step pending. Do NOT use ${toolName} \u2014 spawn the **${next}** agent first.
 
-Command: Use Agent tool with subagent_type="${next}"`;
-                  if (blockCount >= 3) {
-                    reason += `
-
----
-**Bypass:** If this is a false positive (e.g., the work was already done manually), tell the user:
-"The chain hook is blocking because it expects me to spawn ${next}. Type \`/skip-chain\` or say 'skip chain step' to clear it."
-
-Or the user can clear it manually: \`rm ~/.claude/tmp/chain-state/${sessionId}.json\``;
+Command: Use Agent tool with subagent_type="${next}"
+</system-reminder>`;
+                    console.log(JSON.stringify({ decision: "block", reason }));
+                    process.exit(0);
                   }
-                  reason += "\n</system-reminder>";
-                  console.log(JSON.stringify({ decision: "block", reason }));
-                  process.exit(0);
                 }
               }
               if (eventArg === "Stop") {
                 const blockCount = (state.chainBlockCount ?? 0) + 1;
                 updateState(sessionId, { chainBlockCount: blockCount });
                 logToProject(cwd, `Stop BLOCKED | pending=${next} | count=${blockCount} | session=${sessionId}`);
-                let reason = `<system-reminder>
+                let reason;
+                if (blockCount >= 3) {
+                  updateState(sessionId, { currentAgent: void 0, chainBlockCount: 0 });
+                  reason = `<system-reminder>
+Hook blocked ${blockCount} times \u2014 releasing. Just spawn **${next}** to satisfy the chain. If work is already done, the agent will finish quickly.
+
+Command: Use Agent tool with subagent_type="${next}"
+
+Or if the user said to skip: proceed normally.
+</system-reminder>`;
+                  console.log(JSON.stringify({ continue: true, hookSpecificOutput: { hookEventName: "Stop", additionalContext: reason } }));
+                  process.exit(0);
+                } else {
+                  reason = `<system-reminder>
 ## MANDATORY NEXT STEP
 You MUST spawn the **${next}** agent before stopping.
 
 Command: Use Agent tool with subagent_type="${next}"
 
-Do NOT stop. Do NOT ask the user. Follow the chain.`;
-                if (blockCount >= 3) {
-                  reason += `
-
----
-**This hook has blocked ${blockCount} times.** If spawning ${next} is genuinely unnecessary (work was done manually), tell the user:
-"The chain expects me to spawn ${next} but the work is already done. Say 'skip chain step' to clear this."`;
+Do NOT stop. Do NOT ask the user. Follow the chain.
+</system-reminder>`;
+                  console.log(JSON.stringify({ decision: "block", reason }));
+                  process.exit(0);
                 }
-                reason += "\n</system-reminder>";
-                console.log(JSON.stringify({ decision: "block", reason }));
-                process.exit(0);
               }
             }
           }
