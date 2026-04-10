@@ -1,7 +1,7 @@
 "use strict";
 
 // src/hooks/subagent-start.ts
-var import_fs4 = require("fs");
+var import_fs5 = require("fs");
 
 // src/utils/state.ts
 var import_fs = require("fs");
@@ -172,15 +172,44 @@ function formatForContext(messages) {
   return output.trim();
 }
 
-// src/hooks/subagent-start.ts
+// src/utils/chain-resolver.ts
+var import_fs4 = require("fs");
 var import_path5 = require("path");
-var LOG_FILE = (0, import_path5.join)(TMP_DIR, "subagent-start.log");
+function resolveActiveChain(cwd) {
+  const pointerPath = (0, import_path5.join)(cwd, ".claude", "chain-config.yaml");
+  if (!(0, import_fs4.existsSync)(pointerPath)) return null;
+  const content = (0, import_fs4.readFileSync)(pointerPath, "utf-8");
+  if (/^(flow|hooks):/m.test(content)) {
+    return { configPath: pointerPath, chainName: "default", isLegacy: true };
+  }
+  const activeMatch = content.match(/^active:\s*(.+)/m);
+  if (!activeMatch) return null;
+  const active = activeMatch[1].trim();
+  const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
+  const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
+  if (active.includes("..") || chainsDir.includes("..")) return null;
+  const chainPath = (0, import_path5.join)(cwd, chainsDir, `${active}.yaml`);
+  const resolvedPath = (0, import_path5.resolve)(chainPath);
+  const expectedBase = (0, import_path5.resolve)((0, import_path5.join)(cwd, ".claude"));
+  if (!resolvedPath.startsWith(expectedBase)) return null;
+  if (!(0, import_fs4.existsSync)(chainPath)) return null;
+  return { configPath: chainPath, chainName: active, isLegacy: false };
+}
+function readActiveChainContent(cwd) {
+  const resolved = resolveActiveChain(cwd);
+  if (!resolved) return null;
+  return (0, import_fs4.readFileSync)(resolved.configPath, "utf-8");
+}
+
+// src/hooks/subagent-start.ts
+var import_path6 = require("path");
+var LOG_FILE = (0, import_path6.join)(TMP_DIR, "subagent-start.log");
 var CONFIG = { agents: {} };
 try {
-  CONFIG = JSON.parse((0, import_fs4.readFileSync)(CHAIN_CONFIG_FILE, "utf-8"));
+  CONFIG = JSON.parse((0, import_fs5.readFileSync)(CHAIN_CONFIG_FILE, "utf-8"));
 } catch {
   try {
-    const oldRules = JSON.parse((0, import_fs4.readFileSync)(VERIFICATION_RULES_FILE, "utf-8"));
+    const oldRules = JSON.parse((0, import_fs5.readFileSync)(VERIFICATION_RULES_FILE, "utf-8"));
     for (const [type, rule] of Object.entries(oldRules)) {
       CONFIG.agents[type] = { chainNext: rule.chainNext };
     }
@@ -190,9 +219,57 @@ try {
 function getAgentConfig(type) {
   return CONFIG.agents[type.toLowerCase()] ?? {};
 }
+function parseFlowContext(content) {
+  const result = {};
+  let currentAgent = "";
+  let inContext = false;
+  let contextLines = [];
+  let contextIndent = 0;
+  for (const line of content.split("\n")) {
+    const agentMatch = line.match(/^  (\S+):$/);
+    if (agentMatch) {
+      if (currentAgent && contextLines.length > 0) {
+        result[currentAgent] = contextLines.join("\n").trim();
+      }
+      currentAgent = agentMatch[1];
+      inContext = false;
+      contextLines = [];
+      continue;
+    }
+    if (currentAgent) {
+      const contextStart = line.match(/^    context:\s*\|?\s*$/);
+      if (contextStart) {
+        inContext = true;
+        contextIndent = 0;
+        continue;
+      }
+      const inlineContext = line.match(/^    context:\s*(.+)/);
+      if (inlineContext) {
+        result[currentAgent] = inlineContext[1].trim();
+        inContext = false;
+        continue;
+      }
+      if (inContext) {
+        const lineIndent = line.search(/\S|$/);
+        if (lineIndent > 4 || line.trim() === "") {
+          if (contextIndent === 0 && line.trim()) contextIndent = lineIndent;
+          contextLines.push(line.substring(Math.min(contextIndent, lineIndent)));
+        } else {
+          result[currentAgent] = contextLines.join("\n").trim();
+          inContext = false;
+          contextLines = [];
+        }
+      }
+    }
+  }
+  if (currentAgent && contextLines.length > 0) {
+    result[currentAgent] = contextLines.join("\n").trim();
+  }
+  return result;
+}
 function main() {
   try {
-    const stdin = (0, import_fs4.readFileSync)(0, "utf-8").trim();
+    const stdin = (0, import_fs5.readFileSync)(0, "utf-8").trim();
     if (!stdin) process.exit(0);
     const p = JSON.parse(stdin);
     const type = p.agent_type ?? "";
@@ -284,6 +361,23 @@ ${JSON.stringify(state.sharedContext, null, 2)}
 - Summary: ${prev.outputSummary ?? "N/A"}
 - Output: ${prev.outputPath ?? "N/A"}
 `;
+    }
+    const cwd = p.cwd ?? process.cwd();
+    try {
+      const chainContent = readActiveChainContent(cwd);
+      if (chainContent) {
+        const config = parseFlowContext(chainContent);
+        const nodeContext = config[type.toLowerCase()];
+        if (nodeContext) {
+          context += `
+## Chain Instructions
+${nodeContext}
+`;
+          log(LOG_FILE, `[CONTEXT] Injected chain context for ${type} (${nodeContext.length} chars)`);
+        }
+      }
+    } catch (e) {
+      log(LOG_FILE, `[CONTEXT] Error: ${e.message}`);
     }
     console.log(JSON.stringify({
       hookSpecificOutput: {

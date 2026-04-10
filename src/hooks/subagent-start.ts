@@ -3,6 +3,7 @@ import { getState, updateState } from '../utils/state.js';
 import { log, logEvent } from '../utils/logger.js';
 import { CHAIN_CONFIG_FILE, VERIFICATION_RULES_FILE, TMP_DIR } from '../utils/paths.js';
 import { subscribe, formatForContext } from '../memory/bus.js';
+import { readActiveChainContent } from '../utils/chain-resolver.js';
 import { join } from 'path';
 
 const LOG_FILE = join(TMP_DIR, 'subagent-start.log');
@@ -34,6 +35,63 @@ function getAgentConfig(type: string): AgentConfig {
   return CONFIG.agents[type.toLowerCase()] ?? {};
 }
 
+// ─── Chain YAML context parser ───────────────────────────────────────────────
+
+function parseFlowContext(content: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  let currentAgent = '';
+  let inContext = false;
+  let contextLines: string[] = [];
+  let contextIndent = 0;
+
+  for (const line of content.split('\n')) {
+    const agentMatch = line.match(/^  (\S+):$/);
+    if (agentMatch) {
+      if (currentAgent && contextLines.length > 0) {
+        result[currentAgent] = contextLines.join('\n').trim();
+      }
+      currentAgent = agentMatch[1];
+      inContext = false;
+      contextLines = [];
+      continue;
+    }
+
+    if (currentAgent) {
+      const contextStart = line.match(/^    context:\s*\|?\s*$/);
+      if (contextStart) {
+        inContext = true;
+        contextIndent = 0;
+        continue;
+      }
+
+      const inlineContext = line.match(/^    context:\s*(.+)/);
+      if (inlineContext) {
+        result[currentAgent] = inlineContext[1].trim();
+        inContext = false;
+        continue;
+      }
+
+      if (inContext) {
+        const lineIndent = line.search(/\S|$/);
+        if (lineIndent > 4 || line.trim() === '') {
+          if (contextIndent === 0 && line.trim()) contextIndent = lineIndent;
+          contextLines.push(line.substring(Math.min(contextIndent, lineIndent)));
+        } else {
+          result[currentAgent] = contextLines.join('\n').trim();
+          inContext = false;
+          contextLines = [];
+        }
+      }
+    }
+  }
+
+  if (currentAgent && contextLines.length > 0) {
+    result[currentAgent] = contextLines.join('\n').trim();
+  }
+
+  return result;
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 function main(): void {
@@ -46,6 +104,7 @@ function main(): void {
       agent_id?: string;
       transcript_path?: string;
       session_id?: string;
+      cwd?: string;
     };
 
     const type = p.agent_type ?? '';
@@ -150,6 +209,22 @@ ${JSON.stringify(state.sharedContext, null, 2)}
 - Summary: ${prev.outputSummary ?? 'N/A'}
 - Output: ${(prev as { outputPath?: string }).outputPath ?? 'N/A'}
 `;
+    }
+
+    // ─── Chain Context Inject: load context from chain YAML flow node ───
+    const cwd = p.cwd ?? process.cwd();
+    try {
+      const chainContent = readActiveChainContent(cwd);
+      if (chainContent) {
+        const config = parseFlowContext(chainContent);
+        const nodeContext = config[type.toLowerCase()];
+        if (nodeContext) {
+          context += `\n## Chain Instructions\n${nodeContext}\n`;
+          log(LOG_FILE, `[CONTEXT] Injected chain context for ${type} (${nodeContext.length} chars)`);
+        }
+      }
+    } catch (e) {
+      log(LOG_FILE, `[CONTEXT] Error: ${(e as Error).message}`);
     }
 
     console.log(JSON.stringify({
