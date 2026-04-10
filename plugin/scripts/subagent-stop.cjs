@@ -343,6 +343,88 @@ function clearRetries(agentId) {
 
 // src/hooks/subagent-stop.ts
 var LOG_FILE2 = (0, import_path5.join)(TMP_DIR, "subagent-stop.log");
+var STATS_DIR = (0, import_path5.join)(TMP_DIR, "agent-stats");
+function parseTranscript(transcriptPath) {
+  if (!(0, import_fs4.existsSync)(transcriptPath)) return null;
+  try {
+    const content = (0, import_fs4.readFileSync)(transcriptPath, "utf-8");
+    const stats = {
+      toolCalls: [],
+      toolBreakdown: {},
+      filesRead: [],
+      filesEdited: [],
+      filesCreated: [],
+      bashCommands: [],
+      grepPatterns: [],
+      globPatterns: []
+    };
+    for (const line of content.split("\n")) {
+      if (!line.trim()) continue;
+      let entry;
+      try {
+        entry = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      if (entry.type !== "assistant") continue;
+      const msg = entry.message;
+      if (!msg?.content) continue;
+      for (const block of msg.content) {
+        if (block.type !== "tool_use" || !block.name) continue;
+        const tool = block.name;
+        const input = block.input ?? {};
+        stats.toolBreakdown[tool] = (stats.toolBreakdown[tool] ?? 0) + 1;
+        const call = { tool };
+        switch (tool) {
+          case "Read":
+            if (input.file_path) {
+              call.file = input.file_path;
+              stats.filesRead.push(input.file_path);
+            }
+            break;
+          case "Edit":
+          case "MultiEdit":
+            if (input.file_path) {
+              call.file = input.file_path;
+              stats.filesEdited.push(input.file_path);
+            }
+            break;
+          case "Write":
+            if (input.file_path) {
+              call.file = input.file_path;
+              stats.filesCreated.push(input.file_path);
+            }
+            break;
+          case "Bash":
+            if (input.command) {
+              call.command = input.command.substring(0, 200);
+              stats.bashCommands.push(input.command.substring(0, 200));
+            }
+            break;
+          case "Grep":
+            if (input.pattern) {
+              call.pattern = input.pattern;
+              stats.grepPatterns.push(`${input.pattern} in ${input.path ?? "."}`);
+            }
+            break;
+          case "Glob":
+            if (input.pattern) {
+              call.pattern = input.pattern;
+              stats.globPatterns.push(input.pattern);
+            }
+            break;
+        }
+        stats.toolCalls.push(call);
+      }
+    }
+    stats.filesRead = [...new Set(stats.filesRead)];
+    stats.filesEdited = [...new Set(stats.filesEdited)];
+    stats.filesCreated = [...new Set(stats.filesCreated)];
+    return stats;
+  } catch {
+    return null;
+  }
+}
 function main() {
   try {
     const stdin = (0, import_fs4.readFileSync)(0, "utf-8").trim();
@@ -360,6 +442,14 @@ function main() {
       log(LOG_FILE2, `${agentType}:${agentId} max retries (${MAX_RETRIES}), allow`);
       clearRetries(agentId);
       process.exit(0);
+    }
+    if (payload.agent_transcript_path) {
+      const transcriptStats = parseTranscript(payload.agent_transcript_path);
+      if (transcriptStats) {
+        if (!(0, import_fs4.existsSync)(STATS_DIR)) (0, import_fs4.mkdirSync)(STATS_DIR, { recursive: true });
+        (0, import_fs4.writeFileSync)((0, import_path5.join)(STATS_DIR, `${agentId}.json`), JSON.stringify(transcriptStats));
+        log(LOG_FILE2, `[STATS] ${agentType}:${agentId} | tools=${transcriptStats.toolCalls.length} | read=${transcriptStats.filesRead.length} | edit=${transcriptStats.filesEdited.length} | bash=${transcriptStats.bashCommands.length}`);
+      }
     }
     const result = verify(agentType, output);
     const outputPreview = output.substring(0, 100).replace(/\n/g, " ");
