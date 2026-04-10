@@ -459,10 +459,10 @@ ${preview2}`;
 `);
       if (text && cwd && config.saveOutput?.includes(type.toLowerCase())) {
         try {
-          const outputDir = (0, import_path6.join)(cwd, ".claude", "outputs");
+          const outputDir = (0, import_path6.join)(cwd, ".claude", "outputs", type.toLowerCase());
           if (!(0, import_fs5.existsSync)(outputDir)) (0, import_fs5.mkdirSync)(outputDir, { recursive: true });
           const ts = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").substring(0, 19);
-          const filename = `${type}--${ts}.md`;
+          const filename = `${ts}.md`;
           const header = `---
 agent: ${type}
 id: ${id}
@@ -475,7 +475,7 @@ session: ${sessionId}
 
 `;
           (0, import_fs5.writeFileSync)((0, import_path6.join)(outputDir, filename), header + text);
-          log(LOG_FILE, `[SAVE] ${type} \u2192 ${filename} (${text.length} chars)`);
+          log(LOG_FILE, `[SAVE] ${type} \u2192 ${type.toLowerCase()}/${filename} (${text.length} chars)`);
         } catch {
         }
       }
@@ -635,10 +635,10 @@ ${preview}`;
     const flowNode = config.flow[type.toLowerCase()];
     if (flowNode?.saveOutput === "true" && text && cwd) {
       try {
-        const outputDir = (0, import_path6.join)(cwd, ".claude", "outputs");
+        const outputDir = (0, import_path6.join)(cwd, ".claude", "outputs", type.toLowerCase());
         if (!(0, import_fs5.existsSync)(outputDir)) (0, import_fs5.mkdirSync)(outputDir, { recursive: true });
         const ts = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").substring(0, 19);
-        const filename = `${type}--${ts}.md`;
+        const filename = `${ts}.md`;
         const header = `---
 agent: ${type}
 id: ${id}
@@ -652,7 +652,7 @@ next: ${next ?? "END"}
 
 `;
         (0, import_fs5.writeFileSync)((0, import_path6.join)(outputDir, filename), header + text);
-        log(LOG_FILE, `[SAVE] ${type} \u2192 ${filename} (${text.length} chars)`);
+        log(LOG_FILE, `[SAVE] ${type} \u2192 ${type.toLowerCase()}/${filename} (${text.length} chars)`);
       } catch {
       }
     }

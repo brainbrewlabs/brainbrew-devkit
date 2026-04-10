@@ -448,13 +448,13 @@ function main(): void {
       // Save output for non-flow agents if in saveOutput list
       if (text && cwd && config.saveOutput?.includes(type.toLowerCase())) {
         try {
-          const outputDir = join(cwd, '.claude', 'outputs');
+          const outputDir = join(cwd, '.claude', 'outputs', type.toLowerCase());
           if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
           const ts = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-          const filename = `${type}--${ts}.md`;
+          const filename = `${ts}.md`;
           const header = `---\nagent: ${type}\nid: ${id}\ntokens: ${tokens}\nduration_ms: ${ms}\ntools: ${tools}\ntimestamp: ${new Date().toISOString()}\nsession: ${sessionId}\n---\n\n`;
           writeFileSync(join(outputDir, filename), header + text);
-          log(LOG_FILE, `[SAVE] ${type} → ${filename} (${text.length} chars)`);
+          log(LOG_FILE, `[SAVE] ${type} → ${type.toLowerCase()}/${filename} (${text.length} chars)`);
         } catch { /* ignore */ }
       }
 
@@ -612,13 +612,13 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
     const flowNode = config.flow![type.toLowerCase()] as Record<string, unknown> | undefined;
     if (flowNode?.saveOutput === 'true' && text && cwd) {
       try {
-        const outputDir = join(cwd, '.claude', 'outputs');
+        const outputDir = join(cwd, '.claude', 'outputs', type.toLowerCase());
         if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
         const ts = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
-        const filename = `${type}--${ts}.md`;
+        const filename = `${ts}.md`;
         const header = `---\nagent: ${type}\nid: ${id}\ntokens: ${tokens}\nduration_ms: ${ms}\ntools: ${tools}\ntimestamp: ${new Date().toISOString()}\nsession: ${sessionId}\nnext: ${next ?? 'END'}\n---\n\n`;
         writeFileSync(join(outputDir, filename), header + text);
-        log(LOG_FILE, `[SAVE] ${type} → ${filename} (${text.length} chars)`);
+        log(LOG_FILE, `[SAVE] ${type} → ${type.toLowerCase()}/${filename} (${text.length} chars)`);
       } catch { /* ignore save failures */ }
     }
 
