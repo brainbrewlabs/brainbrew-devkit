@@ -448,7 +448,7 @@ function main(): void {
       // Save output for non-flow agents if in saveOutput list
       if (text && cwd && config.saveOutput?.includes(type.toLowerCase())) {
         try {
-          const outputDir = join(cwd, '.claude', 'kg', 'outputs');
+          const outputDir = join(cwd, '.claude', 'outputs');
           if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
           const ts = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
           const filename = `${type}--${ts}.md`;
@@ -612,7 +612,7 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
     const flowNode = config.flow![type.toLowerCase()] as Record<string, unknown> | undefined;
     if (flowNode?.saveOutput === 'true' && text && cwd) {
       try {
-        const outputDir = join(cwd, '.claude', 'kg', 'outputs');
+        const outputDir = join(cwd, '.claude', 'outputs');
         if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
         const ts = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
         const filename = `${type}--${ts}.md`;
