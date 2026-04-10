@@ -147,17 +147,18 @@ function readActiveChainContent(cwd) {
 var LOG_FILE = (0, import_path6.join)(TMP_DIR, "agent-output.log");
 var PLANS_DIR = (0, import_path6.join)((0, import_os2.homedir)(), ".claude", "plans");
 var MAX_AGENT_LOOPS = 0;
+var DEFAULT_SAVE_AGENTS = ["explore"];
 function loadChainConfig(cwd) {
   try {
     const content = readActiveChainContent(cwd);
-    if (!content) return {};
+    if (!content) return { saveOutput: [...DEFAULT_SAVE_AGENTS] };
     return parseSimpleYaml(content);
   } catch {
-    return {};
+    return { saveOutput: [...DEFAULT_SAVE_AGENTS] };
   }
 }
 function parseSimpleYaml(content) {
-  const config = { flow: {} };
+  const config = { flow: {}, saveOutput: [...DEFAULT_SAVE_AGENTS] };
   let currentSection = "";
   let currentAgent = "";
   let currentSubSection = "";
@@ -187,6 +188,14 @@ function parseSimpleYaml(content) {
       currentAgent = "";
       currentSubSection = "";
       currentTeammate = null;
+      continue;
+    }
+    if (currentSection === "saveOutput") {
+      const itemMatch = line.match(/^\s+-\s+(.+)/);
+      if (itemMatch) {
+        if (!config.saveOutput) config.saveOutput = [];
+        config.saveOutput.push(itemMatch[1].trim().toLowerCase());
+      }
       continue;
     }
     if (currentSection === "flow") {
@@ -448,6 +457,28 @@ ${preview2}`;
       log(LOG_FILE, `
 [${(/* @__PURE__ */ new Date()).toISOString()}] ${type}:${id} ${secs2}s ${kTok2}k \u2192 NO CHAIN
 `);
+      if (text && cwd && config.saveOutput?.includes(type.toLowerCase())) {
+        try {
+          const outputDir = (0, import_path6.join)(cwd, ".claude", "kg", "outputs");
+          if (!(0, import_fs5.existsSync)(outputDir)) (0, import_fs5.mkdirSync)(outputDir, { recursive: true });
+          const ts = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").substring(0, 19);
+          const filename = `${type}--${ts}.md`;
+          const header = `---
+agent: ${type}
+id: ${id}
+tokens: ${tokens}
+duration_ms: ${ms}
+tools: ${tools}
+timestamp: ${(/* @__PURE__ */ new Date()).toISOString()}
+session: ${sessionId}
+---
+
+`;
+          (0, import_fs5.writeFileSync)((0, import_path6.join)(outputDir, filename), header + text);
+          log(LOG_FILE, `[SAVE] ${type} \u2192 ${filename} (${text.length} chars)`);
+        } catch {
+        }
+      }
       console.log(JSON.stringify({
         continue: true,
         hookSpecificOutput: {
@@ -600,6 +631,30 @@ ${preview}`;
       });
       state.currentAgent = next ?? null;
       updateState(sessionId, state);
+    }
+    const flowNode = config.flow[type.toLowerCase()];
+    if (flowNode?.saveOutput === "true" && text && cwd) {
+      try {
+        const outputDir = (0, import_path6.join)(cwd, ".claude", "kg", "outputs");
+        if (!(0, import_fs5.existsSync)(outputDir)) (0, import_fs5.mkdirSync)(outputDir, { recursive: true });
+        const ts = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").substring(0, 19);
+        const filename = `${type}--${ts}.md`;
+        const header = `---
+agent: ${type}
+id: ${id}
+tokens: ${tokens}
+duration_ms: ${ms}
+tools: ${tools}
+timestamp: ${(/* @__PURE__ */ new Date()).toISOString()}
+session: ${sessionId}
+next: ${next ?? "END"}
+---
+
+`;
+        (0, import_fs5.writeFileSync)((0, import_path6.join)(outputDir, filename), header + text);
+        log(LOG_FILE, `[SAVE] ${type} \u2192 ${filename} (${text.length} chars)`);
+      } catch {
+      }
     }
     console.log(JSON.stringify({
       continue: true,

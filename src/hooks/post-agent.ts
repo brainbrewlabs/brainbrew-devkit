@@ -1,4 +1,4 @@
-import { readFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { callHaiku } from '../ai/haiku.js';
@@ -34,20 +34,23 @@ interface FlowEntry {
 interface ChainConfig {
   hooks?: Record<string, string[]>;
   flow?: Record<string, FlowEntry>;
+  saveOutput?: string[];
 }
+
+const DEFAULT_SAVE_AGENTS = ['explore'];
 
 function loadChainConfig(cwd: string): ChainConfig {
   try {
     const content = readActiveChainContent(cwd);
-    if (!content) return {};
+    if (!content) return { saveOutput: [...DEFAULT_SAVE_AGENTS] };
     return parseSimpleYaml(content);
   } catch {
-    return {};
+    return { saveOutput: [...DEFAULT_SAVE_AGENTS] };
   }
 }
 
 function parseSimpleYaml(content: string): ChainConfig {
-  const config: ChainConfig = { flow: {} };
+  const config: ChainConfig = { flow: {}, saveOutput: [...DEFAULT_SAVE_AGENTS] };
   let currentSection = '';
   let currentAgent = '';
   let currentSubSection = '';
@@ -81,6 +84,15 @@ function parseSimpleYaml(content: string): ChainConfig {
       currentAgent = '';
       currentSubSection = '';
       currentTeammate = null;
+      continue;
+    }
+
+    if (currentSection === 'saveOutput') {
+      const itemMatch = line.match(/^\s+-\s+(.+)/);
+      if (itemMatch) {
+        if (!config.saveOutput) config.saveOutput = [];
+        config.saveOutput.push(itemMatch[1].trim().toLowerCase());
+      }
       continue;
     }
 
@@ -432,6 +444,20 @@ function main(): void {
       const preview = text.length > 200 ? text.substring(0, 200) + '...' : text;
       const noti = `Agent ${type} completed | ${secs}s | ${kTok}k tokens | ${tools} tools\n\n${preview}`;
       log(LOG_FILE, `\n[${new Date().toISOString()}] ${type}:${id} ${secs}s ${kTok}k → NO CHAIN\n`);
+
+      // Save output for non-flow agents if in saveOutput list
+      if (text && cwd && config.saveOutput?.includes(type.toLowerCase())) {
+        try {
+          const outputDir = join(cwd, '.claude', 'kg', 'outputs');
+          if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
+          const ts = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+          const filename = `${type}--${ts}.md`;
+          const header = `---\nagent: ${type}\nid: ${id}\ntokens: ${tokens}\nduration_ms: ${ms}\ntools: ${tools}\ntimestamp: ${new Date().toISOString()}\nsession: ${sessionId}\n---\n\n`;
+          writeFileSync(join(outputDir, filename), header + text);
+          log(LOG_FILE, `[SAVE] ${type} → ${filename} (${text.length} chars)`);
+        } catch { /* ignore */ }
+      }
+
       console.log(JSON.stringify({
         continue: true,
         hookSpecificOutput: {
@@ -580,6 +606,20 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
       });
       state.currentAgent = next ?? null;
       updateState(sessionId, state as Parameters<typeof updateState>[1]);
+    }
+
+    // Save output if configured
+    const flowNode = config.flow![type.toLowerCase()] as Record<string, unknown> | undefined;
+    if (flowNode?.saveOutput === 'true' && text && cwd) {
+      try {
+        const outputDir = join(cwd, '.claude', 'kg', 'outputs');
+        if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
+        const ts = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+        const filename = `${type}--${ts}.md`;
+        const header = `---\nagent: ${type}\nid: ${id}\ntokens: ${tokens}\nduration_ms: ${ms}\ntools: ${tools}\ntimestamp: ${new Date().toISOString()}\nsession: ${sessionId}\nnext: ${next ?? 'END'}\n---\n\n`;
+        writeFileSync(join(outputDir, filename), header + text);
+        log(LOG_FILE, `[SAVE] ${type} → ${filename} (${text.length} chars)`);
+      } catch { /* ignore save failures */ }
     }
 
     console.log(JSON.stringify({
