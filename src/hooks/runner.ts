@@ -241,7 +241,7 @@ function main(): void {
             if (flowAgentPattern.test(chainContent)) {
 
               if (eventArg === 'PreToolUse') {
-                if (toolName === 'Agent') {
+                if (toolName === 'Agent' || toolName.startsWith('mcp__')) {
                 } else {
                   const blockCount = (state.chainBlockCount ?? 0) + 1;
                   updateState(sessionId, { chainBlockCount: blockCount } as any);
