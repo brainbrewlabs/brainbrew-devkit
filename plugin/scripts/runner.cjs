@@ -35,6 +35,27 @@ function readActiveChainContent(cwd) {
   if (!resolved) return null;
   return (0, import_fs.readFileSync)(resolved.configPath, "utf-8");
 }
+function listChains(cwd) {
+  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
+  if (!(0, import_fs.existsSync)(pointerPath)) return [];
+  const content = (0, import_fs.readFileSync)(pointerPath, "utf-8");
+  if (/^(flow|hooks):/m.test(content)) {
+    return ["default"];
+  }
+  const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
+  const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
+  if (chainsDir.includes("..")) return ["default"];
+  const fullDir = (0, import_path.join)(cwd, chainsDir);
+  const resolvedDir = (0, import_path.resolve)(fullDir);
+  const expectedBase = (0, import_path.resolve)((0, import_path.join)(cwd, ".claude"));
+  if (!resolvedDir.startsWith(expectedBase)) return ["default"];
+  if (!(0, import_fs.existsSync)(fullDir)) return [];
+  return (0, import_fs.readdirSync)(fullDir).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(".yaml", ""));
+}
+function getActiveChainName(cwd) {
+  const resolved = resolveActiveChain(cwd);
+  return resolved?.chainName ?? null;
+}
 
 // src/utils/state.ts
 var import_fs2 = require("fs");
@@ -83,6 +104,27 @@ function updateState(sessionId, updates) {
 }
 
 // src/hooks/runner.ts
+function listChainsWithAgents(cwd) {
+  const chains = listChains(cwd);
+  if (chains.length === 0) return "";
+  const active = getActiveChainName(cwd);
+  const resolved = resolveActiveChain(cwd);
+  const chainsDir = resolved ? (0, import_path4.dirname)(resolved.configPath).replace(cwd + "/", "") + "/" : ".claude/chains/";
+  const lines = [];
+  for (const c of chains) {
+    const chainPath = (0, import_path4.join)(cwd, chainsDir, `${c}.yaml`);
+    let agents = "";
+    if ((0, import_fs3.existsSync)(chainPath)) {
+      const content = (0, import_fs3.readFileSync)(chainPath, "utf-8");
+      const flowSection = content.split(/^flow:\s*$/m)[1] ?? "";
+      const flowAgents = [...flowSection.matchAll(/^  (\S+):/gm)].map((m) => m[1]);
+      agents = flowAgents.join(" \u2192 ");
+    }
+    const marker = c === active ? " (active)" : "";
+    lines.push(`  - ${c}${marker}: ${agents}`);
+  }
+  return lines.join("\n");
+}
 var RUNNER_LOG_DIR = (0, import_path4.join)((0, import_os2.homedir)(), ".claude", "tmp");
 var RUNNER_LOG = (0, import_path4.join)(RUNNER_LOG_DIR, "runner.log");
 function logToProject(_cwd, msg) {
@@ -306,13 +348,17 @@ Or if the user said to skip: proceed normally.
                     console.log(JSON.stringify({ continue: true, hookSpecificOutput: { hookEventName: "PreToolUse", additionalContext: reason } }));
                     process.exit(0);
                   } else {
+                    const chainsList = listChainsWithAgents(cwd);
                     reason = `<system-reminder>
 Chain step pending. Do NOT use ${toolName} \u2014 spawn the **${next}** agent first.
 
 Command: Use Agent tool with subagent_type="${next}"
 
-If you need a different workflow, use chain_continue MCP tool to switch chain:
-mcp__plugin_brainbrew-devkit_brainbrew__chain_continue(chain: "develop", session_id: "${sessionId}")
+To switch workflow, use chain_continue:
+mcp__plugin_brainbrew-devkit_brainbrew__chain_continue(chain: "<name>", session_id: "${sessionId}")
+
+Available chains:
+${chainsList}
 </system-reminder>`;
                     console.log(JSON.stringify({ decision: "block", reason }));
                     process.exit(0);

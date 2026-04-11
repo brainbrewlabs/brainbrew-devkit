@@ -4,8 +4,30 @@ import { readFileSync, existsSync, appendFileSync, mkdirSync } from 'fs';
 import { join, dirname, resolve } from 'path';
 import { homedir } from 'os';
 import { execSync } from 'child_process';
-import { readActiveChainContent } from '../utils/chain-resolver.js';
+import { readActiveChainContent, listChains, getActiveChainName, resolveActiveChain } from '../utils/chain-resolver.js';
 import { getState, updateState } from '../utils/state.js';
+
+function listChainsWithAgents(cwd: string): string {
+  const chains = listChains(cwd);
+  if (chains.length === 0) return '';
+  const active = getActiveChainName(cwd);
+  const resolved = resolveActiveChain(cwd);
+  const chainsDir = resolved ? dirname(resolved.configPath).replace(cwd + '/', '') + '/' : '.claude/chains/';
+  const lines: string[] = [];
+  for (const c of chains) {
+    const chainPath = join(cwd, chainsDir, `${c}.yaml`);
+    let agents = '';
+    if (existsSync(chainPath)) {
+      const content = readFileSync(chainPath, 'utf-8');
+      const flowSection = content.split(/^flow:\s*$/m)[1] ?? '';
+      const flowAgents = [...flowSection.matchAll(/^  (\S+):/gm)].map(m => m[1]);
+      agents = flowAgents.join(' → ');
+    }
+    const marker = c === active ? ' (active)' : '';
+    lines.push(`  - ${c}${marker}: ${agents}`);
+  }
+  return lines.join('\n');
+}
 
 const RUNNER_LOG_DIR = join(homedir(), '.claude', 'tmp');
 const RUNNER_LOG = join(RUNNER_LOG_DIR, 'runner.log');
@@ -254,7 +276,8 @@ function main(): void {
                     console.log(JSON.stringify({ continue: true, hookSpecificOutput: { hookEventName: 'PreToolUse', additionalContext: reason } }));
                     process.exit(0);
                   } else {
-                    reason = `<system-reminder>\nChain step pending. Do NOT use ${toolName} — spawn the **${next}** agent first.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nIf you need a different workflow, use chain_continue MCP tool to switch chain:\nmcp__plugin_brainbrew-devkit_brainbrew__chain_continue(chain: "develop", session_id: "${sessionId}")\n</system-reminder>`;
+                    const chainsList = listChainsWithAgents(cwd);
+                    reason = `<system-reminder>\nChain step pending. Do NOT use ${toolName} — spawn the **${next}** agent first.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nTo switch workflow, use chain_continue:\nmcp__plugin_brainbrew-devkit_brainbrew__chain_continue(chain: "<name>", session_id: "${sessionId}")\n\nAvailable chains:\n${chainsList}\n</system-reminder>`;
                     console.log(JSON.stringify({ decision: 'block', reason }));
                     process.exit(0);
                   }
