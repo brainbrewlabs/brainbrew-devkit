@@ -263,7 +263,18 @@ function main(): void {
             if (flowAgentPattern.test(chainContent)) {
 
               if (eventArg === 'PreToolUse') {
-                if (toolName === 'Agent' || toolName.includes('chain_run')) {
+                if (toolName.includes('chain_run')) {
+                } else if (toolName === 'Agent') {
+                  const requestedAgent = (payload.tool_input?.subagent_type ?? '').toLowerCase();
+                  if (requestedAgent && requestedAgent !== next) {
+                    const chainsList = listChainsWithAgents(cwd);
+                    logToProject(cwd, `PreToolUse BLOCKED Agent(${requestedAgent}) | expected=${next} | session=${sessionId}`);
+                    console.log(JSON.stringify({
+                      decision: 'block',
+                      reason: `<system-reminder>\nWrong agent. Chain expects **${next}** but you tried to spawn **${requestedAgent}**.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nTo switch workflow, use chain_run:\nmcp__plugin_brainbrew-devkit_brainbrew__chain_run(chain: "<name>", session_id: "${sessionId}")\n\nAvailable chains:\n${chainsList}\n</system-reminder>`,
+                    }));
+                    process.exit(0);
+                  }
                 } else {
                   const blockCount = (state.chainBlockCount ?? 0) + 1;
                   updateState(sessionId, { chainBlockCount: blockCount } as any);
