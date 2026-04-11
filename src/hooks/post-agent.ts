@@ -670,6 +670,7 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
         state.currentAgent = null;
         (state as Record<string, unknown>).allowedAgents = [];
         (state as Record<string, unknown>).chainBlockCount = 0;
+        state.previousAgents = [];
       }
       updateState(sessionId, state as Parameters<typeof updateState>[1]);
 
