@@ -11,7 +11,6 @@ const LOG_FILE = join(TMP_DIR, 'agent-output.log');
 const PLANS_DIR = join(homedir(), '.claude', 'plans');
 const MAX_AGENT_LOOPS = 0;
 
-// ─── Flow Config ─────────────────────────────────────────────────────────────
 
 interface TeammateConfig {
   name: string;
@@ -277,7 +276,6 @@ Respond ONLY with JSON: {"route": "<agent-name or END>", "reason": "brief explan
   return { next: defaultNext, reason: 'Default next in flow' };
 }
 
-// ─── Phase Tracking ───────────────────────────────────────────────────────────
 
 interface Phase {
   number: number;
@@ -386,7 +384,6 @@ function checkPhaseProgress(sessionId: string): { hasMore: boolean; allComplete?
   return { hasMore: false, allComplete: true };
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
 
 type ChainState = {
   previousAgents: Array<{ type: string; id: string; completedAt: string; outputSummary: string }>;
@@ -482,10 +479,8 @@ function main(): void {
     const cwd = p.cwd ?? process.cwd();
     void _transcriptPath;
 
-    // Load chain config from cwd
     const config = loadChainConfig(cwd);
 
-    // Extract response text
     let text = '';
     if (p.tool_response?.content) {
       for (const c of p.tool_response.content) {
@@ -503,7 +498,6 @@ function main(): void {
       const noti = `Agent ${type} completed | ${secs}s | ${kTok}k tokens | ${tools} tools\n\n${preview}`;
       log(LOG_FILE, `\n[${new Date().toISOString()}] ${type}:${id} ${secs}s ${kTok}k → NO CHAIN\n`);
 
-      // Save output for non-flow agents if in saveOutput list
       if (text && cwd && config.saveOutput?.includes(type.toLowerCase())) {
         try {
           const outputDir = join(cwd, '.claude', 'outputs', type.toLowerCase());
@@ -529,7 +523,6 @@ function main(): void {
       process.exit(0);
     }
 
-    // Detect backgrounded agents
     const isBackgrounded = tokens === 0 && ms === 0 && text.length === 0;
     if (isBackgrounded) {
       const dir = dirname(LOG_FILE);
@@ -547,11 +540,9 @@ function main(): void {
       process.exit(2);
     }
 
-    // Get next agent from flow config
     const chainDecision = getNextAgent(type, text, config);
     let next: string | null = chainDecision.next;
 
-    // Phase tracking for git-manager
     if (type.toLowerCase() === 'git-manager' && sessionId) {
       const progress = checkPhaseProgress(sessionId);
       if (progress.hasMore) {
@@ -589,7 +580,6 @@ function main(): void {
       }
     }
 
-    // Build notification
     const preview = text.length > 200 ? text.substring(0, 200) + '...' : text;
     const secs = (ms / 1000).toFixed(1);
     const kTok = (tokens / 1000).toFixed(1);
@@ -642,7 +632,6 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
 
     noti += `\n\n${preview}`;
 
-    // Log
     log(LOG_FILE, `\n[${new Date().toISOString()}] ${type}:${id} ${secs}s ${kTok}k → ${next ?? 'END'}\n`);
     logEvent({
       event: 'complete',
@@ -655,7 +644,6 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
       reason: chainDecision.reason,
     });
 
-    // Update state
     if (sessionId) {
       const state = (getState(sessionId) ?? { previousAgents: [] }) as ChainState;
       state.previousAgents = state.previousAgents ?? [];
@@ -668,7 +656,6 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
       state.currentAgent = next ?? null;
       updateState(sessionId, state as Parameters<typeof updateState>[1]);
 
-      // Always save full output to tmp for next agent injection
       try {
         const tmpOutputDir = join(TMP_DIR, 'agent-outputs');
         if (!existsSync(tmpOutputDir)) mkdirSync(tmpOutputDir, { recursive: true });
@@ -676,7 +663,6 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
       } catch { /* ignore */ }
     }
 
-    // Save output if configured
     const flowNode = config.flow![type.toLowerCase()] as Record<string, unknown> | undefined;
     if (flowNode?.saveOutput === 'true' && text && cwd) {
       try {

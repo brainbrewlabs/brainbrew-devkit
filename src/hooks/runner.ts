@@ -1,16 +1,4 @@
 #!/usr/bin/env node
-/**
- * Hook Runner — Single entry point for all Claude Code hooks.
- *
- * Execution order (2 layers):
- *   1. User custom hooks  — from .claude/hooks.yaml (per-project, easy customize)
- *   2. Chain hooks        — from chain-config.yaml (only when chain is active)
- *
- * Script path resolution:
- *   - "plugin:foo.cjs"  → ${CLAUDE_PLUGIN_ROOT}/scripts/foo.cjs
- *   - "./foo.js"        → ${cwd}/.claude/hooks/foo.js
- *   - "/absolute/path"  → as-is
- */
 
 import { readFileSync, existsSync, appendFileSync, mkdirSync } from 'fs';
 import { join, dirname, resolve } from 'path';
@@ -34,7 +22,6 @@ interface HookConfig {
   hooks: Record<string, string[]>;
 }
 
-// ─── Layer 1: User custom hooks ──────────────────────────────────────────────
 
 function parseSimpleYaml(content: string): Record<string, string[]> {
   const result: Record<string, string[]> = {};
@@ -93,7 +80,6 @@ function getUserHooks(event: string, cwd: string): string[] {
   }
 }
 
-// ─── Layer 2: Chain hooks ────────────────────────────────────────────────────
 
 function parseChainHooksConfig(content: string): HookConfig {
   const config: HookConfig = { hooks: {} };
@@ -128,7 +114,6 @@ function getChainHooks(event: string, cwd: string): string[] {
   }
 }
 
-// ─── Hook execution ──────────────────────────────────────────────────────────
 
 function runHook(hookPath: string, stdin: string): { output?: string; block?: boolean; exit2?: boolean } {
   if (!existsSync(hookPath)) {
@@ -166,7 +151,6 @@ function runHook(hookPath: string, stdin: string): { output?: string; block?: bo
   return {};
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
 
 function main(): void {
   const eventArg = process.argv[2];
@@ -189,7 +173,6 @@ function main(): void {
     if (payload.cwd) cwd = payload.cwd;
   } catch { /* use process.cwd */ }
 
-  // UserPromptSubmit: handle "skip chain step" bypass
   if (eventArg === 'UserPromptSubmit') {
     try {
       const payload = JSON.parse(stdin);
@@ -206,7 +189,6 @@ function main(): void {
     } catch { /* ignore */ }
   }
 
-  // Chain enforcement: block tools/stop when a chain step is pending
   if (eventArg === 'PreToolUse' || eventArg === 'Stop') {
     try {
       const payload = JSON.parse(stdin);
@@ -223,12 +205,9 @@ function main(): void {
             const flowAgentPattern = new RegExp(`^  ${next}:`, 'm');
             if (flowAgentPattern.test(chainContent)) {
 
-              // PreToolUse: only allow Agent tool
               if (eventArg === 'PreToolUse') {
                 if (toolName === 'Agent') {
-                  // allowed — fall through to normal processing
                 } else {
-                  // blocked — increment counter
                   const blockCount = (state.chainBlockCount ?? 0) + 1;
                   updateState(sessionId, { chainBlockCount: blockCount } as any);
                   logToProject(cwd, `PreToolUse BLOCKED ${toolName} | pending=${next} | count=${blockCount} | session=${sessionId}`);
@@ -247,7 +226,6 @@ function main(): void {
                 }
               }
 
-              // Stop: always block when pending
               if (eventArg === 'Stop') {
                 const blockCount = (state.chainBlockCount ?? 0) + 1;
                 updateState(sessionId, { chainBlockCount: blockCount } as any);
@@ -268,7 +246,6 @@ function main(): void {
             }
           }
 
-          // currentAgent not in current chain flow — stale, clear it
           if (eventArg === 'Stop') {
             updateState(sessionId, { currentAgent: undefined, chainBlockCount: 0 } as any);
             logToProject(cwd, `Stop CLEARED stale currentAgent=${next} | session=${sessionId}`);

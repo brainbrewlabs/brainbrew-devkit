@@ -7,7 +7,6 @@ import { join } from 'path';
 
 const LOG_FILE = join(TMP_DIR, 'subagent-start.log');
 
-// ─── Config ───────────────────────────────────────────────────────────────────
 
 interface AgentConfig {
   chainNext?: string | null;
@@ -34,7 +33,6 @@ function getAgentConfig(type: string): AgentConfig {
   return CONFIG.agents[type.toLowerCase()] ?? {};
 }
 
-// ─── Chain YAML context parser ───────────────────────────────────────────────
 
 function parseFlowContext(content: string): Record<string, string> {
   const result: Record<string, string> = {};
@@ -91,7 +89,6 @@ function parseFlowContext(content: string): Record<string, string> {
   return result;
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
 
 function main(): void {
   try {
@@ -144,7 +141,6 @@ Ensure your output is complete enough for the next agent to proceed.
       context += instructions;
     }
 
-    // Special instruction for git-manager: check plan for remaining phases
     if (type.toLowerCase() === 'git-manager') {
       context += `
 ## Phase Reporting (REQUIRED)
@@ -159,7 +155,6 @@ This helps the workflow decide if more implementation is needed.
 `;
     }
 
-    // Get session state
     const state = getState(sessionId);
 
     if (state?.activeTeam) {
@@ -183,7 +178,6 @@ Focus on your specific review area. Your output will be combined with other team
 ${JSON.stringify(state.sharedContext, null, 2)}
 `;
     }
-    // ─── Inject previous agent's full output ───
     if (state?.previousAgents?.length) {
       const prev = state.previousAgents[state.previousAgents.length - 1];
       const prevId = (prev as { id?: string }).id;
@@ -201,7 +195,6 @@ ${JSON.stringify(state.sharedContext, null, 2)}
       }
     }
 
-    // ─── Chain Context Inject: load context from chain YAML flow node ───
     const cwd = p.cwd ?? process.cwd();
     try {
       const chainContent = readActiveChainContent(cwd);

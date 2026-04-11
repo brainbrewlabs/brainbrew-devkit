@@ -111,7 +111,6 @@ function parseTranscript(transcriptPath: string): AgentTranscriptStats | null {
   }
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
 
 function main(): void {
   try {
@@ -138,7 +137,6 @@ function main(): void {
     const agentId = payload.agent_id ?? 'x';
     const output = payload.last_assistant_message ?? '';
 
-    // Check retries
     const retries = getRetries(agentId);
     if (retries >= MAX_RETRIES) {
       log(LOG_FILE, `${agentType}:${agentId} max retries (${MAX_RETRIES}), allow`);
@@ -146,7 +144,6 @@ function main(): void {
       process.exit(0);
     }
 
-    // Parse transcript and save stats for PostToolUse to pick up
     if (payload.agent_transcript_path) {
       const transcriptStats = parseTranscript(payload.agent_transcript_path);
       if (transcriptStats) {
@@ -156,7 +153,6 @@ function main(): void {
       }
     }
 
-    // Verify output quality
     const result = verify(agentType, output);
     const outputPreview = output.substring(0, 100).replace(/\n/g, ' ');
 
@@ -175,7 +171,6 @@ function main(): void {
       process.exit(0);
     }
 
-    // Block with feedback
     setRetries(agentId, retries + 1);
     const feedback = (result.issues?.length ?? 0) > 0
       ? `Issues:\n- ${result.issues!.join('\n- ')}\n\nFix: ${result.suggestion}`

@@ -1,7 +1,3 @@
-/**
- * SessionEnd Hook
- * Cleanup session-scoped messages from Memory Bus
- */
 
 import { readFileSync } from 'fs';
 import { clearSession } from '../memory/bus.js';
@@ -28,12 +24,10 @@ function main(): void {
       process.exit(0);
     }
 
-    // Clear session messages from Memory Bus
     const cleared = clearSession(sessionId, cwd);
 
     log(LOG_FILE, `[SESSION END] ${sessionId} - Cleared ${cleared} messages`);
 
-    // SessionEnd doesn't support hookSpecificOutput, just exit silently
     process.exit(0);
 
   } catch (e: unknown) {
