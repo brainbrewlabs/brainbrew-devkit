@@ -695,13 +695,19 @@ ${preview}`;
         completedAt: (/* @__PURE__ */ new Date()).toISOString(),
         outputSummary: preview.substring(0, 100)
       });
-      state.currentAgent = next ?? null;
-      const flowNode2 = config.flow?.[type.toLowerCase()];
-      const routes = flowNode2?.routes ? Object.keys(flowNode2.routes).filter((r) => r !== "END") : [];
-      const allowed = new Set(routes);
-      allowed.add(type.toLowerCase());
-      if (next) allowed.add(next);
-      state.allowedAgents = [...allowed];
+      if (next) {
+        state.currentAgent = next;
+        const flowNode2 = config.flow?.[type.toLowerCase()];
+        const routes = flowNode2?.routes ? Object.keys(flowNode2.routes).filter((r) => r !== "END") : [];
+        const allowed = new Set(routes);
+        allowed.add(type.toLowerCase());
+        allowed.add(next);
+        state.allowedAgents = [...allowed];
+      } else {
+        state.currentAgent = null;
+        state.allowedAgents = [];
+        state.chainBlockCount = 0;
+      }
       updateState(sessionId, state);
       try {
         const tmpOutputDir = (0, import_path6.join)(TMP_DIR, "agent-outputs");

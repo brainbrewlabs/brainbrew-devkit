@@ -658,13 +658,19 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
         completedAt: new Date().toISOString(),
         outputSummary: preview.substring(0, 100),
       });
-      state.currentAgent = next ?? null;
-      const flowNode = config.flow?.[type.toLowerCase()];
-      const routes = flowNode?.routes ? Object.keys(flowNode.routes).filter(r => r !== 'END') : [];
-      const allowed = new Set(routes);
-      allowed.add(type.toLowerCase());
-      if (next) allowed.add(next);
-      (state as Record<string, unknown>).allowedAgents = [...allowed];
+      if (next) {
+        state.currentAgent = next;
+        const flowNode = config.flow?.[type.toLowerCase()];
+        const routes = flowNode?.routes ? Object.keys(flowNode.routes).filter(r => r !== 'END') : [];
+        const allowed = new Set(routes);
+        allowed.add(type.toLowerCase());
+        allowed.add(next);
+        (state as Record<string, unknown>).allowedAgents = [...allowed];
+      } else {
+        state.currentAgent = null;
+        (state as Record<string, unknown>).allowedAgents = [];
+        (state as Record<string, unknown>).chainBlockCount = 0;
+      }
       updateState(sessionId, state as Parameters<typeof updateState>[1]);
 
       try {
