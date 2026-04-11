@@ -292,9 +292,7 @@ function main() {
         const state = getState(sessionId);
         if (state?.previousAgents?.length) {
           const prev = state.previousAgents[state.previousAgents.length - 1];
-          const prevAge = prev.completedAt ? Date.now() - new Date(prev.completedAt).getTime() : Infinity;
-          const MAX_AGE_MS = 10 * 60 * 1e3;
-          if (prev.id && prevAge < MAX_AGE_MS) {
+          if (prev.id) {
             const prevOutputFile = (0, import_path4.join)((0, import_os2.homedir)(), ".claude", "tmp", "agent-outputs", `${prev.id}.md`);
             if ((0, import_fs3.existsSync)(prevOutputFile)) {
               const prevOutput = (0, import_fs3.readFileSync)(prevOutputFile, "utf-8");

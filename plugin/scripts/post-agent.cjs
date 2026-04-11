@@ -705,6 +705,7 @@ ${preview}`;
         state.allowedAgents = [...allowed];
       } else {
         state.currentAgent = null;
+        state.previousAgents = [];
         state.allowedAgents = [];
         state.chainBlockCount = 0;
       }

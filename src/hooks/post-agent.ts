@@ -668,6 +668,7 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
         (state as Record<string, unknown>).allowedAgents = [...allowed];
       } else {
         state.currentAgent = null;
+        state.previousAgents = [];
         (state as Record<string, unknown>).allowedAgents = [];
         (state as Record<string, unknown>).chainBlockCount = 0;
       }
