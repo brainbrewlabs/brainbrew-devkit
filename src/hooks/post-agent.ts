@@ -615,6 +615,11 @@ ${nextFlow.decide ? `\nRouting rules:\n${nextFlow.decide}` : ''}
 DO NOT ask user. DO NOT skip. Wait for all teammates to finish before proceeding.
 </system-reminder>`;
       } else {
+        const flowNode = config.flow?.[type.toLowerCase()];
+        const routes = flowNode?.routes ? Object.keys(flowNode.routes).filter(r => r !== 'END') : [];
+        const selfAndRoutes = [...new Set([type.toLowerCase(), ...routes])];
+        const otherOptions = selfAndRoutes.filter(a => a !== next);
+        const altText = otherOptions.length > 0 ? `\nAlternatively: ${otherOptions.map(a => `Agent(subagent_type="${a}")`).join(' or ')}` : '';
         noti += `
 
 <system-reminder>
@@ -622,7 +627,7 @@ DO NOT ask user. DO NOT skip. Wait for all teammates to finish before proceeding
 You MUST now spawn the **${next}** agent to continue the chain.
 
 Command: Use Agent tool with subagent_type="${next}"
-
+${altText}
 DO NOT ask user. DO NOT skip. DO NOT background agents.
 </system-reminder>`;
       }
