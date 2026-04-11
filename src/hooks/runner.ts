@@ -202,12 +202,17 @@ function main(): void {
       const payload = JSON.parse(stdin);
       const sessionId = payload.session_id ?? '';
       const message = (payload.message ?? '').toLowerCase();
-      if (sessionId && (message.includes('skip chain') || message.includes('/skip-chain'))) {
+      if (sessionId) {
         const state = getState(sessionId);
-        if (state?.currentAgent) {
-          const skipped = state.currentAgent;
-          updateState(sessionId, { currentAgent: undefined, chainBlockCount: 0 } as any);
-          logToProject(cwd, `SKIP chain step | skipped=${skipped} | session=${sessionId}`);
+        if (message.includes('skip chain') || message.includes('/skip-chain')) {
+          if (state?.currentAgent) {
+            const skipped = state.currentAgent;
+            updateState(sessionId, { currentAgent: undefined, chainBlockCount: 0, allowedAgents: [] } as any);
+            logToProject(cwd, `SKIP chain step | skipped=${skipped} | session=${sessionId}`);
+          }
+        } else if (state?.chainBlockCount && state.chainBlockCount > 0) {
+          updateState(sessionId, { chainBlockCount: 0 } as any);
+          logToProject(cwd, `RESET blockCount on user message | session=${sessionId}`);
         }
       }
     } catch { /* ignore */ }
