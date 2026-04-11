@@ -656,7 +656,10 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
       state.currentAgent = next ?? null;
       const flowNode = config.flow?.[type.toLowerCase()];
       const routes = flowNode?.routes ? Object.keys(flowNode.routes).filter(r => r !== 'END') : [];
-      (state as Record<string, unknown>).allowedAgents = routes.length > 0 ? routes : (next ? [next] : []);
+      const allowed = new Set(routes);
+      allowed.add(type.toLowerCase());
+      if (next) allowed.add(next);
+      (state as Record<string, unknown>).allowedAgents = [...allowed];
       updateState(sessionId, state as Parameters<typeof updateState>[1]);
 
       try {
