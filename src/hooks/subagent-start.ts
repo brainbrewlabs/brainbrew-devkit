@@ -114,7 +114,7 @@ function main(): void {
     if (sessionId) {
       const currentState = getState(sessionId);
       if (currentState?.currentAgent && currentState.currentAgent === type.toLowerCase()) {
-        updateState(sessionId, { currentAgent: undefined, chainBlockCount: 0 });
+        updateState(sessionId, { currentAgent: undefined, chainBlockCount: 0, allowedAgents: [] });
       }
     }
 

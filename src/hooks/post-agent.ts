@@ -654,6 +654,9 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
         outputSummary: preview.substring(0, 100),
       });
       state.currentAgent = next ?? null;
+      const flowNode = config.flow?.[type.toLowerCase()];
+      const routes = flowNode?.routes ? Object.keys(flowNode.routes).filter(r => r !== 'END') : [];
+      (state as Record<string, unknown>).allowedAgents = routes.length > 0 ? routes : (next ? [next] : []);
       updateState(sessionId, state as Parameters<typeof updateState>[1]);
 
       try {

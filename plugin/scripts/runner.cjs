@@ -333,15 +333,18 @@ ORIGINAL INPUT: ${JSON.stringify(toolInput)}`);
                 if (toolName.includes("chain_run")) {
                 } else if (toolName === "Agent") {
                   const requestedAgent = (payload.tool_input?.subagent_type ?? "").toLowerCase();
-                  if (requestedAgent && requestedAgent !== next) {
+                  const allowed = state.allowedAgents;
+                  const allowedList = allowed && allowed.length > 0 ? allowed : next ? [next] : [];
+                  if (requestedAgent && !allowedList.includes(requestedAgent)) {
                     const chainsList = listChainsWithAgents(cwd);
-                    logToProject(cwd, `PreToolUse BLOCKED Agent(${requestedAgent}) | expected=${next} | session=${sessionId}`);
+                    const allowedStr = allowedList.map((a) => `**${a}**`).join(" or ");
+                    logToProject(cwd, `PreToolUse BLOCKED Agent(${requestedAgent}) | allowed=[${allowedList.join(",")}] | session=${sessionId}`);
                     console.log(JSON.stringify({
                       decision: "block",
                       reason: `<system-reminder>
-Wrong agent. Chain expects **${next}** but you tried to spawn **${requestedAgent}**.
+Wrong agent. Chain allows ${allowedStr} but you tried to spawn **${requestedAgent}**.
 
-Command: Use Agent tool with subagent_type="${next}"
+Spawn one of: ${allowedList.map((a) => `Agent(subagent_type="${a}")`).join(" or ")}
 
 To switch workflow, use chain_run:
 mcp__plugin_brainbrew-devkit_brainbrew__chain_run(chain: "<name>", session_id: "${sessionId}")

@@ -19,6 +19,7 @@ interface ChainState {
     startedAt: string;
   };
   chainBlockCount?: number;
+  allowedAgents?: string[];
 }
 
 function statePath(sessionId: string): string {

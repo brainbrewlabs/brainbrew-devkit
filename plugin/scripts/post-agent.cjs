@@ -690,6 +690,9 @@ ${preview}`;
         outputSummary: preview.substring(0, 100)
       });
       state.currentAgent = next ?? null;
+      const flowNode2 = config.flow?.[type.toLowerCase()];
+      const routes = flowNode2?.routes ? Object.keys(flowNode2.routes).filter((r) => r !== "END") : [];
+      state.allowedAgents = routes.length > 0 ? routes : next ? [next] : [];
       updateState(sessionId, state);
       try {
         const tmpOutputDir = (0, import_path6.join)(TMP_DIR, "agent-outputs");
