@@ -265,7 +265,7 @@ function main() {
     try {
       const payload = JSON.parse(stdin);
       const sessionId = payload.session_id ?? "";
-      const message = (payload.message ?? "").toLowerCase();
+      const message = (payload.prompt ?? "").toLowerCase();
       if (sessionId) {
         const state = getState(sessionId);
         if (message.includes("skip chain") || message.includes("/skip-chain")) {
