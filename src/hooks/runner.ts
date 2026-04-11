@@ -7,13 +7,14 @@ import { execSync } from 'child_process';
 import { readActiveChainContent } from '../utils/chain-resolver.js';
 import { getState, updateState } from '../utils/state.js';
 
-function logToProject(cwd: string, msg: string): void {
+const RUNNER_LOG_DIR = join(homedir(), '.claude', 'tmp');
+const RUNNER_LOG = join(RUNNER_LOG_DIR, 'runner.log');
+
+function logToProject(_cwd: string, msg: string): void {
   try {
-    const tmpDir = join(cwd, '.claude', 'tmp');
-    if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
-    const logFile = join(tmpDir, 'runner.log');
-    appendFileSync(logFile, `[${new Date().toISOString()}] ${msg}\n`);
-  } catch { /* ignore log failures */ }
+    if (!existsSync(RUNNER_LOG_DIR)) mkdirSync(RUNNER_LOG_DIR, { recursive: true });
+    appendFileSync(RUNNER_LOG, `[${new Date().toISOString()}] ${msg}\n`);
+  } catch {}
 }
 
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || dirname(dirname(__filename));

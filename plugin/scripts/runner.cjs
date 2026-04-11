@@ -83,12 +83,12 @@ function updateState(sessionId, updates) {
 }
 
 // src/hooks/runner.ts
-function logToProject(cwd, msg) {
+var RUNNER_LOG_DIR = (0, import_path4.join)((0, import_os2.homedir)(), ".claude", "tmp");
+var RUNNER_LOG = (0, import_path4.join)(RUNNER_LOG_DIR, "runner.log");
+function logToProject(_cwd, msg) {
   try {
-    const tmpDir = (0, import_path4.join)(cwd, ".claude", "tmp");
-    if (!(0, import_fs3.existsSync)(tmpDir)) (0, import_fs3.mkdirSync)(tmpDir, { recursive: true });
-    const logFile = (0, import_path4.join)(tmpDir, "runner.log");
-    (0, import_fs3.appendFileSync)(logFile, `[${(/* @__PURE__ */ new Date()).toISOString()}] ${msg}
+    if (!(0, import_fs3.existsSync)(RUNNER_LOG_DIR)) (0, import_fs3.mkdirSync)(RUNNER_LOG_DIR, { recursive: true });
+    (0, import_fs3.appendFileSync)(RUNNER_LOG, `[${(/* @__PURE__ */ new Date()).toISOString()}] ${msg}
 `);
   } catch {
   }
