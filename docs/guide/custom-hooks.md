@@ -113,6 +113,22 @@ Injects context when agent spawns.
 - Shared context from previous agents
 - Chain-specific instructions from `context:` field in the flow node
 
+#### Per-Agent Context Injection
+
+Use the `context:` field on any flow node to inject agent-specific instructions into its system-reminder at spawn time:
+
+```yaml
+flow:
+  implementer:
+    context: |
+      Follow No Comments Policy.
+      Use Base UI components.
+    routes:
+      code-reviewer: "Done"
+```
+
+The value is injected via `subagent-start.cjs` as a `<system-reminder>` block. Useful for enforcing project conventions on specific agents without modifying the agent definition file.
+
 ### subagent-stop.cjs (SubagentStop)
 
 Verifies output quality, blocks incomplete work with retry feedback.

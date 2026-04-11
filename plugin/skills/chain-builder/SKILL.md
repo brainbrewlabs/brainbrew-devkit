@@ -117,7 +117,15 @@ Shows all chains and which is active.
 mcp__brainbrew__chain_switch(chain: "discovery")
 ```
 
-Takes effect immediately for subsequent agent runs.
+Takes effect immediately for subsequent agent runs. Use `chain_switch` when you want to change the active chain without enforcing the first agent.
+
+## Run a Chain (Recommended)
+
+```
+mcp__brainbrew__chain_run(chain: "discovery", session_id: "{current_session_id}")
+```
+
+Switches to the chain, clears previous chain state, and enforces the first agent immediately. PreToolUse and Stop hooks will block until the first agent is spawned. Use `chain_run` as the preferred way to start a chain from scratch.
 
 ### Flow Node Types
 
@@ -281,7 +289,7 @@ flow:
 2. Create agents: `.claude/agents/{name}.md`
 3. Create skills: `.claude/skills/{name}/SKILL.md`
 4. Edit active chain: `.claude/chains/{name}.yaml`
-5. Switch chains: `mcp__brainbrew__chain_switch(chain: "name")`
+5. Run chain: `mcp__brainbrew__chain_run(chain: "name", session_id: "{current_session_id}")` (recommended) or `mcp__brainbrew__chain_switch(chain: "name")` to switch without enforcement
 6. Restart Claude Code session
 
 ### Hook System (2 Layers)

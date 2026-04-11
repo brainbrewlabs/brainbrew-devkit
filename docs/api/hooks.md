@@ -21,8 +21,9 @@ Injects context when agent spawns.
 **Injected Context:**
 
 - Chain state
-- Memory Bus messages for this agent
-- Previous agent output summary
+- Team context (if part of a parallel team)
+- Shared context from previous agents
+- Chain-specific instructions from `context:` field in the flow node
 
 ## SubagentStop: subagent-stop.cjs
 
