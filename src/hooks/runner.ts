@@ -288,36 +288,18 @@ function main(): void {
                   updateState(sessionId, { chainBlockCount: blockCount } as any);
                   logToProject(cwd, `PreToolUse BLOCKED ${toolName} | pending=${next} | count=${blockCount} | session=${sessionId}`);
 
-                  let reason: string;
-                  if (blockCount >= 3) {
-                    updateState(sessionId, { currentAgent: undefined, chainBlockCount: 0 } as any);
-                    reason = `<system-reminder>\nHook blocked ${blockCount} times — releasing. Just spawn **${next}** to satisfy the chain. If work is already done, the agent will finish quickly.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nOr if the user said to skip: proceed normally.\n</system-reminder>`;
-                    console.log(JSON.stringify({ continue: true, hookSpecificOutput: { hookEventName: 'PreToolUse', additionalContext: reason } }));
-                    process.exit(0);
-                  } else {
-                    const chainsList = listChainsWithAgents(cwd);
-                    reason = `<system-reminder>\nChain step pending. Do NOT use ${toolName} — spawn the **${next}** agent first.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nTo switch workflow, use chain_run:\nmcp__plugin_brainbrew-devkit_brainbrew__chain_run(chain: "<name>", session_id: "${sessionId}")\n\nAvailable chains:\n${chainsList}\n</system-reminder>`;
-                    console.log(JSON.stringify({ decision: 'block', reason }));
-                    process.exit(0);
-                  }
+                  const chainsList = listChainsWithAgents(cwd);
+                  const reason = `<system-reminder>\nChain step pending. Do NOT use ${toolName} — spawn the **${next}** agent first.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nTo switch workflow, use chain_run:\nmcp__plugin_brainbrew-devkit_brainbrew__chain_run(chain: "<name>", session_id: "${sessionId}")\n\nAvailable chains:\n${chainsList}\n</system-reminder>`;
+                  console.log(JSON.stringify({ decision: 'block', reason }));
+                  process.exit(0);
                 }
               }
 
               if (eventArg === 'Stop') {
-                const blockCount = (state.chainBlockCount ?? 0) + 1;
-                updateState(sessionId, { chainBlockCount: blockCount } as any);
-                logToProject(cwd, `Stop BLOCKED | pending=${next} | count=${blockCount} | session=${sessionId}`);
-
-                let reason: string;
-                if (blockCount >= 3) {
-                  updateState(sessionId, { currentAgent: undefined, chainBlockCount: 0 } as any);
-                  logToProject(cwd, `Stop RELEASED after ${blockCount} blocks | pending=${next} | session=${sessionId}`);
-                  process.exit(0);
-                } else {
-                  reason = `<system-reminder>\n## MANDATORY NEXT STEP\nYou MUST spawn the **${next}** agent before stopping.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nDo NOT stop. Do NOT ask the user. Follow the chain.\n</system-reminder>`;
-                  console.log(JSON.stringify({ decision: 'block', reason }));
-                  process.exit(0);
-                }
+                logToProject(cwd, `Stop BLOCKED | pending=${next} | session=${sessionId}`);
+                const reason = `<system-reminder>\n## MANDATORY NEXT STEP\nYou MUST spawn the **${next}** agent before stopping.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nDo NOT stop. Do NOT ask the user. Follow the chain.\n</system-reminder>`;
+                console.log(JSON.stringify({ decision: 'block', reason }));
+                process.exit(0);
               }
 
             }
