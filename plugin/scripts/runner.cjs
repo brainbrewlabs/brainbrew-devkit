@@ -330,7 +330,7 @@ ORIGINAL INPUT: ${JSON.stringify(toolInput)}`);
             const flowAgentPattern = new RegExp(`^  ${next}:`, "m");
             if (flowAgentPattern.test(chainContent)) {
               if (eventArg === "PreToolUse") {
-                if (toolName === "Agent" || toolName.includes("chain_continue")) {
+                if (toolName === "Agent" || toolName.includes("chain_run")) {
                 } else {
                   const blockCount = (state.chainBlockCount ?? 0) + 1;
                   updateState(sessionId, { chainBlockCount: blockCount });
@@ -354,8 +354,8 @@ Chain step pending. Do NOT use ${toolName} \u2014 spawn the **${next}** agent fi
 
 Command: Use Agent tool with subagent_type="${next}"
 
-To switch workflow, use chain_continue:
-mcp__plugin_brainbrew-devkit_brainbrew__chain_continue(chain: "<name>", session_id: "${sessionId}")
+To switch workflow, use chain_run:
+mcp__plugin_brainbrew-devkit_brainbrew__chain_run(chain: "<name>", session_id: "${sessionId}")
 
 Available chains:
 ${chainsList}

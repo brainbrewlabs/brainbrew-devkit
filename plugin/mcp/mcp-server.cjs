@@ -21039,13 +21039,13 @@ var TOOLS = [
     }
   },
   {
-    name: "chain_continue",
-    description: "Switch to a chain and immediately enforce spawning its first agent. Use when you need to jump into a different workflow (e.g., from docs chain to develop chain). The first agent becomes mandatory \u2014 PreToolUse/Stop hooks will block until it is spawned.",
+    name: "chain_run",
+    description: "Activate a chain and enforce spawning its first agent immediately. Switches chain, clears previous state, and sets the first agent as mandatory. PreToolUse/Stop hooks will block until it is spawned.",
     inputSchema: {
       type: "object",
       properties: {
-        chain: { type: "string", description: "Chain name to switch to and start" },
-        session_id: { type: "string", description: "Current session ID (from hook payload)" }
+        chain: { type: "string", description: "Chain name to run" },
+        session_id: { type: "string", description: "Current session ID" }
       },
       required: ["chain", "session_id"]
     }
@@ -21437,7 +21437,7 @@ ${lines.join("\n")}`);
         writePointer(cwd, chain, existingChainsDir);
         return success2(`Switched active chain to "${chain}".`);
       }
-      case "chain_continue": {
+      case "chain_run": {
         const chain = args?.chain;
         const sessionId = args?.session_id;
         const chains = listChains(cwd);
@@ -21451,10 +21451,13 @@ ${lines.join("\n")}`);
         writePointer(cwd, chain, existingChainsDir);
         const chainPath = (0, import_path3.join)(cwd, existingChainsDir, `${chain}.yaml`);
         let firstAgent = "";
+        let allAgents = "";
         if ((0, import_fs3.existsSync)(chainPath)) {
           const content = (0, import_fs3.readFileSync)(chainPath, "utf-8");
-          const flowMatch = content.match(/^flow:\s*\n\s{2}(\S+):/m);
-          if (flowMatch) firstAgent = flowMatch[1];
+          const flowSection = content.split(/^flow:\s*$/m)[1] ?? "";
+          const flowAgents = [...flowSection.matchAll(/^  (\S+):/gm)].map((m) => m[1]);
+          firstAgent = flowAgents[0] ?? "";
+          allAgents = flowAgents.join(" \u2192 ");
         }
         if (!firstAgent) {
           return error2(`Chain "${chain}" has no flow agents defined.`);
@@ -21472,11 +21475,12 @@ ${lines.join("\n")}`);
           }
           state.currentAgent = firstAgent;
           state.chainBlockCount = 0;
+          state.previousAgents = [];
           (0, import_fs3.writeFileSync)(statePath, JSON.stringify(state, null, 2));
         }
-        return success2(`Switched to "${chain}" and set **${firstAgent}** as mandatory next agent. PreToolUse/Stop hooks will enforce spawning it.
+        return success2(`Chain "${chain}" activated: ${allAgents}
 
-Spawn now: Agent(subagent_type="${firstAgent}")`);
+You MUST now spawn: Agent(subagent_type="${firstAgent}")`);
       }
       // ─── memory_add ───
       case "memory_add": {

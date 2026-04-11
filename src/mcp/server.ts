@@ -96,13 +96,13 @@ const TOOLS = [
     },
   },
   {
-    name: 'chain_continue',
-    description: 'Switch to a chain and immediately enforce spawning its first agent. Use when you need to jump into a different workflow (e.g., from docs chain to develop chain). The first agent becomes mandatory — PreToolUse/Stop hooks will block until it is spawned.',
+    name: 'chain_run',
+    description: 'Activate a chain and enforce spawning its first agent immediately. Switches chain, clears previous state, and sets the first agent as mandatory. PreToolUse/Stop hooks will block until it is spawned.',
     inputSchema: {
       type: 'object',
       properties: {
-        chain: { type: 'string', description: 'Chain name to switch to and start' },
-        session_id: { type: 'string', description: 'Current session ID (from hook payload)' },
+        chain: { type: 'string', description: 'Chain name to run' },
+        session_id: { type: 'string', description: 'Current session ID' },
       },
       required: ['chain', 'session_id'],
     },
@@ -505,7 +505,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return success(`Switched active chain to "${chain}".`);
       }
 
-      case 'chain_continue': {
+      case 'chain_run': {
         const chain = args?.chain as string;
         const sessionId = args?.session_id as string;
         const chains = listChains(cwd);
@@ -522,10 +522,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         const chainPath = join(cwd, existingChainsDir, `${chain}.yaml`);
         let firstAgent = '';
+        let allAgents = '';
         if (existsSync(chainPath)) {
           const content = readFileSync(chainPath, 'utf-8');
-          const flowMatch = content.match(/^flow:\s*\n\s{2}(\S+):/m);
-          if (flowMatch) firstAgent = flowMatch[1];
+          const flowSection = content.split(/^flow:\s*$/m)[1] ?? '';
+          const flowAgents = [...flowSection.matchAll(/^  (\S+):/gm)].map(m => m[1]);
+          firstAgent = flowAgents[0] ?? '';
+          allAgents = flowAgents.join(' → ');
         }
 
         if (!firstAgent) {
@@ -542,10 +545,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           }
           state.currentAgent = firstAgent;
           state.chainBlockCount = 0;
+          state.previousAgents = [];
           writeFileSync(statePath, JSON.stringify(state, null, 2));
         }
 
-        return success(`Switched to "${chain}" and set **${firstAgent}** as mandatory next agent. PreToolUse/Stop hooks will enforce spawning it.\n\nSpawn now: Agent(subagent_type="${firstAgent}")`);
+        return success(`Chain "${chain}" activated: ${allAgents}\n\nYou MUST now spawn: Agent(subagent_type="${firstAgent}")`);
       }
 
       // ─── memory_add ───

@@ -263,7 +263,7 @@ function main(): void {
             if (flowAgentPattern.test(chainContent)) {
 
               if (eventArg === 'PreToolUse') {
-                if (toolName === 'Agent' || toolName.includes('chain_continue')) {
+                if (toolName === 'Agent' || toolName.includes('chain_run')) {
                 } else {
                   const blockCount = (state.chainBlockCount ?? 0) + 1;
                   updateState(sessionId, { chainBlockCount: blockCount } as any);
@@ -277,7 +277,7 @@ function main(): void {
                     process.exit(0);
                   } else {
                     const chainsList = listChainsWithAgents(cwd);
-                    reason = `<system-reminder>\nChain step pending. Do NOT use ${toolName} — spawn the **${next}** agent first.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nTo switch workflow, use chain_continue:\nmcp__plugin_brainbrew-devkit_brainbrew__chain_continue(chain: "<name>", session_id: "${sessionId}")\n\nAvailable chains:\n${chainsList}\n</system-reminder>`;
+                    reason = `<system-reminder>\nChain step pending. Do NOT use ${toolName} — spawn the **${next}** agent first.\n\nCommand: Use Agent tool with subagent_type="${next}"\n\nTo switch workflow, use chain_run:\nmcp__plugin_brainbrew-devkit_brainbrew__chain_run(chain: "<name>", session_id: "${sessionId}")\n\nAvailable chains:\n${chainsList}\n</system-reminder>`;
                     console.log(JSON.stringify({ decision: 'block', reason }));
                     process.exit(0);
                   }
