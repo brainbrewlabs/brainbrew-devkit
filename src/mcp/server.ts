@@ -35,6 +35,7 @@ import { MessageTarget, MessagePersistence, MessagePriority } from '../memory/ty
 // Plugin root from env
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || dirname(dirname(dirname(__filename)));
 const TEMPLATES_DIR = join(PLUGIN_ROOT, 'config', 'templates');
+const CONFIG_TEMPLATE = join(PLUGIN_ROOT, 'config', 'config.yaml');
 const PLUGINS_DIR = join(dirname(PLUGIN_ROOT), 'plugins');
 
 const server = new Server(
@@ -232,11 +233,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         writePointer(cwd, template);
 
+        // Scaffold project config if missing (never overwrite user's file).
+        const projectConfigPath = join(cwd, '.claude', 'config.yaml');
+        let configScaffolded = false;
+        if (!existsSync(projectConfigPath) && existsSync(CONFIG_TEMPLATE)) {
+          copyFileSync(CONFIG_TEMPLATE, projectConfigPath);
+          configScaffolded = true;
+        }
+
         const config = readFileSync(templateYaml, 'utf-8');
         const flowMatch = config.match(/flow:[\s\S]*/);
         const flow = flowMatch ? flowMatch[0].substring(0, 500) : '';
 
-        return success(`Template "${template}" set up!\n\nAgents: ${agentCount}\nSkills: ${skillCount}\nActive chain: ${template}\n\n${flow}`);
+        const configNote = configScaffolded
+          ? `\nProject config: .claude/config.yaml (new — edit values for this project)`
+          : `\nProject config: .claude/config.yaml (kept existing)`;
+        return success(`Template "${template}" set up!\n\nAgents: ${agentCount}\nSkills: ${skillCount}\nActive chain: ${template}${configNote}\n\n${flow}`);
       }
 
       // ─── list_templates ───

@@ -363,6 +363,29 @@ hooks:
 | `./` | `.claude/hooks/` in project |
 | `/absolute` | Absolute path |
 
+## Project Config (`.claude/config.yaml`)
+
+Every `template_bump` scaffolds `.claude/config.yaml` if it does not exist.
+Existing files are never overwritten — safe to re-run.
+
+Purpose: shared project-level settings (default branch, branch name format,
+Jira project key, commit format, test command, CI provider, etc.) that all
+chains/agents/skills can read.
+
+**How agents consume it** — the `subagent-start` hook injects the file's full
+contents into every spawned agent as a `## Project Config` block. Agent
+prompts reference keys like `git.default_branch` or `jira.branch_field`.
+
+**How skills consume it** — read `.claude/config.yaml` directly via the Read
+tool.
+
+**Editing** — commit to the repo so teammates inherit the same defaults.
+Personal overrides: keep them in a gitignored `.claude/config.local.yaml`
+(consumers should merge if present).
+
+Canonical template: `plugin/config/config.yaml`. Add new top-level
+sections there when new chains need shared settings.
+
 ## Post-Bump Tuning
 
 After `template_bump`, review and tune these files:

@@ -20983,6 +20983,7 @@ function copyDirRecursive(src, dest) {
 }
 var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || (0, import_path3.dirname)((0, import_path3.dirname)((0, import_path3.dirname)(__filename)));
 var TEMPLATES_DIR = (0, import_path3.join)(PLUGIN_ROOT, "config", "templates");
+var CONFIG_TEMPLATE = (0, import_path3.join)(PLUGIN_ROOT, "config", "config.yaml");
 var PLUGINS_DIR = (0, import_path3.join)((0, import_path3.dirname)(PLUGIN_ROOT), "plugins");
 var server = new Server(
   {
@@ -21159,14 +21160,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         (0, import_fs3.copyFileSync)(templateYaml, (0, import_path3.join)(cwd, ".claude/chains", `${template}.yaml`));
         writePointer(cwd, template);
+        const projectConfigPath = (0, import_path3.join)(cwd, ".claude", "config.yaml");
+        let configScaffolded = false;
+        if (!(0, import_fs3.existsSync)(projectConfigPath) && (0, import_fs3.existsSync)(CONFIG_TEMPLATE)) {
+          (0, import_fs3.copyFileSync)(CONFIG_TEMPLATE, projectConfigPath);
+          configScaffolded = true;
+        }
         const config2 = (0, import_fs3.readFileSync)(templateYaml, "utf-8");
         const flowMatch = config2.match(/flow:[\s\S]*/);
         const flow = flowMatch ? flowMatch[0].substring(0, 500) : "";
+        const configNote = configScaffolded ? `
+Project config: .claude/config.yaml (new \u2014 edit values for this project)` : `
+Project config: .claude/config.yaml (kept existing)`;
         return success2(`Template "${template}" set up!
 
 Agents: ${agentCount}
 Skills: ${skillCount}
-Active chain: ${template}
+Active chain: ${template}${configNote}
 
 ${flow}`);
       }

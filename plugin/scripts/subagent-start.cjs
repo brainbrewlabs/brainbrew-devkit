@@ -95,6 +95,7 @@ function readActiveChainContent(cwd) {
 }
 
 // src/hooks/subagent-start.ts
+var import_fs5 = require("fs");
 var import_path5 = require("path");
 var LOG_FILE = (0, import_path5.join)(TMP_DIR, "subagent-start.log");
 var CONFIG = { agents: {} };
@@ -231,6 +232,24 @@ ${JSON.stringify(state.sharedContext, null, 2)}
 `;
     }
     const cwd = p.cwd ?? process.cwd();
+    try {
+      const projectConfigPath = (0, import_path5.join)(cwd, ".claude", "config.yaml");
+      if ((0, import_fs5.existsSync)(projectConfigPath)) {
+        const cfg = (0, import_fs4.readFileSync)(projectConfigPath, "utf-8").trim();
+        if (cfg) {
+          context += `
+## Project Config
+Shared project settings from .claude/config.yaml. Respect these values \u2014 do not hardcode alternates.
+
+\`\`\`yaml
+${cfg}
+\`\`\`
+`;
+        }
+      }
+    } catch (e) {
+      log(LOG_FILE, `[CONFIG] Error: ${e.message}`);
+    }
     try {
       const chainContent = readActiveChainContent(cwd);
       if (chainContent) {

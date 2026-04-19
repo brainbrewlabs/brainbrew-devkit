@@ -3,6 +3,7 @@ import { getState, updateState } from '../utils/state.js';
 import { log, logEvent } from '../utils/logger.js';
 import { CHAIN_CONFIG_FILE, VERIFICATION_RULES_FILE, TMP_DIR } from '../utils/paths.js';
 import { readActiveChainContent } from '../utils/chain-resolver.js';
+import { existsSync } from 'fs';
 import { join } from 'path';
 
 const LOG_FILE = join(TMP_DIR, 'subagent-start.log');
@@ -180,6 +181,21 @@ ${JSON.stringify(state.sharedContext, null, 2)}
     }
 
     const cwd = p.cwd ?? process.cwd();
+
+    // Inject project-level config so every agent sees shared defaults
+    // (branch names, Jira project key, test commands, etc.).
+    try {
+      const projectConfigPath = join(cwd, '.claude', 'config.yaml');
+      if (existsSync(projectConfigPath)) {
+        const cfg = readFileSync(projectConfigPath, 'utf-8').trim();
+        if (cfg) {
+          context += `\n## Project Config\nShared project settings from .claude/config.yaml. Respect these values — do not hardcode alternates.\n\n\`\`\`yaml\n${cfg}\n\`\`\`\n`;
+        }
+      }
+    } catch (e) {
+      log(LOG_FILE, `[CONFIG] Error: ${(e as Error).message}`);
+    }
+
     try {
       const chainContent = readActiveChainContent(cwd);
       if (chainContent) {

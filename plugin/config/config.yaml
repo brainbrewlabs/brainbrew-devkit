@@ -1,0 +1,69 @@
+# Project-level configuration shared across all chains/agents/skills.
+# Scaffolded on first `template_bump`. Subsequent bumps DO NOT overwrite.
+# Commit this file — teammates inherit the same defaults.
+#
+# Agents receive this file's contents automatically via SubagentStart hook
+# as a "## Project Config" block. Skills can read it via `.claude/config.yaml`.
+
+# ─── User ────────────────────────────────────────────────────────────────
+user:
+  # Your short handle, used in branch names (e.g. "alice", "duongcn").
+  # Keep it lowercase, no spaces. Used as {username} in branch formats.
+  username: ""
+
+# ─── Git ─────────────────────────────────────────────────────────────────
+git:
+  # Default branch to checkout for new product bug fixes.
+  default_branch: main
+
+  # Branch naming templates. Placeholders: {issue_keys}, {username}, {type}
+  # {issue_keys} = all Jira keys joined by "-" (e.g. "PROJ-123-PROJ-125").
+  # Issue keys ALSO go in commit messages (see commit_format).
+  branch_format: "fix/{username}-{issue_keys}"
+  hotfix_format: "hotfix/{username}-{issue_keys}"
+  feature_format: "feat/{username}-{issue_keys}"
+
+  # Commit message template. Placeholders: {issue_key}, {summary}
+  commit_format: "{type}({issue_key}): {summary}"
+
+# ─── Jira (via mcp-atlassian) ────────────────────────────────────────────
+jira:
+  # Jira project key (e.g. PROJ, ENG). Used as default for issue lookups.
+  project_key: ""
+
+  # Custom field on a Jira issue that points to an existing feature branch.
+  # When set and non-empty on an issue, fix lands there instead of default_branch.
+  # Leave empty to disable field-based routing.
+  branch_field: ""
+
+  # Transition name to apply after PR opened (e.g. "In Review", "Code Review").
+  transition_on_pr: ""
+
+  # Transition name after fix merged (e.g. "Done", "Closed").
+  transition_on_merge: ""
+
+# ─── Deployment / CI ─────────────────────────────────────────────────────
+deploy:
+  # CI provider (github-actions, gitlab-ci, circleci, none).
+  provider: "github-actions"
+
+  # Environments to deploy to in order.
+  environments:
+    - staging
+    - production
+
+# ─── Documentation ───────────────────────────────────────────────────────
+docs:
+  # Root directory for project docs.
+  dir: "docs"
+
+  # Docs framework (vitepress, docusaurus, mkdocs, none).
+  framework: ""
+
+# ─── Testing ─────────────────────────────────────────────────────────────
+test:
+  # Test command run by tester agent.
+  command: ""
+
+  # Minimum coverage threshold (0-100). 0 disables.
+  min_coverage: 0
