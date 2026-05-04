@@ -28,6 +28,10 @@ You should see `brainbrew-devkit` in the list.
 
 brainbrew-devkit runs under [opencode](https://opencode.ai) via the [oh-my-opencode (OHO)](https://github.com/code-yeongyu/oh-my-opencode) plugin. OHO discovers Claude Code plugins from `~/.claude/plugins/` and registers their agents, skills, commands, and MCP servers inside opencode.
 
+::: warning Prerequisite
+You must install the plugin in **Claude Code** first (the [Install the Plugin](#install-the-plugin) steps above). opencode does not have its own plugin marketplace — OHO only sees brainbrew-devkit after Claude Code has installed it into `~/.claude/plugins/`.
+:::
+
 ### Setup
 
 1. **Install OHO** in your opencode config (`~/.config/opencode/opencode.json`):

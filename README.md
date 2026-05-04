@@ -94,7 +94,11 @@ That's it. The chain handles routing, error recovery, and coordination.
 
 ### opencode users
 
-brainbrew-devkit also runs under [opencode](https://opencode.ai) via the [oh-my-opencode (OHO)](https://github.com/code-yeongyu/oh-my-opencode) plugin. After installing the plugin in Claude Code, also:
+brainbrew-devkit also runs under [opencode](https://opencode.ai) via the [oh-my-opencode (OHO)](https://github.com/code-yeongyu/oh-my-opencode) plugin.
+
+> **Prerequisite:** you must install the plugin in **Claude Code** first (steps 1 above). opencode itself has no plugin marketplace — OHO discovers brainbrew-devkit from `~/.claude/plugins/` after Claude Code installs it.
+
+Then, in addition:
 
 1. Add OHO to your opencode config (`~/.config/opencode/opencode.json`):
    ```json
