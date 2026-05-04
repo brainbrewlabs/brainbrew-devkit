@@ -20981,7 +20981,7 @@ function copyDirRecursive(src, dest) {
     }
   }
 }
-var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || (0, import_path3.dirname)((0, import_path3.dirname)((0, import_path3.dirname)(__filename)));
+var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || (0, import_path3.dirname)((0, import_path3.dirname)(__filename));
 var TEMPLATES_DIR = (0, import_path3.join)(PLUGIN_ROOT, "config", "templates");
 var PLUGINS_DIR = (0, import_path3.join)((0, import_path3.dirname)(PLUGIN_ROOT), "plugins");
 var server = new Server(
