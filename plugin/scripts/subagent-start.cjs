@@ -165,8 +165,8 @@ function main() {
     const stdin = (0, import_fs4.readFileSync)(0, "utf-8").trim();
     if (!stdin) process.exit(0);
     const p = JSON.parse(stdin);
-    const type = p.agent_type ?? "";
-    const id = p.agent_id ?? "";
+    const type = p.agent_type ?? p.subagent_type ?? p.tool_input?.subagent_type ?? p.metadata?.agent ?? p.agentName ?? p.agent_name ?? p.agent ?? "";
+    const id = p.agent_id ?? p.agentId ?? "";
     const transcriptPath = p.transcript_path ?? "";
     const sessionId = p.session_id ?? "";
     log(LOG_FILE, `START ${type}:${id}`);

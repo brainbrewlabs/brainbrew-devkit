@@ -150,7 +150,7 @@ function updateSettings(): void {
 
   for (const event of events) {
     const existing = cleanHooks(settings.hooks[event] || []);
-    const matcher = event === 'PostToolUse' ? 'Agent' : '.*';
+    const matcher = event === 'PostToolUse' ? 'Agent|task|Task' : '.*';
 
     existing.push({
       matcher,

@@ -288,7 +288,7 @@ function main() {
       const sessionId = payload.session_id ?? "";
       const toolName = payload.tool_name ?? "";
       const toolInput = payload.tool_input ?? {};
-      if (toolName === "Agent" && sessionId) {
+      if (["Agent", "task", "Task"].includes(toolName) && sessionId) {
         const state = getState(sessionId);
         if (state?.previousAgents?.length) {
           const prev = state.previousAgents[state.previousAgents.length - 1];
@@ -336,8 +336,9 @@ ORIGINAL INPUT: ${JSON.stringify(toolInput)}`);
             if (flowAgentPattern.test(chainContent)) {
               if (eventArg === "PreToolUse") {
                 if (toolName.includes("chain_run")) {
-                } else if (toolName === "Agent") {
-                  const requestedAgent = (payload.tool_input?.subagent_type ?? "").toLowerCase();
+                } else if (["Agent", "task", "Task"].includes(toolName)) {
+                  const ti = payload.tool_input ?? {};
+                  const requestedAgent = (ti.subagent_type ?? ti.agent ?? ti.subAgent ?? ti.agent_type ?? "").toLowerCase();
                   const allowed = state.allowedAgents;
                   const allowedList = allowed && allowed.length > 0 ? allowed : next ? [next] : [];
                   if (requestedAgent && !allowedList.includes(requestedAgent)) {
@@ -402,6 +403,22 @@ Do NOT stop. Do NOT ask the user. Follow the chain.
         }
       }
     } catch {
+    }
+  }
+  if (eventArg === "PostToolUse") {
+    const postAgentPath = (0, import_path4.join)(PLUGIN_SCRIPTS, "post-agent.cjs");
+    if ((0, import_fs3.existsSync)(postAgentPath)) {
+      try {
+        const result = runHook(postAgentPath, stdin);
+        if (result.output) {
+          logToProject(cwd, `PostToolUse post-agent output: ${result.output.substring(0, 200)}`);
+          console.log(result.output);
+          process.exit(0);
+        }
+      } catch (e) {
+        logToProject(cwd, `PostToolUse post-agent error: ${e.message}`);
+        process.exit(0);
+      }
     }
   }
   const userHooks = getUserHooks(eventArg, cwd);

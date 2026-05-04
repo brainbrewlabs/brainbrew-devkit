@@ -225,7 +225,7 @@ function main(): void {
       const toolName = payload.tool_name ?? '';
       const toolInput = payload.tool_input ?? {};
 
-      if (toolName === 'Agent' && sessionId) {
+      if (['Agent', 'task', 'Task'].includes(toolName) && sessionId) {
         const state = getState(sessionId);
         if (state?.previousAgents?.length) {
           const prev = state.previousAgents[state.previousAgents.length - 1] as { type: string; id?: string };
@@ -269,8 +269,15 @@ function main(): void {
 
               if (eventArg === 'PreToolUse') {
                 if (toolName.includes('chain_run')) {
-                } else if (toolName === 'Agent') {
-                  const requestedAgent = (payload.tool_input?.subagent_type ?? '').toLowerCase();
+                } else if (['Agent', 'task', 'Task'].includes(toolName)) {
+                  const ti = payload.tool_input ?? {};
+                  const requestedAgent = (
+                    ti.subagent_type
+                    ?? ti.agent
+                    ?? ti.subAgent
+                    ?? ti.agent_type
+                    ?? ''
+                  ).toLowerCase();
                   const allowed = (state as unknown as Record<string, unknown>).allowedAgents as string[] | undefined;
                   const allowedList = allowed && allowed.length > 0 ? allowed : (next ? [next] : []);
                   if (requestedAgent && !allowedList.includes(requestedAgent)) {
@@ -312,6 +319,23 @@ function main(): void {
         }
       }
     } catch { /* fall through to normal hook processing */ }
+  }
+
+  if (eventArg === 'PostToolUse') {
+    const postAgentPath = join(PLUGIN_SCRIPTS, 'post-agent.cjs');
+    if (existsSync(postAgentPath)) {
+      try {
+        const result = runHook(postAgentPath, stdin);
+        if (result.output) {
+          logToProject(cwd, `PostToolUse post-agent output: ${result.output.substring(0, 200)}`);
+          console.log(result.output);
+          process.exit(0);
+        }
+      } catch (e: unknown) {
+        logToProject(cwd, `PostToolUse post-agent error: ${(e as Error).message}`);
+        process.exit(0);
+      }
+    }
   }
 
   const userHooks = getUserHooks(eventArg, cwd);

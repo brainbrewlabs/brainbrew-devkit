@@ -474,11 +474,12 @@ function main() {
     const stdin = (0, import_fs5.readFileSync)(0, "utf-8").trim();
     if (!stdin) process.exit(0);
     const p = JSON.parse(stdin);
-    const type = p.tool_input?.subagent_type ?? "agent";
-    const id = p.tool_response?.agentId ?? "?";
-    const tokens = p.tool_response?.totalTokens ?? 0;
-    const ms = p.tool_response?.totalDurationMs ?? 0;
-    const tools = p.tool_response?.totalToolUseCount ?? 0;
+    const tr = p.tool_response ?? {};
+    const type = p.tool_input?.subagent_type || tr.metadata?.agent || tr.agent_name || tr.agentName || "agent";
+    const id = tr.agent_id ?? tr.agentId ?? "?";
+    const tokens = tr.total_tokens ?? tr.totalTokens ?? 0;
+    const ms = tr.total_duration_ms ?? tr.totalDurationMs ?? 0;
+    const tools = tr.total_tool_use_count ?? tr.totalToolUseCount ?? 0;
     const prompt = p.tool_input?.prompt ?? "";
     const description = p.tool_input?.description ?? "";
     const _transcriptPath = p.transcript_path ?? "";
@@ -487,7 +488,9 @@ function main() {
     void _transcriptPath;
     const config = loadChainConfig(cwd);
     let text = "";
-    if (p.tool_response?.content) {
+    if (p.tool_response?.output && p.tool_response.output.length > 0) {
+      text = p.tool_response.output;
+    } else if (p.tool_response?.content) {
       for (const c of p.tool_response.content) {
         if (c.type === "text") {
           text = c.text;

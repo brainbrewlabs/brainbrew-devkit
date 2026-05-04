@@ -121,8 +121,16 @@ function main(): void {
       stop_hook_active?: boolean;
       agent_type?: string;
       subagent_type?: string;
+      agent_name?: string;
+      agentName?: string;
+      agent?: string;
+      tool_input?: { subagent_type?: string };
+      tool_response?: { agentName?: string; agent_name?: string; output?: string; metadata?: { agent?: string } };
+      metadata?: { agent?: string };
       agent_id?: string;
+      agentId?: string;
       last_assistant_message?: string;
+      output?: string;
       agent_transcript_path?: string;
       session_id?: string;
       cwd?: string;
@@ -133,9 +141,21 @@ function main(): void {
       process.exit(0);
     }
 
-    const agentType = payload.agent_type ?? payload.subagent_type ?? '';
-    const agentId = payload.agent_id ?? 'x';
-    const output = payload.last_assistant_message ?? '';
+    const agentType = payload.agent_type
+      ?? payload.subagent_type
+      ?? payload.tool_input?.subagent_type
+      ?? payload.metadata?.agent
+      ?? payload.tool_response?.metadata?.agent
+      ?? payload.agentName
+      ?? payload.tool_response?.agentName
+      ?? payload.agent_name
+      ?? payload.agent
+      ?? '';
+    const agentId = payload.agent_id ?? payload.agentId ?? 'x';
+    const output = payload.last_assistant_message
+      ?? payload.tool_response?.output
+      ?? payload.output
+      ?? '';
 
     const retries = getRetries(agentId);
     if (retries >= MAX_RETRIES) {

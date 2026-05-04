@@ -434,9 +434,9 @@ function main() {
       log(LOG_FILE2, `[SKIP] stop_hook_active`);
       process.exit(0);
     }
-    const agentType = payload.agent_type ?? payload.subagent_type ?? "";
-    const agentId = payload.agent_id ?? "x";
-    const output = payload.last_assistant_message ?? "";
+    const agentType = payload.agent_type ?? payload.subagent_type ?? payload.tool_input?.subagent_type ?? payload.metadata?.agent ?? payload.tool_response?.metadata?.agent ?? payload.agentName ?? payload.tool_response?.agentName ?? payload.agent_name ?? payload.agent ?? "";
+    const agentId = payload.agent_id ?? payload.agentId ?? "x";
+    const output = payload.last_assistant_message ?? payload.tool_response?.output ?? payload.output ?? "";
     const retries = getRetries(agentId);
     if (retries >= MAX_RETRIES) {
       log(LOG_FILE2, `${agentType}:${agentId} max retries (${MAX_RETRIES}), allow`);

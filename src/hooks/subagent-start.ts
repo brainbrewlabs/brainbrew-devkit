@@ -97,14 +97,28 @@ function main(): void {
 
     const p = JSON.parse(stdin) as {
       agent_type?: string;
+      subagent_type?: string;
+      agent_name?: string;
+      agentName?: string;
+      agent?: string;
+      tool_input?: { subagent_type?: string };
+      metadata?: { agent?: string };
       agent_id?: string;
+      agentId?: string;
       transcript_path?: string;
       session_id?: string;
       cwd?: string;
     };
 
-    const type = p.agent_type ?? '';
-    const id = p.agent_id ?? '';
+    const type = p.agent_type
+      ?? p.subagent_type
+      ?? p.tool_input?.subagent_type
+      ?? p.metadata?.agent
+      ?? p.agentName
+      ?? p.agent_name
+      ?? p.agent
+      ?? '';
+    const id = p.agent_id ?? p.agentId ?? '';
     const transcriptPath = p.transcript_path ?? '';
     const sessionId = p.session_id ?? '';
 

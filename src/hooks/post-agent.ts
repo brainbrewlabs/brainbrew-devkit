@@ -457,21 +457,34 @@ function main(): void {
       tool_input?: { subagent_type?: string; prompt?: string; description?: string };
       tool_response?: {
         agentId?: string;
+        agent_id?: string;
+        agentName?: string;
+        agent_name?: string;
         totalTokens?: number;
+        total_tokens?: number;
         totalDurationMs?: number;
+        total_duration_ms?: number;
         totalToolUseCount?: number;
+        total_tool_use_count?: number;
         content?: Array<{ type: string; text: string }>;
+        output?: string;
+        metadata?: { agent?: string };
       };
       transcript_path?: string;
       session_id?: string;
       cwd?: string;
     };
 
-    const type = p.tool_input?.subagent_type ?? 'agent';
-    const id = p.tool_response?.agentId ?? '?';
-    const tokens = p.tool_response?.totalTokens ?? 0;
-    const ms = p.tool_response?.totalDurationMs ?? 0;
-    const tools = p.tool_response?.totalToolUseCount ?? 0;
+    const tr = p.tool_response ?? {};
+    const type = p.tool_input?.subagent_type
+      || tr.metadata?.agent
+      || tr.agent_name
+      || tr.agentName
+      || 'agent';
+    const id = tr.agent_id ?? tr.agentId ?? '?';
+    const tokens = tr.total_tokens ?? tr.totalTokens ?? 0;
+    const ms = tr.total_duration_ms ?? tr.totalDurationMs ?? 0;
+    const tools = tr.total_tool_use_count ?? tr.totalToolUseCount ?? 0;
     const prompt = p.tool_input?.prompt ?? '';
     const description = p.tool_input?.description ?? '';
     const _transcriptPath = p.transcript_path ?? '';
@@ -482,7 +495,9 @@ function main(): void {
     const config = loadChainConfig(cwd);
 
     let text = '';
-    if (p.tool_response?.content) {
+    if (p.tool_response?.output && p.tool_response.output.length > 0) {
+      text = p.tool_response.output;
+    } else if (p.tool_response?.content) {
       for (const c of p.tool_response.content) {
         if (c.type === 'text') { text = c.text; break; }
       }
