@@ -26,11 +26,11 @@ You should see `brainbrew-devkit` in the list.
 
 ## opencode support
 
-brainbrew-devkit also runs under [opencode](https://opencode.ai), but **only via the [oh-my-opencode (OHO)](https://github.com/code-yeongyu/oh-my-opencode) plugin** — opencode itself does not read Claude Code plugin manifests. OHO ships a Claude Code plugin loader that discovers plugins from `~/.claude/plugins/` and registers their hooks, agents, and skills inside opencode.
+brainbrew-devkit runs under [opencode](https://opencode.ai) via the [oh-my-opencode (OHO)](https://github.com/code-yeongyu/oh-my-opencode) plugin. OHO discovers Claude Code plugins from `~/.claude/plugins/` and registers their agents, skills, commands, and MCP servers inside opencode.
 
 ### Setup
 
-1. **Install OHO first** in your opencode config (`~/.config/opencode/opencode.json`):
+1. **Install OHO** in your opencode config (`~/.config/opencode/opencode.json`):
 
    ```json
    {
@@ -38,11 +38,23 @@ brainbrew-devkit also runs under [opencode](https://opencode.ai), but **only via
    }
    ```
 
-2. **Install brainbrew-devkit through Claude Code** as shown above. OHO picks it up automatically from `~/.claude/plugins/installed_plugins.json`.
+2. **Install brainbrew-devkit through Claude Code** as shown above. OHO will surface its agents, skills, and MCP tools (`chain_run`, `template_bump`, etc.) inside opencode automatically.
 
-3. **Restart opencode.** OHO scans the installed plugins on startup, loads `plugin/hooks/hooks.json`, substitutes `${CLAUDE_PLUGIN_ROOT}` with the actual install path, and dispatches hook events to brainbrew's runner.
+3. **Run the `init` MCP tool** to register hooks in `~/.claude/settings.json`. From inside opencode (or Claude Code), invoke the brainbrew MCP:
 
-Without OHO, opencode will not see brainbrew's hooks or chain routing, even if the plugin is installed in Claude Code.
+   ```
+   mcp__plugin_brainbrew-devkit_brainbrew__init
+   ```
+
+   or in chat: *"run brainbrew init"*. The tool writes hook entries with absolute paths to the plugin's `runner.cjs`, so opencode's lack of `${CLAUDE_PLUGIN_ROOT}` env propagation is not a problem.
+
+   This step is required for opencode. OHO's `claude-code-hooks` plugin only dispatches hooks declared in `~/.claude/settings.json` — it does **not** dispatch hooks shipped inside plugin manifests. Without this step, chain routing (PostToolUse → next agent) will not fire under opencode even though the plugin is installed.
+
+4. **Restart opencode** so the new hook entries are picked up.
+
+::: tip
+Claude Code reads hooks directly from the plugin manifest, so you don't need `brainbrew init` for Claude Code — only for opencode.
+:::
 
 ## Next Steps
 

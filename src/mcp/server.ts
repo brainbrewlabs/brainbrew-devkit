@@ -108,6 +108,22 @@ const TOOLS = [
     },
   },
 
+  // ─── Init / Setup ───
+  {
+    name: 'init',
+    description: 'Register brainbrew chain hooks in ~/.claude/settings.json so opencode can dispatch them. Required once for opencode users (Claude Code reads hooks directly from the plugin manifest, so this is optional under Claude Code). Idempotent — replaces any existing brainbrew entries. Uses absolute paths so it works without CLAUDE_PLUGIN_ROOT in the hook subprocess env.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        events: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional subset of events to register. Defaults to PreToolUse, PostToolUse, Stop, UserPromptSubmit, SubagentStart, SubagentStop, SessionStart, SessionEnd.',
+        },
+      },
+    },
+  },
+
   // ─── Plugin Tools ───
   {
     name: 'plugin_list',
@@ -583,6 +599,69 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           .join('\n');
 
         return success(`Memory Bus (${messages.length}):\n\n${output}`);
+      }
+
+      // ─── init ───
+      case 'init': {
+        const HOME = homedir();
+        const SETTINGS_FILE = join(HOME, '.claude', 'settings.json');
+        const runnerPath = join(PLUGIN_ROOT, 'scripts', 'runner.cjs');
+
+        if (!existsSync(runnerPath)) {
+          return error(`runner.cjs not found at ${runnerPath}. PLUGIN_ROOT=${PLUGIN_ROOT}. Reinstall the plugin.`);
+        }
+
+        const defaultEvents = [
+          'PreToolUse',
+          'PostToolUse',
+          'Stop',
+          'UserPromptSubmit',
+          'SubagentStart',
+          'SubagentStop',
+          'SessionStart',
+          'SessionEnd',
+        ];
+        const events = (Array.isArray(args?.events) && (args!.events as string[]).length > 0
+          ? args!.events as string[]
+          : defaultEvents);
+
+        let settings: Record<string, unknown> = {};
+        if (existsSync(SETTINGS_FILE)) {
+          try {
+            settings = JSON.parse(readFileSync(SETTINGS_FILE, 'utf-8'));
+          } catch (e) {
+            return error(`Cannot parse ~/.claude/settings.json: ${(e as Error).message}`);
+          }
+        } else {
+          mkdirSync(dirname(SETTINGS_FILE), { recursive: true });
+        }
+
+        const isOurHook = (h: any): boolean =>
+          h?.hooks?.[0]?.command?.includes('brainbrew') ||
+          h?.hooks?.[0]?.command?.includes('runner.cjs') ||
+          h?.hooks?.[0]?.command?.includes('hooks/chains/');
+
+        const hooksRoot = (settings.hooks ??= {}) as Record<string, unknown[]>;
+
+        for (const event of events) {
+          const existing = (hooksRoot[event] ?? []).filter((h) => !isOurHook(h));
+          const matcher = event === 'PostToolUse' ? 'Agent|task|Task' : '.*';
+          const timeout = event === 'PostToolUse' || event === 'SubagentStop' ? 120 : 30;
+          existing.push({
+            matcher,
+            hooks: [{ type: 'command', command: `node "${runnerPath}" ${event}`, timeout }],
+          });
+          hooksRoot[event] = existing;
+        }
+
+        writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+
+        return success(
+          `✓ Registered ${events.length} brainbrew hook events in ${SETTINGS_FILE}\n` +
+          `  Runner: ${runnerPath}\n` +
+          `  Events: ${events.join(', ')}\n\n` +
+          `Restart opencode (or Claude Code) so the new hooks are picked up.`
+        );
       }
 
       // ─── memory_clear ───
