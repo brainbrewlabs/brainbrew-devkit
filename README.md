@@ -92,6 +92,19 @@ Chain config lives in git. Agents are markdown files in `.claude/agents/`. No ve
 
 That's it. The chain handles routing, error recovery, and coordination.
 
+### opencode users
+
+brainbrew-devkit also runs under [opencode](https://opencode.ai) via the [oh-my-opencode (OHO)](https://github.com/code-yeongyu/oh-my-opencode) plugin. After installing the plugin in Claude Code, also:
+
+1. Add OHO to your opencode config (`~/.config/opencode/opencode.json`):
+   ```json
+   { "plugin": ["oh-my-openagent@latest"] }
+   ```
+2. Run `/brainbrew-devkit:init` — this calls the `init` MCP tool which writes hook entries to `~/.claude/settings.json` (OHO only dispatches hooks declared there, not from plugin manifests).
+3. Restart opencode.
+
+Claude Code reads hooks directly from the plugin manifest, so step 2 is **only** required for opencode. See [docs/guide/installation.md](docs/guide/installation.md#opencode-support) for details.
+
 ### Natural Language Commands
 
 ```
