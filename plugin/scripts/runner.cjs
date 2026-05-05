@@ -85,22 +85,62 @@ var STATE_DIR = (0, import_path3.join)(TMP_DIR, "chain-state");
 function statePath(sessionId) {
   return (0, import_path3.join)(STATE_DIR, `${sessionId}.json`);
 }
+function isPlainObject(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function sanitize(raw) {
+  if (!isPlainObject(raw)) return null;
+  const out = { previousAgents: [] };
+  if (Array.isArray(raw.previousAgents)) {
+    out.previousAgents = raw.previousAgents.filter(
+      (entry) => isPlainObject(entry) && typeof entry.type === "string"
+    );
+  }
+  if (typeof raw.currentAgent === "string") out.currentAgent = raw.currentAgent;
+  if (isPlainObject(raw.sharedContext)) out.sharedContext = raw.sharedContext;
+  if (isPlainObject(raw.phaseTracking) && typeof raw.phaseTracking.totalPhases === "number" && typeof raw.phaseTracking.completedPhases === "number" && Array.isArray(raw.phaseTracking.phases)) {
+    out.phaseTracking = raw.phaseTracking;
+  }
+  if (isPlainObject(raw.activeTeam)) out.activeTeam = raw.activeTeam;
+  if (typeof raw.chainBlockCount === "number") out.chainBlockCount = raw.chainBlockCount;
+  if (Array.isArray(raw.allowedAgents) && raw.allowedAgents.every((a) => typeof a === "string")) {
+    out.allowedAgents = raw.allowedAgents;
+  }
+  return out;
+}
 function getState(sessionId) {
   if (!sessionId) return null;
   const file = statePath(sessionId);
   if (!(0, import_fs2.existsSync)(file)) return null;
+  let raw;
   try {
-    return JSON.parse((0, import_fs2.readFileSync)(file, "utf-8"));
+    raw = JSON.parse((0, import_fs2.readFileSync)(file, "utf-8"));
   } catch {
+    try {
+      (0, import_fs2.unlinkSync)(file);
+    } catch {
+    }
     return null;
   }
+  const clean = sanitize(raw);
+  if (!clean) {
+    try {
+      (0, import_fs2.unlinkSync)(file);
+    } catch {
+    }
+    return null;
+  }
+  return clean;
 }
 function updateState(sessionId, updates) {
   if (!sessionId) return;
   if (!(0, import_fs2.existsSync)(STATE_DIR)) (0, import_fs2.mkdirSync)(STATE_DIR, { recursive: true });
   const current = getState(sessionId) || { previousAgents: [] };
-  const merged = { ...current, ...updates };
-  (0, import_fs2.writeFileSync)(statePath(sessionId), JSON.stringify(merged, null, 2));
+  const merged = sanitize({ ...current, ...updates }) || { previousAgents: [] };
+  const finalPath = statePath(sessionId);
+  const tmpPath = `${finalPath}.${process.pid}.${Date.now()}.tmp`;
+  (0, import_fs2.writeFileSync)(tmpPath, JSON.stringify(merged, null, 2));
+  (0, import_fs2.renameSync)(tmpPath, finalPath);
 }
 
 // src/hooks/runner.ts
