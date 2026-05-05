@@ -29293,10 +29293,9 @@ ${output}`);
         const hooksRoot = settings.hooks ??= {};
         for (const event of events) {
           const existing = (hooksRoot[event] ?? []).filter((h) => !isOurHook(h));
-          const matcher = event === "PostToolUse" ? "Agent|Task|task|mcp__.*" : ".*";
           const timeout = event === "PostToolUse" || event === "SubagentStop" ? 120 : 30;
           existing.push({
-            matcher,
+            matcher: ".*",
             hooks: [{ type: "command", command: `node "${runnerPath}" ${event}`, timeout }]
           });
           hooksRoot[event] = existing;
