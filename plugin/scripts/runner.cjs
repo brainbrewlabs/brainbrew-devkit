@@ -106,6 +106,17 @@ function sanitize(raw) {
   if (Array.isArray(raw.allowedAgents) && raw.allowedAgents.every((a) => typeof a === "string")) {
     out.allowedAgents = raw.allowedAgents;
   }
+  if (isPlainObject(raw.awaiting)) {
+    const a = raw.awaiting;
+    if ((a.kind === "subagent" || a.kind === "mcp" || a.kind === "tool") && typeof a.nodeId === "string") {
+      if (a.kind === "subagent" && typeof a.agentType === "string") {
+        out.awaiting = { kind: "subagent", agentType: a.agentType, nodeId: a.nodeId };
+      } else if ((a.kind === "mcp" || a.kind === "tool") && typeof a.toolName === "string") {
+        out.awaiting = { kind: a.kind, toolName: a.toolName, nodeId: a.nodeId };
+      }
+    }
+  }
+  if (isPlainObject(raw.outputs)) out.outputs = raw.outputs;
   return out;
 }
 function getState(sessionId) {
@@ -366,7 +377,10 @@ ORIGINAL INPUT: ${JSON.stringify(toolInput)}`);
       const payload = JSON.parse(stdin);
       const sessionId = payload.session_id ?? "";
       const toolName = payload.tool_name ?? "";
-      if (sessionId) {
+      const subagentId = payload.agent_id ?? payload.agentId ?? payload.agent_type ?? payload.subagent_type ?? "";
+      if (subagentId && eventArg === "PreToolUse") {
+        logToProject(cwd, `PreToolUse SKIP enforcement (subagent context: ${subagentId}) | tool=${toolName}`);
+      } else if (sessionId) {
         const state = getState(sessionId);
         if (state?.currentAgent) {
           const next = state.currentAgent;
@@ -446,6 +460,26 @@ Do NOT stop. Do NOT ask the user. Follow the chain.
     }
   }
   if (eventArg === "PostToolUse") {
+    let toolName = "";
+    try {
+      toolName = JSON.parse(stdin).tool_name ?? "";
+    } catch {
+    }
+    if (toolName.startsWith("mcp__") || toolName && !["Agent", "Task", "task"].includes(toolName)) {
+      const postToolPath = (0, import_path4.join)(PLUGIN_SCRIPTS, "post-tool-use.cjs");
+      if ((0, import_fs3.existsSync)(postToolPath)) {
+        try {
+          const result = runHook(postToolPath, stdin);
+          if (result.output) {
+            logToProject(cwd, `PostToolUse post-tool-use ${toolName}: ${result.output.substring(0, 200)}`);
+            console.log(result.output);
+            process.exit(result.exit2 ? 2 : 0);
+          }
+        } catch (e) {
+          logToProject(cwd, `PostToolUse post-tool-use error: ${e.message}`);
+        }
+      }
+    }
     const postAgentPath = (0, import_path4.join)(PLUGIN_SCRIPTS, "post-agent.cjs");
     if ((0, import_fs3.existsSync)(postAgentPath)) {
       try {

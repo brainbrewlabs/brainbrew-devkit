@@ -1,0 +1,40 @@
+version: 2
+name: v2-demo
+description: Demonstrates v2 schema with agent, mcp, tool, and transform nodes
+
+flow:
+  fetch_repo_meta:
+    type: mcp
+    spec:
+      server: github
+      tool: search_repositories
+      input:
+        query: "anthropic claude"
+    routing:
+      next: extract_top_score
+
+  extract_top_score:
+    type: transform
+    spec:
+      fn: "state.fetch_repo_meta?.items?.[0]?.stargazers_count ?? 0"
+    routing:
+      next: write_summary
+
+  write_summary:
+    type: tool
+    spec:
+      tool: Write
+      params:
+        file_path: "/tmp/repo-summary.txt"
+        content: "Top result fetched."
+    routing:
+      next: review
+
+  review:
+    type: agent
+    spec:
+      name: code-reviewer
+    context: |
+      Review the summary file at /tmp/repo-summary.txt produced by the chain.
+    routes:
+      END: "Approved"

@@ -13,6 +13,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, copyFi
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { resolveActiveChain, listChains, getActiveChainName, writePointer, migrateToMultiChain } from '../utils/chain-resolver.js';
+import { parseChainYaml } from '../core/config.js';
+import { listStrategies } from '../core/strategies/registry.js';
 
 // Recursive directory copy
 function copyDirRecursive(src: string, dest: string): void {
@@ -74,6 +76,11 @@ const TOOLS = [
     inputSchema: { type: 'object', properties: {} },
   },
 
+  {
+    name: 'chain_node_types',
+    description: 'List node types supported by the chain runtime (agent, team, mcp, tool, transform).',
+    inputSchema: { type: 'object', properties: {} },
+  },
   {
     name: 'chain_validate',
     description: 'Validate the chain config. Checks that all agents in flow exist, team nodes have valid teammates, routes point to valid targets, and detects dead-end nodes.',
@@ -270,6 +277,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return success(`Available templates:\n\n${info}`);
       }
 
+      case 'chain_node_types': {
+        return success(`Supported node types:\n  - ${listStrategies().join('\n  - ')}`);
+      }
+
       // ─── chain_validate ───
       case 'chain_validate': {
         const resolved = resolveActiveChain(cwd);
@@ -288,74 +299,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             .forEach(f => installedAgents.add(f.replace('.md', '')));
         }
 
+        const parsedChain = parseChainYaml(content);
         const flowNodes = new Map<string, { isTeam: boolean; teammates: Array<{ name: string; agent: string }>; routes: string[] }>();
-        let currentNode = '';
-        let inFlow = false;
-        let inTeammates = false;
-        let inRoutes = false;
-        let isTeam = false;
-        let teammates: Array<{ name: string; agent: string }> = [];
-        let routes: string[] = [];
-        let currentTm: { name: string; agent: string } | null = null;
-
-        const flushNode = () => {
-          if (!currentNode) return;
-          if (currentTm) { teammates.push({ ...currentTm }); currentTm = null; }
-          flowNodes.set(currentNode, { isTeam, teammates: [...teammates], routes: [...routes] });
-          teammates = []; routes = []; isTeam = false;
-        };
-
-        for (const line of content.split('\n')) {
-          if (line.match(/^flow:\s*$/)) { inFlow = true; continue; }
-          if (!inFlow) continue;
-          if (line.match(/^\S/) && !line.match(/^flow:/)) { inFlow = false; flushNode(); continue; }
-
-          const nodeMatch = line.match(/^  (\S+):\s*$/);
-          if (nodeMatch) {
-            flushNode();
-            const candidate = nodeMatch[1];
-            if (!isSafeAgentName(candidate)) continue;
-            currentNode = candidate;
-            inTeammates = false; inRoutes = false;
-            continue;
+        for (const [name, entry] of Object.entries(parsedChain.flow)) {
+          if (!isSafeAgentName(name)) continue;
+          const isTeam = entry.type === 'team';
+          const teammates = (entry.teammates ?? [])
+            .filter(t => t.name && (!t.agent || isSafeAgentName(t.agent)))
+            .map(t => ({ name: t.name, agent: t.agent }));
+          const routes: string[] = [];
+          for (const target of Object.keys(entry.routes ?? {})) {
+            if (isSafeAgentName(target) || target === 'END') routes.push(target);
           }
-
-          const propFields = /^\s+(type|decide|next|on_fail|on_issues):\s*/;
-          if (line.match(propFields) && currentNode) {
-            if (line.match(/^\s+type:\s*team/)) isTeam = true;
-            inTeammates = false; inRoutes = false;
-            if (currentTm) { teammates.push({ ...currentTm }); currentTm = null; }
-            continue;
-          }
-
-          if (line.match(/^\s+teammates:\s*$/) && currentNode) { inTeammates = true; inRoutes = false; continue; }
-          if (line.match(/^\s+routes:\s*$/) && currentNode) { inRoutes = true; inTeammates = false; if (currentTm) { teammates.push({ ...currentTm }); currentTm = null; } continue; }
-
-          if (inTeammates) {
-            const startMatch = line.match(/^\s+- name:\s*(.+)/);
-            if (startMatch) {
-              if (currentTm) teammates.push({ ...currentTm });
-              currentTm = { name: startMatch[1].trim(), agent: '' };
-              continue;
-            }
-            const agentMatch = line.match(/^\s+agent:\s*(.+)/);
-            if (agentMatch && currentTm) {
-              const agentVal = agentMatch[1].trim();
-              if (isSafeAgentName(agentVal)) currentTm.agent = agentVal;
-              continue;
-            }
-          }
-
-          if (inRoutes) {
-            const routeMatch = line.match(/^\s{6}(\S+):\s*"[^"]*"\s*$/);
-            if (routeMatch) {
-              const target = routeMatch[1];
-              if (isSafeAgentName(target) || target === 'END') routes.push(target);
-              continue;
-            }
-          }
+          if (entry.next && (isSafeAgentName(entry.next) || entry.next === 'END')) routes.push(entry.next);
+          if (entry.on_issues && isSafeAgentName(entry.on_issues)) routes.push(entry.on_issues);
+          if (entry.on_fail && isSafeAgentName(entry.on_fail)) routes.push(entry.on_fail);
+          flowNodes.set(name, { isTeam, teammates, routes });
         }
-        flushNode();
 
         const allNodeNames = new Set(flowNodes.keys());
 

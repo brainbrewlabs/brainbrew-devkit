@@ -48,9 +48,8 @@ export function showCommand(chainName?: string, flags: Record<string, string> = 
 
 function printChainDiagram(
   name: string,
-  flow: Record<string, { next: string | null; on_issues?: string; on_fail?: string }>
+  flow: Record<string, { next?: string | null; on_issues?: string; on_fail?: string }>
 ): void {
-  // Find chain start (agent not targeted by any next)
   const targets = new Set<string>();
   for (const entry of Object.values(flow)) {
     if (entry.next) targets.add(entry.next);
@@ -58,14 +57,13 @@ function printChainDiagram(
   const starts = Object.keys(flow).filter(a => !targets.has(a) || a === Object.keys(flow)[0]);
   const start = starts[0] || Object.keys(flow)[0];
 
-  // Walk main path
   const mainPath: string[] = [];
   const visited = new Set<string>();
-  let current: string | null = start;
+  let current: string | null | undefined = start;
   while (current && !visited.has(current)) {
     visited.add(current);
     mainPath.push(current);
-    current = flow[current]?.next || null;
+    current = flow[current]?.next ?? null;
   }
 
   // Print main path

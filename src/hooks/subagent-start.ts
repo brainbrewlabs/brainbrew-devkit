@@ -3,6 +3,7 @@ import { getState, updateState } from '../utils/state.js';
 import { log, logEvent } from '../utils/logger.js';
 import { CHAIN_CONFIG_FILE, VERIFICATION_RULES_FILE, TMP_DIR } from '../utils/paths.js';
 import { readActiveChainContent } from '../utils/chain-resolver.js';
+import { parseChainYaml } from '../core/config.js';
 import { join } from 'path';
 
 const LOG_FILE = join(TMP_DIR, 'subagent-start.log');
@@ -36,56 +37,12 @@ function getAgentConfig(type: string): AgentConfig {
 
 function parseFlowContext(content: string): Record<string, string> {
   const result: Record<string, string> = {};
-  let currentAgent = '';
-  let inContext = false;
-  let contextLines: string[] = [];
-  let contextIndent = 0;
-
-  for (const line of content.split('\n')) {
-    const agentMatch = line.match(/^  (\S+):$/);
-    if (agentMatch) {
-      if (currentAgent && contextLines.length > 0) {
-        result[currentAgent] = contextLines.join('\n').trim();
-      }
-      currentAgent = agentMatch[1];
-      inContext = false;
-      contextLines = [];
-      continue;
+  try {
+    const chain = parseChainYaml(content);
+    for (const [name, entry] of Object.entries(chain.flow)) {
+      if (entry.context) result[name] = entry.context.trim();
     }
-
-    if (currentAgent) {
-      const contextStart = line.match(/^    context:\s*\|?\s*$/);
-      if (contextStart) {
-        inContext = true;
-        contextIndent = 0;
-        continue;
-      }
-
-      const inlineContext = line.match(/^    context:\s*(.+)/);
-      if (inlineContext) {
-        result[currentAgent] = inlineContext[1].trim();
-        inContext = false;
-        continue;
-      }
-
-      if (inContext) {
-        const lineIndent = line.search(/\S|$/);
-        if (lineIndent > 4 || line.trim() === '') {
-          if (contextIndent === 0 && line.trim()) contextIndent = lineIndent;
-          contextLines.push(line.substring(Math.min(contextIndent, lineIndent)));
-        } else {
-          result[currentAgent] = contextLines.join('\n').trim();
-          inContext = false;
-          contextLines = [];
-        }
-      }
-    }
-  }
-
-  if (currentAgent && contextLines.length > 0) {
-    result[currentAgent] = contextLines.join('\n').trim();
-  }
-
+  } catch { /* ignore */ }
   return result;
 }
 

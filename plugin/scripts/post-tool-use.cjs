@@ -7333,8 +7333,9 @@ var require_dist = __commonJS({
   }
 });
 
-// src/hooks/subagent-start.ts
+// src/hooks/post-tool-use.ts
 var import_fs4 = require("fs");
+var import_path5 = require("path");
 
 // src/utils/state.ts
 var import_fs = require("fs");
@@ -7638,133 +7639,346 @@ function parseChainYaml(content) {
   return chain;
 }
 
-// src/hooks/subagent-start.ts
-var import_path5 = require("path");
-var LOG_FILE = (0, import_path5.join)(TMP_DIR, "subagent-start.log");
-var CONFIG = { agents: {} };
-try {
-  CONFIG = JSON.parse((0, import_fs4.readFileSync)(CHAIN_CONFIG_FILE, "utf-8"));
-} catch {
-  try {
-    const oldRules = JSON.parse((0, import_fs4.readFileSync)(VERIFICATION_RULES_FILE, "utf-8"));
-    for (const [type, rule] of Object.entries(oldRules)) {
-      CONFIG.agents[type] = { chainNext: rule.chainNext };
-    }
-  } catch {
+// src/core/strategies/agent.ts
+function specName(spec, fallback) {
+  const v = spec?.["name"];
+  return typeof v === "string" && v ? v : fallback;
+}
+var agentStrategy = {
+  type: "agent",
+  validate(node, nodeId) {
+    const errors = [];
+    if (!specName(node.spec, nodeId)) errors.push(`agent node "${nodeId}": missing spec.name`);
+    return { ok: errors.length === 0, errors };
+  },
+  enter(nodeId, node) {
+    const agentName = specName(node.spec, nodeId);
+    const routes = node.routes ? Object.keys(node.routes).filter((r) => r !== "END") : [];
+    const altText = routes.length ? `
+Alternatively: ${routes.map((a) => `Agent(subagent_type="${a}")`).join(" or ")}` : "";
+    const instruction = `<system-reminder>
+## MANDATORY NEXT STEP
+You MUST now spawn the **${agentName}** agent to continue the chain.
+
+Command: Use Agent tool with subagent_type="${agentName}"
+${altText}
+DO NOT ask user. DO NOT skip. DO NOT background agents.
+</system-reminder>`;
+    return {
+      instruction,
+      awaiting: { kind: "subagent", agentType: agentName, nodeId }
+    };
   }
-}
-function getAgentConfig(type) {
-  return CONFIG.agents[type.toLowerCase()] ?? {};
-}
-function parseFlowContext(content) {
-  const result = {};
-  try {
-    const chain = parseChainYaml(content);
-    for (const [name, entry] of Object.entries(chain.flow)) {
-      if (entry.context) result[name] = entry.context.trim();
-    }
-  } catch {
+};
+
+// src/core/strategies/team.ts
+function readTeammates(spec, fallback) {
+  const fromSpec = spec?.["teammates"];
+  if (Array.isArray(fromSpec)) {
+    return fromSpec.filter((t) => typeof t === "object" && t !== null).map((t) => ({
+      name: String(t["name"] ?? ""),
+      agent: String(t["agent"] ?? ""),
+      prompt: typeof t["prompt"] === "string" ? t["prompt"] : void 0,
+      model: typeof t["model"] === "string" ? t["model"] : void 0
+    }));
   }
-  return result;
+  return fallback ?? [];
 }
+var teamStrategy = {
+  type: "team",
+  validate(node, nodeId) {
+    const errors = [];
+    const teammates = readTeammates(node.spec, node.teammates);
+    if (teammates.length === 0) errors.push(`team node "${nodeId}": no teammates`);
+    for (const t of teammates) {
+      if (!t.name) errors.push(`team node "${nodeId}": teammate missing name`);
+      if (!t.agent) errors.push(`team node "${nodeId}": teammate "${t.name}" missing agent`);
+    }
+    return { ok: errors.length === 0, errors };
+  },
+  enter(nodeId, node) {
+    const teammates = readTeammates(node.spec, node.teammates);
+    const teamInstruction = teammates.map((t) => `- Teammate "${t.name}" using agent type "${t.agent}"${t.prompt ? `: ${t.prompt}` : ""}${t.model ? ` (model: ${t.model})` : ""}`).join("\n");
+    const routesList = node.routes ? Object.entries(node.routes).map(([a, d]) => `- "${a}" \u2192 ${d}`).join("\n") : "";
+    const instruction = `<system-reminder>
+## MANDATORY NEXT STEP \u2014 AGENT TEAM
+You MUST now create an agent team for the **${nodeId}** step.
+
+Create a team with these teammates:
+${teamInstruction}
+
+Each teammate should work in parallel. After all teammates complete, synthesize their results and continue the chain.
+
+Use the TeamCreate tool to create the team with the above configuration.
+${routesList ? `
+After the team completes, route based on:
+${routesList}` : ""}
+${node.decide ? `
+Routing rules:
+${node.decide}` : ""}
+DO NOT ask user. DO NOT skip. Wait for all teammates to finish before proceeding.
+</system-reminder>`;
+    return {
+      instruction,
+      awaiting: { kind: "subagent", agentType: nodeId, nodeId }
+    };
+  }
+};
+
+// src/core/strategies/mcp.ts
+function buildToolName(spec) {
+  const server = spec?.["server"];
+  const tool = spec?.["tool"];
+  if (typeof server !== "string" || typeof tool !== "string") return null;
+  if (!server || !tool) return null;
+  return `mcp__${server}__${tool}`;
+}
+var mcpStrategy = {
+  type: "mcp",
+  validate(node, nodeId) {
+    const errors = [];
+    const server = node.spec?.["server"];
+    const tool = node.spec?.["tool"];
+    if (typeof server !== "string" || !server) errors.push(`mcp node "${nodeId}": missing spec.server`);
+    if (typeof tool !== "string" || !tool) errors.push(`mcp node "${nodeId}": missing spec.tool`);
+    if (typeof server === "string" && !/^[a-z0-9_-]+$/.test(server)) errors.push(`mcp node "${nodeId}": invalid server name "${server}"`);
+    if (typeof tool === "string" && !/^[a-z0-9_-]+$/.test(tool)) errors.push(`mcp node "${nodeId}": invalid tool name "${tool}"`);
+    return { ok: errors.length === 0, errors };
+  },
+  enter(nodeId, node) {
+    const toolName = buildToolName(node.spec);
+    if (!toolName) {
+      return { instruction: `Chain error: mcp node "${nodeId}" has invalid spec.` };
+    }
+    const inputJson = JSON.stringify(node.spec?.["input"] ?? {}, null, 2);
+    const instruction = `<system-reminder>
+## MANDATORY NEXT STEP \u2014 MCP TOOL CALL
+Chain node **${nodeId}** requires calling MCP tool: \`${toolName}\`
+
+Call the tool with this input:
+\`\`\`json
+${inputJson}
+\`\`\`
+
+The chain will advance automatically when the tool returns.
+DO NOT ask user. DO NOT skip. Call the tool now.
+</system-reminder>`;
+    return {
+      instruction,
+      awaiting: { kind: "mcp", toolName, nodeId }
+    };
+  },
+  onComplete(_nodeId, node, ctx) {
+    const payload = ctx.eventPayload;
+    const goto = node.routing?.next ?? node.next ?? null;
+    return { outputs: payload?.toolResponse ?? null, goto };
+  }
+};
+
+// src/core/strategies/tool.ts
+var ALLOWED_TOOLS = /* @__PURE__ */ new Set(["Bash", "Read", "Write", "Edit", "Grep", "Glob"]);
+var toolStrategy = {
+  type: "tool",
+  validate(node, nodeId) {
+    const errors = [];
+    const tool = node.spec?.["tool"];
+    if (typeof tool !== "string" || !tool) {
+      errors.push(`tool node "${nodeId}": missing spec.tool`);
+    } else if (!ALLOWED_TOOLS.has(tool)) {
+      errors.push(`tool node "${nodeId}": tool "${tool}" not in allowlist [${[...ALLOWED_TOOLS].join(", ")}]`);
+    }
+    return { ok: errors.length === 0, errors };
+  },
+  enter(nodeId, node) {
+    const tool = String(node.spec?.["tool"] ?? "");
+    const params = JSON.stringify(node.spec?.["params"] ?? {}, null, 2);
+    const instruction = `<system-reminder>
+## MANDATORY NEXT STEP \u2014 TOOL CALL
+Chain node **${nodeId}** requires calling tool: \`${tool}\`
+
+Call \`${tool}\` with:
+\`\`\`json
+${params}
+\`\`\`
+
+The chain will advance automatically when the tool returns.
+DO NOT ask user. DO NOT skip.
+</system-reminder>`;
+    return {
+      instruction,
+      awaiting: { kind: "tool", toolName: tool, nodeId }
+    };
+  },
+  onComplete(_nodeId, node, ctx) {
+    const payload = ctx.eventPayload;
+    const goto = node.routing?.next ?? node.next ?? null;
+    return { outputs: payload?.toolResponse ?? null, goto };
+  }
+};
+
+// src/core/strategies/transform.ts
+var import_vm = require("vm");
+var DEFAULT_TIMEOUT_MS = 1e3;
+function evalExpr(expr, scope) {
+  return (0, import_vm.runInNewContext)(`(${expr})`, { ...scope }, { timeout: DEFAULT_TIMEOUT_MS });
+}
+var transformStrategy = {
+  type: "transform",
+  validate(node, nodeId) {
+    const errors = [];
+    const fn = node.spec?.["fn"];
+    if (typeof fn !== "string" || !fn) errors.push(`transform node "${nodeId}": missing spec.fn (string expression)`);
+    return { ok: errors.length === 0, errors };
+  },
+  enter(_nodeId, node, ctx) {
+    const fn = String(node.spec?.["fn"] ?? "");
+    const state = getState(ctx.sessionId);
+    const outputs = state?.outputs ?? {};
+    const inputs = {};
+    if (node.inputs) {
+      for (const [key, binding] of Object.entries(node.inputs)) {
+        if (binding.from) {
+          const path = binding.from.split(".");
+          let cur = outputs;
+          for (const p of path) {
+            if (cur && typeof cur === "object") cur = cur[p];
+            else {
+              cur = void 0;
+              break;
+            }
+          }
+          inputs[key] = cur;
+        } else if ("value" in binding) {
+          inputs[key] = binding.value;
+        }
+      }
+    }
+    let result = null;
+    try {
+      result = evalExpr(fn, { state: outputs, inputs });
+    } catch (e) {
+      return {
+        syncOutputs: { error: e.message },
+        syncGoto: node.routing?.on_fail ?? node.on_fail ?? null
+      };
+    }
+    return {
+      syncOutputs: result,
+      syncGoto: node.routing?.next ?? node.next ?? null
+    };
+  }
+};
+
+// src/core/strategies/registry.ts
+var registry = /* @__PURE__ */ new Map();
+function register(s) {
+  registry.set(s.type, s);
+}
+register(agentStrategy);
+register(teamStrategy);
+register(mcpStrategy);
+register(toolStrategy);
+register(transformStrategy);
+function getStrategy(type) {
+  return registry.get(type);
+}
+
+// src/core/runtime.ts
+function loadChain(cwd) {
+  const content = readActiveChainContent(cwd);
+  if (!content) return null;
+  return parseChainYaml(content);
+}
+function getNode(chain, nodeId) {
+  return chain.flow[nodeId] ?? null;
+}
+function saveOutput(sessionId, nodeId, value) {
+  const state = getState(sessionId);
+  const outputs = { ...state?.outputs ?? {}, [nodeId]: value };
+  updateState(sessionId, { outputs });
+}
+function setAwaiting(sessionId, token) {
+  updateState(sessionId, { awaiting: token });
+}
+function advanceFromMcp(cwd, sessionId, nodeId, toolName, toolResponse) {
+  const chain = loadChain(cwd);
+  if (!chain) return { nextNodeId: null };
+  const node = getNode(chain, nodeId);
+  if (!node) return { nextNodeId: null };
+  const strategy = getStrategy("mcp");
+  if (!strategy?.onComplete) return { nextNodeId: null };
+  const result = strategy.onComplete(nodeId, node, { chain, sessionId, cwd, eventPayload: { toolName, toolResponse } });
+  if (result.outputs !== void 0) saveOutput(sessionId, nodeId, result.outputs);
+  return advanceTo(cwd, sessionId, result.goto ?? null);
+}
+function advanceFromTool(cwd, sessionId, nodeId, toolName, toolResponse) {
+  const chain = loadChain(cwd);
+  if (!chain) return { nextNodeId: null };
+  const node = getNode(chain, nodeId);
+  if (!node) return { nextNodeId: null };
+  const strategy = getStrategy("tool");
+  if (!strategy?.onComplete) return { nextNodeId: null };
+  const result = strategy.onComplete(nodeId, node, { chain, sessionId, cwd, eventPayload: { toolName, toolResponse } });
+  if (result.outputs !== void 0) saveOutput(sessionId, nodeId, result.outputs);
+  return advanceTo(cwd, sessionId, result.goto ?? null);
+}
+function advanceTo(cwd, sessionId, nextNodeId) {
+  if (!nextNodeId || nextNodeId === "END") return { nextNodeId: null };
+  const chain = loadChain(cwd);
+  if (!chain) return { nextNodeId: null };
+  const next = getNode(chain, nextNodeId);
+  if (!next) return { nextNodeId: null };
+  const type = next.type ?? "agent";
+  const strategy = getStrategy(type);
+  if (!strategy) return { nextNodeId: null };
+  const result = strategy.enter(nextNodeId, next, { chain, sessionId, cwd });
+  if (result.awaiting) setAwaiting(sessionId, result.awaiting);
+  else setAwaiting(sessionId, void 0);
+  if (type === "transform" && result.syncOutputs !== void 0) {
+    saveOutput(sessionId, nextNodeId, result.syncOutputs);
+    return advanceTo(cwd, sessionId, result.syncGoto ?? null);
+  }
+  return { nextNodeId, instruction: result.instruction };
+}
+
+// src/hooks/post-tool-use.ts
+var LOG_FILE = (0, import_path5.join)(TMP_DIR, "post-tool-use.log");
 function main() {
   try {
     const stdin = (0, import_fs4.readFileSync)(0, "utf-8").trim();
     if (!stdin) process.exit(0);
     const p = JSON.parse(stdin);
-    const type = p.agent_type ?? p.subagent_type ?? p.tool_input?.subagent_type ?? p.metadata?.agent ?? p.agentName ?? p.agent_name ?? p.agent ?? "";
-    const id = p.agent_id ?? p.agentId ?? "";
-    const transcriptPath = p.transcript_path ?? "";
+    const toolName = p.tool_name ?? "";
     const sessionId = p.session_id ?? "";
-    log(LOG_FILE, `START ${type}:${id}`);
-    logEvent({ event: "start", agent: type, id, session: sessionId });
-    if (sessionId) {
-      const currentState = getState(sessionId);
-      if (currentState?.currentAgent && currentState.currentAgent === type.toLowerCase()) {
-        updateState(sessionId, { currentAgent: void 0, chainBlockCount: 0, allowedAgents: [] });
-      }
-    }
-    const agentConfig = getAgentConfig(type);
-    const chainNext = agentConfig.chainNext;
-    const instructions = agentConfig.instructions ?? "";
-    let context = `
-## Context
-- Main Session: ${transcriptPath}
-- Session ID: ${sessionId}
-- You can read the main transcript to understand parent context if needed.
-`;
-    if (chainNext) {
-      context += `
-## Chain Workflow
-After completing this task, the next agent should be: **${chainNext}**
-Ensure your output is complete enough for the next agent to proceed.
-`;
-    }
-    if (instructions) {
-      context += instructions;
-    }
-    if (type.toLowerCase() === "git-manager") {
-      context += `
-## Phase Reporting (REQUIRED)
-After committing, check for a plan file in the project's plans/ directory.
-If found, report phase status in your output:
-
-### Phase Status
-- **Committed**: [Phase name/number you just committed]
-- **Remaining**: [List remaining phases, or "None" if all complete]
-
-This helps the workflow decide if more implementation is needed.
-`;
-    }
-    const state = getState(sessionId);
-    if (state?.activeTeam) {
-      const team = state.activeTeam;
-      const myTeammate = team.teammates.find((t) => t.agent === type.toLowerCase());
-      if (myTeammate) {
-        context += `
-## Team Context
-You are part of the **${team.name}** team.
-Your role: **${myTeammate.name}**
-Other teammates: ${team.teammates.filter((t) => t.name !== myTeammate.name).map((t) => t.name).join(", ")}
-
-Focus on your specific review area. Your output will be combined with other teammates' results.
-`;
-      }
-    }
-    if (state?.sharedContext) {
-      context += `
-## Shared Context from Previous Agents
-${JSON.stringify(state.sharedContext, null, 2)}
-`;
-    }
     const cwd = p.cwd ?? process.cwd();
-    try {
-      const chainContent = readActiveChainContent(cwd);
-      if (chainContent) {
-        const config = parseFlowContext(chainContent);
-        const nodeContext = config[type.toLowerCase()];
-        if (nodeContext) {
-          context += `
-## Chain Instructions
-${nodeContext}
-`;
-          log(LOG_FILE, `[CONTEXT] Injected chain context for ${type} (${nodeContext.length} chars)`);
-        }
-      }
-    } catch (e) {
-      log(LOG_FILE, `[CONTEXT] Error: ${e.message}`);
+    if (!sessionId || !toolName) process.exit(0);
+    if (toolName === "Task") process.exit(0);
+    const state = getState(sessionId);
+    if (!state?.awaiting) process.exit(0);
+    const awaiting = state.awaiting;
+    const isMcp = toolName.startsWith("mcp__");
+    const matches = isMcp ? awaiting.kind === "mcp" && awaiting.toolName === toolName : awaiting.kind === "tool" && awaiting.toolName === toolName;
+    if (!matches) {
+      log(LOG_FILE, `tool=${toolName} awaiting=${awaiting.kind}:${awaiting.kind === "subagent" ? awaiting.agentType : awaiting.toolName} \u2192 no match`);
+      process.exit(0);
     }
-    console.log(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "SubagentStart",
-        additionalContext: `<system-reminder>
-${context.trim()}
-</system-reminder>`
-      }
-    }));
+    log(LOG_FILE, `tool=${toolName} matches awaiting node=${awaiting.nodeId} \u2192 advance`);
+    logEvent({ event: "mcp-advance", tool: toolName, node: awaiting.nodeId, session: sessionId });
+    const decision = isMcp ? advanceFromMcp(cwd, sessionId, awaiting.nodeId, toolName, p.tool_response ?? {}) : advanceFromTool(cwd, sessionId, awaiting.nodeId, toolName, p.tool_response ?? {});
+    updateState(sessionId, { awaiting: void 0 });
+    if (decision?.instruction) {
+      console.log(JSON.stringify({
+        continue: true,
+        hookSpecificOutput: {
+          hookEventName: "PostToolUse",
+          additionalContext: decision.instruction
+        }
+      }));
+      process.exit(2);
+    }
     process.exit(0);
   } catch (e) {
-    console.error(`[subagent-start] ${e.message}`);
+    log(LOG_FILE, `[ERROR] ${e.message}`);
     process.exit(0);
   }
 }

@@ -4,6 +4,11 @@ import { TMP_DIR } from './paths.js';
 
 const STATE_DIR = join(TMP_DIR, 'chain-state');
 
+export type AwaitToken =
+  | { kind: 'subagent'; agentType: string; nodeId: string }
+  | { kind: 'mcp'; toolName: string; nodeId: string }
+  | { kind: 'tool'; toolName: string; nodeId: string };
+
 interface ChainState {
   previousAgents: Array<{ type: string; outputSummary?: string; outputPath?: string }>;
   currentAgent?: string;
@@ -20,6 +25,8 @@ interface ChainState {
   };
   chainBlockCount?: number;
   allowedAgents?: string[];
+  awaiting?: AwaitToken;
+  outputs?: Record<string, unknown>;
 }
 
 function statePath(sessionId: string): string {
@@ -53,6 +60,17 @@ function sanitize(raw: unknown): ChainState | null {
   if (Array.isArray(raw.allowedAgents) && raw.allowedAgents.every((a) => typeof a === 'string')) {
     out.allowedAgents = raw.allowedAgents as string[];
   }
+  if (isPlainObject(raw.awaiting)) {
+    const a = raw.awaiting as Record<string, unknown>;
+    if ((a.kind === 'subagent' || a.kind === 'mcp' || a.kind === 'tool') && typeof a.nodeId === 'string') {
+      if (a.kind === 'subagent' && typeof a.agentType === 'string') {
+        out.awaiting = { kind: 'subagent', agentType: a.agentType, nodeId: a.nodeId };
+      } else if ((a.kind === 'mcp' || a.kind === 'tool') && typeof a.toolName === 'string') {
+        out.awaiting = { kind: a.kind, toolName: a.toolName, nodeId: a.nodeId };
+      }
+    }
+  }
+  if (isPlainObject(raw.outputs)) out.outputs = raw.outputs;
   return out;
 }
 

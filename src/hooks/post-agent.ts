@@ -6,29 +6,11 @@ import { getState, updateState } from '../utils/state.js';
 import { log, logEvent } from '../utils/logger.js';
 import { TMP_DIR } from '../utils/paths.js';
 import { readActiveChainContent } from '../utils/chain-resolver.js';
+import { parseChainYaml, type FlowEntry } from '../core/config.js';
 
 const LOG_FILE = join(TMP_DIR, 'agent-output.log');
 const PLANS_DIR = join(homedir(), '.claude', 'plans');
 const MAX_AGENT_LOOPS = 0;
-
-
-interface TeammateConfig {
-  name: string;
-  agent: string;
-  prompt?: string;
-  model?: string;
-}
-
-interface FlowEntry {
-  type?: 'agent' | 'team';
-  teammates?: TeammateConfig[];
-  routes?: Record<string, string>;
-  decide?: string;
-  next?: string | null;
-  on_issues?: string;
-  on_fail?: string;
-  reset_counters?: string;
-}
 
 interface ChainConfig {
   hooks?: Record<string, string[]>;
@@ -42,153 +24,15 @@ function loadChainConfig(cwd: string): ChainConfig {
   try {
     const content = readActiveChainContent(cwd);
     if (!content) return { saveOutput: [...DEFAULT_SAVE_AGENTS] };
-    return parseSimpleYaml(content);
+    const chain = parseChainYaml(content);
+    return {
+      hooks: chain.hooks,
+      flow: chain.flow,
+      saveOutput: chain.saveOutput && chain.saveOutput.length > 0 ? chain.saveOutput : [...DEFAULT_SAVE_AGENTS],
+    };
   } catch {
     return { saveOutput: [...DEFAULT_SAVE_AGENTS] };
   }
-}
-
-function parseSimpleYaml(content: string): ChainConfig {
-  const config: ChainConfig = { flow: {}, saveOutput: [...DEFAULT_SAVE_AGENTS] };
-  let currentSection = '';
-  let currentAgent = '';
-  let currentSubSection = '';
-  let multilineKey = '';
-  let multilineValue = '';
-  let multilineIndent = 0;
-  let currentTeammate: TeammateConfig | null = null;
-
-  const lines = content.split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    if (multilineKey && currentAgent) {
-      const lineIndent = line.search(/\S|$/);
-      if (lineIndent > multilineIndent || line.trim() === '') {
-        multilineValue += (multilineValue ? '\n' : '') + line.trim();
-        continue;
-      } else {
-        (config.flow![currentAgent] as Record<string, string>)[multilineKey] = multilineValue;
-        multilineKey = '';
-        multilineValue = '';
-        multilineIndent = 0;
-      }
-    }
-
-    if (line.trim().startsWith('#') || !line.trim()) continue;
-
-    const sectionMatch = line.match(/^(\w+):$/);
-    if (sectionMatch) {
-      currentSection = sectionMatch[1];
-      currentAgent = '';
-      currentSubSection = '';
-      currentTeammate = null;
-      continue;
-    }
-
-    if (currentSection === 'saveOutput') {
-      const itemMatch = line.match(/^\s+-\s+(.+)/);
-      if (itemMatch) {
-        if (!config.saveOutput) config.saveOutput = [];
-        config.saveOutput.push(itemMatch[1].trim().toLowerCase());
-      }
-      continue;
-    }
-
-    if (currentSection === 'flow') {
-      const agentMatch = line.match(/^  (\S+):$/);
-      if (agentMatch) {
-        if (currentTeammate && currentSubSection === 'teammates') {
-          config.flow![currentAgent].teammates!.push(currentTeammate);
-        }
-        currentAgent = agentMatch[1];
-        currentSubSection = '';
-        currentTeammate = null;
-        config.flow![currentAgent] = {};
-        continue;
-      }
-
-      const subSectionMatch = line.match(/^    (routes|teammates):$/);
-      if (subSectionMatch && currentAgent) {
-        if (currentTeammate && currentSubSection === 'teammates') {
-          config.flow![currentAgent].teammates!.push(currentTeammate);
-        }
-        currentSubSection = subSectionMatch[1];
-        currentTeammate = null;
-        if (currentSubSection === 'routes') {
-          config.flow![currentAgent].routes = {};
-        } else if (currentSubSection === 'teammates') {
-          config.flow![currentAgent].teammates = [];
-        }
-        continue;
-      }
-
-      if (currentSubSection === 'teammates' && currentAgent) {
-        const arrayItemMatch = line.match(/^      - (\w+):\s*"?([^"]*)"?$/);
-        if (arrayItemMatch) {
-          if (currentTeammate) {
-            config.flow![currentAgent].teammates!.push(currentTeammate);
-          }
-          currentTeammate = { name: '', agent: '' };
-          const [, key, value] = arrayItemMatch;
-          (currentTeammate as unknown as Record<string, string>)[key] = value.trim();
-          continue;
-        }
-
-        const teammatePropMatch = line.match(/^        (\w+):\s*"?([^"]*)"?$/);
-        if (teammatePropMatch && currentTeammate) {
-          const [, key, value] = teammatePropMatch;
-          (currentTeammate as unknown as Record<string, string>)[key] = value.trim();
-          continue;
-        }
-
-        if (currentTeammate && !line.match(/^      /)) {
-          config.flow![currentAgent].teammates!.push(currentTeammate);
-          currentTeammate = null;
-          currentSubSection = '';
-        }
-      }
-
-      if (currentSubSection === 'routes' && currentAgent) {
-        const routeMatch = line.match(/^      (\S+):\s*"?([^"]*)"?$/);
-        if (routeMatch) {
-          const [, routeAgent, description] = routeMatch;
-          config.flow![currentAgent].routes![routeAgent] = description.trim();
-          continue;
-        }
-      }
-
-      const multilineMatch = line.match(/^    (\w+):\s*\|$/);
-      if (multilineMatch && currentAgent) {
-        if (currentSubSection === 'teammates' && currentTeammate) {
-          config.flow![currentAgent].teammates!.push(currentTeammate);
-          currentTeammate = null;
-        }
-        currentSubSection = '';
-        multilineKey = multilineMatch[1];
-        multilineValue = '';
-        multilineIndent = 4;
-        continue;
-      }
-
-      const propMatch = line.match(/^    (\w+):\s*(.+)/);
-      if (propMatch && currentAgent && !currentSubSection) {
-        const [, key, value] = propMatch;
-        const cleanValue = value.trim() === 'null' ? null : value.trim();
-        (config.flow![currentAgent] as Record<string, string | null>)[key] = cleanValue;
-      }
-    }
-  }
-
-  if (multilineKey && currentAgent && multilineValue) {
-    (config.flow![currentAgent] as Record<string, string>)[multilineKey] = multilineValue;
-  }
-
-  if (currentTeammate && currentAgent && currentSubSection === 'teammates') {
-    config.flow![currentAgent].teammates!.push(currentTeammate);
-  }
-
-  return config;
 }
 
 function getNextAgent(
@@ -570,7 +414,7 @@ function main(): void {
     }
 
     const currentFlow = config.flow?.[type.toLowerCase()];
-    if (next && sessionId && currentFlow?.reset_counters === 'true') {
+    if (next && sessionId && currentFlow?.reset_counters === true) {
       const state = (getState(sessionId) ?? { previousAgents: [] }) as ChainState;
       state.previousAgents = (state.previousAgents ?? []).filter(a => a.type !== next);
       updateState(sessionId, state as Parameters<typeof updateState>[1]);
@@ -697,7 +541,7 @@ DO NOT ask user. DO NOT skip. DO NOT background agents.
     }
 
     const flowNode = config.flow![type.toLowerCase()] as Record<string, unknown> | undefined;
-    if (flowNode?.saveOutput === 'true' && text && cwd) {
+    if (flowNode?.saveOutput === true && text && cwd) {
       try {
         const outputDir = join(cwd, '.claude', 'outputs', type.toLowerCase());
         if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });

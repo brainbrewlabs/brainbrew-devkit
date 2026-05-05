@@ -28,6 +28,7 @@ export default defineConfig([
     entry: {
       'runner': 'src/hooks/runner.ts',
       'post-agent': 'src/hooks/post-agent.ts',
+      'post-tool-use': 'src/hooks/post-tool-use.ts',
       'subagent-start': 'src/hooks/subagent-start.ts',
       'subagent-stop': 'src/hooks/subagent-stop.ts',
       'session-start': 'src/hooks/session-start.ts',

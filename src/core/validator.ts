@@ -2,6 +2,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { AGENTS_DIR, SKILLS_DIR } from '../utils/paths.js';
 import type { ChainDef } from './config.js';
+import { getStrategy, listStrategies } from './strategies/registry.js';
 
 interface ValidationResult {
   pass: boolean;
@@ -115,11 +116,30 @@ export function validateChain(chain: ChainDef): ValidationResult {
       : 'All skills exist',
   });
 
+  const strategyErrors: string[] = [];
+  for (const [nodeId, entry] of Object.entries(chain.flow)) {
+    const type = entry.type ?? 'agent';
+    const strategy = getStrategy(type);
+    if (!strategy) {
+      strategyErrors.push(`Node "${nodeId}": unknown type "${type}" (known: ${listStrategies().join(', ')})`);
+      continue;
+    }
+    const r = strategy.validate(entry, nodeId, chain);
+    if (!r.ok) strategyErrors.push(...r.errors);
+  }
+  checks.push({
+    name: 'Strategy validation',
+    status: strategyErrors.length ? 'fail' : 'pass',
+    message: strategyErrors.length
+      ? strategyErrors.join('; ')
+      : `All ${Object.keys(chain.flow).length} nodes pass strategy validation`,
+  });
+
   const pass = checks.every(c => c.status !== 'fail');
   return { pass, checks };
 }
 
-function detectCycles(flow: Record<string, { next: string | null }>): string[][] {
+function detectCycles(flow: Record<string, { next?: string | null }>): string[][] {
   const cycles: string[][] = [];
   const visited = new Set<string>();
   const stack = new Set<string>();

@@ -256,8 +256,11 @@ function main(): void {
       const payload = JSON.parse(stdin);
       const sessionId = payload.session_id ?? '';
       const toolName = payload.tool_name ?? '';
+      const subagentId = payload.agent_id ?? payload.agentId ?? payload.agent_type ?? payload.subagent_type ?? '';
 
-      if (sessionId) {
+      if (subagentId && eventArg === 'PreToolUse') {
+        logToProject(cwd, `PreToolUse SKIP enforcement (subagent context: ${subagentId}) | tool=${toolName}`);
+      } else if (sessionId) {
         const state = getState(sessionId);
         if (state?.currentAgent) {
           const next = state.currentAgent;
@@ -322,6 +325,25 @@ function main(): void {
   }
 
   if (eventArg === 'PostToolUse') {
+    let toolName = '';
+    try { toolName = (JSON.parse(stdin).tool_name ?? '') as string; } catch { /* ignore */ }
+
+    if (toolName.startsWith('mcp__') || (toolName && !['Agent', 'Task', 'task'].includes(toolName))) {
+      const postToolPath = join(PLUGIN_SCRIPTS, 'post-tool-use.cjs');
+      if (existsSync(postToolPath)) {
+        try {
+          const result = runHook(postToolPath, stdin);
+          if (result.output) {
+            logToProject(cwd, `PostToolUse post-tool-use ${toolName}: ${result.output.substring(0, 200)}`);
+            console.log(result.output);
+            process.exit(result.exit2 ? 2 : 0);
+          }
+        } catch (e: unknown) {
+          logToProject(cwd, `PostToolUse post-tool-use error: ${(e as Error).message}`);
+        }
+      }
+    }
+
     const postAgentPath = join(PLUGIN_SCRIPTS, 'post-agent.cjs');
     if (existsSync(postAgentPath)) {
       try {
