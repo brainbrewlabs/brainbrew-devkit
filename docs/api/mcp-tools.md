@@ -12,7 +12,7 @@ Set up a workflow template in the current project.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| template | string | Yes | Template name: develop, devops, marketing, research, docs, support, data, moderation, review, minimal |
+| template | string | Yes | Template name. The schema's `enum` is generated at server startup from `plugin/config/templates/*.yaml` — call `template_list` for the current set. |
 
 **Example:**
 

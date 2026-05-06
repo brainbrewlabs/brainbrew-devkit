@@ -59,7 +59,6 @@ That's it. The chain handles routing, error recovery, and coordination.
 | **data** | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
 | **moderation** | 5 | content-scanner → classifier → flagger → reviewer → actioner |
 | **review** | 1 | code-reviewer → END |
-| **minimal** | 0 | empty — add your own |
 
 ## Next Steps
 

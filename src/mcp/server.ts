@@ -53,6 +53,16 @@ const server = new Server(
 
 // ─── Tool Definitions ────────────────────────────────────────────────────────
 
+function listTemplateNames(): string[] {
+  if (!existsSync(TEMPLATES_DIR)) return [];
+  return readdirSync(TEMPLATES_DIR)
+    .filter(f => f.endsWith('.yaml'))
+    .map(f => f.replace(/\.yaml$/, ''))
+    .sort();
+}
+
+const AVAILABLE_TEMPLATES = listTemplateNames();
+
 const TOOLS = [
   // ─── Workflow/Template Tools ───
   {
@@ -63,8 +73,8 @@ const TOOLS = [
       properties: {
         template: {
           type: 'string',
-          enum: ['develop', 'devops', 'marketing', 'research', 'docs', 'support', 'data', 'moderation', 'review', 'minimal'],
-          description: 'Template name to set up',
+          enum: AVAILABLE_TEMPLATES,
+          description: `Template name to set up. Available: ${AVAILABLE_TEMPLATES.join(', ')}`,
         },
       },
       required: ['template'],

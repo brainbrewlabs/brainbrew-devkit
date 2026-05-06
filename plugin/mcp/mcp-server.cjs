@@ -28789,6 +28789,11 @@ var server = new Server(
     }
   }
 );
+function listTemplateNames() {
+  if (!(0, import_fs4.existsSync)(TEMPLATES_DIR)) return [];
+  return (0, import_fs4.readdirSync)(TEMPLATES_DIR).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(/\.yaml$/, "")).sort();
+}
+var AVAILABLE_TEMPLATES = listTemplateNames();
 var TOOLS = [
   // ─── Workflow/Template Tools ───
   {
@@ -28799,8 +28804,8 @@ var TOOLS = [
       properties: {
         template: {
           type: "string",
-          enum: ["develop", "devops", "marketing", "research", "docs", "support", "data", "moderation", "review", "minimal"],
-          description: "Template name to set up"
+          enum: AVAILABLE_TEMPLATES,
+          description: `Template name to set up. Available: ${AVAILABLE_TEMPLATES.join(", ")}`
         }
       },
       required: ["template"]

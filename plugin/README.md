@@ -57,7 +57,6 @@ All functionality exposed via MCP - no CLI needed:
 | **data** | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
 | **moderation** | 5 | content-scanner → classifier → flagger → reviewer → actioner |
 | **review** | 1 | code-reviewer → END |
-| **minimal** | 0 | hooks only (add your own) |
 
 ## Memory Bus - Inter-Agent Communication
 

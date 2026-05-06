@@ -47,7 +47,7 @@ Same orchestration power. Different tradeoffs:
 | **Learning curve** | Pick template, start working | Learn framework, write code |
 | **Runs inside** | Claude Code | Standalone runtime |
 
-### 10 templates. 60+ agents. Ready to run.
+### 9 templates. 60+ agents. Ready to run.
 
 No blank-page problem. Pick a template:
 
@@ -55,7 +55,7 @@ No blank-page problem. Pick a template:
 - **devops** — scan → security → test → deploy → monitor → [rollback if alert]
 - **marketing** — research → write → edit → SEO → publish → analyze
 - **research** — gather → analyze → synthesize → report
-- And 6 more (docs, support, data, moderation, review, minimal)
+- And 5 more (docs, support, data, moderation, review)
 
 ### Declared in YAML. Your agents stay with you.
 

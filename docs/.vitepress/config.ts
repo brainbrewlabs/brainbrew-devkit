@@ -76,8 +76,7 @@ export default defineConfig({
             { text: 'support', link: '/templates/support' },
             { text: 'data', link: '/templates/data' },
             { text: 'moderation', link: '/templates/moderation' },
-            { text: 'review', link: '/templates/review' },
-            { text: 'minimal', link: '/templates/minimal' }
+            { text: 'review', link: '/templates/review' }
           ]
         }
       ],

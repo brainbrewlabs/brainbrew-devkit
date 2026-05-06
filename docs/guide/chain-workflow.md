@@ -109,12 +109,11 @@ Returns PASS or list of issues.
 
 ## Creating Custom Chains
 
-1. Start with: `mcp__brainbrew__template_bump(template: "minimal")`
+1. Create the chain file directly: `.claude/chains/{name}.yaml` with a `flow:` section
 2. Create agents: `.claude/agents/{name}.md`
-3. Create skills: `.claude/skills/{name}/SKILL.md`
-4. Edit active chain: `.claude/chains/{name}.yaml`
-5. Switch chains: `mcp__brainbrew__chain_switch(chain: "name")`
-6. Restart Claude Code session
+3. Create skills (optional): `.claude/skills/{name}/SKILL.md`
+4. Switch chains: `mcp__brainbrew__chain_switch(chain: "name")`
+5. Restart Claude Code session
 
 ## Example Chain
 

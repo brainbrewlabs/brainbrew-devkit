@@ -13,7 +13,6 @@ Pre-built agent chains for common workflows.
 | [data](/templates/data) | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
 | [moderation](/templates/moderation) | 5 | content-scanner → classifier → flagger → reviewer → actioner |
 | [review](/templates/review) | 1 | code-reviewer → END |
-| [minimal](/templates/minimal) | 0 | hooks only |
 
 ## Usage
 

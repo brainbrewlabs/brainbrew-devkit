@@ -82,7 +82,6 @@ Use templates only as a starting point to copy from.
 | **moderation** | scan → classify → flag → act |
 | **review** | code-reviewer only |
 | **skill-dev** | build new agent skills |
-| **minimal** | empty — bring your own |
 
 ## Define a chain manually
 

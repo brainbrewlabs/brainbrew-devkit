@@ -33,7 +33,6 @@ mcp__brainbrew__template_bump(template: "develop")
 | `moderation` | content-scanner → classifier → flagger → reviewer → actioner |
 | `review` | code-reviewer → END |
 | `skill-dev` | skill-finder → skill-creator → skill-reviewer (PASS = END, FIXES → skill-improver) |
-| `minimal` | hooks only (add your own) |
 
 ## Show Chain Flow
 
@@ -79,16 +78,9 @@ active: develop
 chains_dir: .claude/chains/
 ```
 
-Each chain file in `.claude/chains/` has the same format:
-```yaml
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-  SubagentStart:
-    - plugin:subagent-start.cjs
-  SubagentStop:
-    - plugin:subagent-stop.cjs
+Each chain file in `.claude/chains/` only contains a `flow:` section (and optional `saveOutput:`). Hook dispatch is handled by `runner.cjs` automatically.
 
+```yaml
 saveOutput:
   - explore
   - scout
@@ -122,7 +114,7 @@ Takes effect immediately for subsequent agent runs. Use `chain_switch` when you 
 ## Run a Chain (Recommended)
 
 ```
-mcp__brainbrew__chain_run(chain: "discovery", session_id: "{current_session_id}")
+mcp__brainbrew__chain_run(chain: "discovery")
 ```
 
 Switches to the chain, clears previous chain state, and enforces the first agent immediately. PreToolUse and Stop hooks will block until the first agent is spawned. Use `chain_run` as the preferred way to start a chain from scratch.
@@ -285,23 +277,17 @@ flow:
 
 ## Create Custom Workflow
 
-1. Start with: `mcp__brainbrew__template_bump(template: "minimal")`
+1. Create the chain file directly: `.claude/chains/{name}.yaml` with a `flow:` section
 2. Create agents: `.claude/agents/{name}.md`
-3. Create skills: `.claude/skills/{name}/SKILL.md`
-4. Edit active chain: `.claude/chains/{name}.yaml`
-5. Run chain: `mcp__brainbrew__chain_run(chain: "name", session_id: "{current_session_id}")` (recommended) or `mcp__brainbrew__chain_switch(chain: "name")` to switch without enforcement
-6. Restart Claude Code session
+3. Create skills (optional): `.claude/skills/{name}/SKILL.md`
+4. Run chain: `mcp__brainbrew__chain_run(chain: "name")` (recommended) or `mcp__brainbrew__chain_switch(chain: "name")` to switch without enforcement
+5. Restart Claude Code session
 
-### Hook System (2 Layers)
+### Hook System
 
-Hooks run in order through 2 layers:
+`runner.cjs` dispatches built-in chain scripts (`post-agent`, `subagent-start`, `subagent-stop`, `post-tool-use`) inline for the relevant events. Chain files do **not** carry a `hooks:` section.
 
-| Layer | Source | When |
-|-------|--------|------|
-| 1. User hooks | `.claude/hooks.yaml` | If file exists |
-| 2. Chain hooks | `.claude/chains/{name}.yaml` → `hooks:` section | Only when chain is active |
-
-**User hooks** — create `.claude/hooks.yaml` to add hooks at any lifecycle stage:
+For user customization, create `.claude/hooks.yaml` to register additional scripts that run after the built-ins:
 
 ```yaml
 PreToolUse:
@@ -342,18 +328,6 @@ Return `{"decision": "block", "reason": "..."}` to block, or exit 0 to pass thro
 | `plugin:safety-guard.cjs` | Block dangerous commands (rm -rf, git push --force, DROP TABLE, etc.) |
 | `plugin:session-start.cjs` | Session initialization and context setup |
 | `plugin:session-end.cjs` | Session cleanup |
-
-**Chain hooks** — defined inside chain files (`.claude/chains/{name}.yaml`), only run when that chain is active:
-
-```yaml
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-  SubagentStart:
-    - plugin:subagent-start.cjs
-  SubagentStop:
-    - plugin:subagent-stop.cjs
-```
 
 ### Script Path Resolution
 
