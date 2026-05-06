@@ -1,13 +1,38 @@
 # Introduction
 
-**Agent pipelines that fix themselves.**
+**Self-correcting agent chains for Claude Code.**
 
-The pipeline layer Claude Code was missing. Self-correcting agent chains with automatic routing, retry, and coordination — running on your existing Claude Code subscription.
+A chain of agents takes turns. One plans, one codes, one reviews, one tests, one commits. If an agent fails, another agent fixes it and the chain retries — automatically.
+
+You watch. Approve the PR. Done.
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[Agent runs] --> B[PostToolUse hook]
+    B --> C[Read chain<br/>decide + routes]
+    C --> D{{Haiku picks<br/>next agent}}
+    D --> E[MANDATORY<br/>NEXT STEP]
+    E --> F[PreToolUse hook<br/>injects prev output]
+    F --> A
+    D -- route: END --> G([Done])
+```
+
+That's the whole engine. Each lap of the loop = one agent step.
+
+- **You** define the chain (`flow:` in YAML — agents and their routes).
+- **Hooks** fire automatically — no glue code.
+- **Haiku** reads the agent's output against the `decide:` prompt and picks the next route.
+- **Context** carries forward — previous agent's full output is injected into the next agent's prompt.
+- **Failure** is just another route — point it at a `debugger` agent and the chain self-corrects.
+
+## A run, end-to-end
 
 ```
 /code implement login feature
 
-[Pipeline runs automatically — you don't touch anything]
+[Chain runs automatically — you don't touch anything]
 → planner: creates plan
 → plan-reviewer: approves ✓
 → implementer: writes code

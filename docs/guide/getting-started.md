@@ -4,9 +4,14 @@ This guide will help you get up and running with Brainbrew Devkit in minutes.
 
 ## What is Brainbrew?
 
-Brainbrew Devkit adds an orchestration layer to Claude Code — self-correcting agent pipelines with automatic routing, retry, and coordination.
+**Self-correcting agent chains for Claude Code.** A chain of agents takes turns. One plans, one codes, one reviews, one tests, one commits. If an agent fails, another fixes it and the chain retries — automatically.
 
-Instead of manually deciding what agent to run next, Brainbrew uses AI-powered routing (via Haiku) to analyze output and pick the appropriate next step.
+Instead of manually deciding what agent to run next, Brainbrew uses AI-powered routing (via Haiku) to analyze each agent's output and pick the appropriate next step.
+
+## Prerequisites
+
+- [Claude Code](https://docs.claude.com/en/docs/claude-code)
+- Node.js 18+
 
 ## Quick Setup
 
@@ -17,24 +22,31 @@ Instead of manually deciding what agent to run next, Brainbrew uses AI-powered r
 /plugin install brainbrew-devkit
 ```
 
+After installation, **restart Claude Code** for hooks, agents, and the chain config to take effect.
+
 ### 2. Build a Chain (recommended)
 
-The included templates are **examples, not best practice**. Every project has its own workflow — ask **chain-builder** to design one that fits:
+Templates are **reference examples, not best practice**. Every project is different — your real workflow needs its own chain. Just describe it:
 
 ```
 "Build me a chain for this project"
 "I need: design review → implement → security scan → deploy"
 ```
 
-Need a specific capability? Ask **skill-finder** — it searches Vercel Skills, GitHub, and Anthropic's official skills, then installs a match.
+The **chain-builder** agent reads your codebase, asks a few questions, and writes a chain that fits.
 
-Or start from a template:
+Need a specific capability? Ask **skill-finder** — it searches Vercel Skills, GitHub, and Anthropic's official skills, then installs a match:
+
+```
+"Find a skill for writing tests"
+"Install a skill for database migrations"
+```
+
+Or start from a template (use only as a copy-from starting point):
 
 ```
 "Set up a development workflow"
 ```
-
-This installs the `develop` template with 22 agents and a full chain flow.
 
 ### 3. Start Working
 

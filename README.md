@@ -46,6 +46,23 @@ That's the whole engine. Each lap of the loop = one agent step.
 
 The chain handles routing, retries, and coordination.
 
+### opencode users
+
+brainbrew-devkit also runs under [opencode](https://opencode.ai) via the [oh-my-opencode (OHO)](https://github.com/code-yeongyu/oh-my-opencode) plugin.
+
+> **Prerequisite:** you must install the plugin in **Claude Code** first (steps above). opencode has no plugin marketplace — OHO discovers brainbrew-devkit from `~/.claude/plugins/` after Claude Code installs it.
+
+Then, in addition:
+
+1. Add OHO to your opencode config (`~/.config/opencode/opencode.json`):
+   ```json
+   { "plugin": ["oh-my-openagent@latest"] }
+   ```
+2. Run `/brainbrew-devkit:init` — this calls the `init` MCP tool which writes hook entries to `~/.claude/settings.json` (OHO only dispatches hooks declared there, not from plugin manifests).
+3. Restart opencode.
+
+Claude Code reads hooks directly from the plugin manifest, so step 2 is **only** required for opencode. See [docs/guide/installation.md](docs/guide/installation.md#opencode-support) for details.
+
 ## Build your own chain (recommended)
 
 Templates are **reference examples, not best practice**. Every project is different — your real workflow needs its own chain.
@@ -117,4 +134,4 @@ Each agent is a markdown file in `.claude/agents/`. Chains live in your repo —
 ## More
 
 - [Full docs](docs/) — every knob and dial
-- [opencode](docs/guide/installation.md#opencode-support) — supported; run `/brainbrew-devkit:init` after install
+- [opencode setup](docs/guide/installation.md#opencode-support) — detailed setup guide

@@ -37,6 +37,25 @@ After bumping a template, restart your Claude Code session for the new hooks, ag
 
 That's it. The chain handles routing, error recovery, and coordination.
 
+## opencode users
+
+brainbrew-devkit also runs under [opencode](https://opencode.ai) via the [oh-my-opencode (OHO)](https://github.com/code-yeongyu/oh-my-opencode) plugin.
+
+::: warning Prerequisite
+Install the plugin in **Claude Code** first. opencode has no plugin marketplace — OHO discovers brainbrew-devkit from `~/.claude/plugins/` after Claude Code installs it.
+:::
+
+After installing in Claude Code:
+
+1. Add OHO to `~/.config/opencode/opencode.json`:
+   ```json
+   { "plugin": ["oh-my-openagent@latest"] }
+   ```
+2. Run `/brainbrew-devkit:init` to write hook entries to `~/.claude/settings.json` (OHO only dispatches hooks declared there, not from plugin manifests).
+3. Restart opencode.
+
+Claude Code reads hooks directly from the plugin manifest — step 2 is **only** required for opencode. See [Installation](/guide/installation#opencode-support) for the full guide.
+
 ## Natural Language Commands
 
 ```
@@ -48,17 +67,18 @@ That's it. The chain handles routing, error recovery, and coordination.
 
 ## Available Templates
 
-| Template | Agents | Chain |
-|----------|--------|-------|
-| **develop** | 22 | planner → plan-reviewer → implementer → **parallel-review** (team) → tester → git-manager |
-| **devops** | 10 | code-scanner → security-auditor → test-runner → deployer → monitor |
-| **marketing** | 6 | researcher → content-writer → editor → seo-optimizer → publisher → analyzer |
-| **research** | 5 | topic-researcher → source-gatherer → analyzer → synthesizer → report-writer |
-| **docs** | 5 | code-scanner → doc-generator → doc-reviewer → formatter → publisher |
-| **support** | 5 | ticket-classifier → router → knowledge-searcher → response-drafter → reviewer |
-| **data** | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
-| **moderation** | 5 | content-scanner → classifier → flagger → reviewer → actioner |
-| **review** | 1 | code-reviewer → END |
+| Template | Chain |
+|----------|-------|
+| **develop** | plan → code → review → test → commit |
+| **devops** | scan → secure → test → deploy |
+| **marketing** | research → write → edit → publish |
+| **research** | gather → analyze → report |
+| **docs** | scan code → write → review |
+| **support** | classify → answer → review |
+| **data** | collect → clean → chart → report |
+| **moderation** | scan → classify → flag → act |
+| **review** | code-reviewer only |
+| **skill-dev** | build new agent skills |
 
 ## Next Steps
 
