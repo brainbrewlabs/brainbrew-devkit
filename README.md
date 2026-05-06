@@ -270,14 +270,6 @@ Just ask:
 Or edit `.claude/chain-config.yaml`:
 
 ```yaml
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-  SubagentStart:
-    - plugin:subagent-start.cjs
-  SubagentStop:
-    - plugin:subagent-stop.cjs
-
 flow:
   # Your custom chain
   researcher:
@@ -303,74 +295,6 @@ flow:
   publisher:
     routes:
       END: "Published"
-```
-
-### Custom Hook Scripts
-
-You can inject your own hook scripts alongside the 3 built-in ones (`post-agent`, `subagent-start`, `subagent-stop`). Place scripts in `.claude/hooks/` and register them in `chain-config.yaml`:
-
-```yaml
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs        # built-in: chain routing
-    - ./my-post-validator.js       # your custom script
-  SubagentStart:
-    - plugin:subagent-start.cjs    # built-in: context injection
-    - ./inject-env-context.js      # your custom script
-  SubagentStop:
-    - plugin:subagent-stop.cjs     # built-in: output verification
-  SessionEnd:
-    - ./cleanup.js                 # your custom cleanup
-```
-
-**Script path resolution:**
-
-| Prefix | Resolves to | Example |
-|--------|-------------|---------|
-| `plugin:` | Plugin's built-in scripts | `plugin:post-agent.cjs` |
-| `./` | `{cwd}/.claude/hooks/` | `./my-hook.js` |
-| `/absolute` | Absolute path | `/usr/local/hooks/lint.js` |
-
-**Script contract:**
-
-Your script receives the hook event payload via **stdin** (JSON) and communicates back via **stdout** + **exit code**:
-
-| Exit code | stdout | Effect |
-|-----------|--------|--------|
-| `0` | _(empty)_ | No-op |
-| `0` | `{"decision": "block", "reason": "..."}` | Block the tool use |
-| `2` | JSON with `hookSpecificOutput` | Inject context into Claude's conversation |
-| `0` | Any other text | Pass-through output |
-
-Example — a custom script that injects context:
-
-```js
-// .claude/hooks/inject-env-context.js
-const stdin = require('fs').readFileSync(0, 'utf-8');
-const payload = JSON.parse(stdin);
-
-console.log(JSON.stringify({
-  hookSpecificOutput: {
-    hookEventName: 'SubagentStart',
-    additionalContext: `<system-reminder>Environment: ${process.env.NODE_ENV}</system-reminder>`,
-  },
-}));
-```
-
-Example — a custom script that blocks dangerous commands:
-
-```js
-// .claude/hooks/block-prod-deploy.js
-const stdin = require('fs').readFileSync(0, 'utf-8');
-const payload = JSON.parse(stdin);
-const cmd = payload.tool_input?.command || '';
-
-if (cmd.includes('deploy') && cmd.includes('production')) {
-  console.log(JSON.stringify({
-    decision: 'block',
-    reason: 'Production deploys require manual approval',
-  }));
-}
 ```
 
 ### Mix & Match Templates

@@ -3,14 +3,6 @@
 #
 # Usage: /chain-builder bump develop
 
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-  SubagentStart:
-    - plugin:subagent-start.cjs
-  SubagentStop:
-    - plugin:subagent-stop.cjs
-
 flow:
   planner:
     routes:

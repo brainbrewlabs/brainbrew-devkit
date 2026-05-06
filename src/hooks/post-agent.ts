@@ -13,7 +13,6 @@ const PLANS_DIR = join(homedir(), '.claude', 'plans');
 const MAX_AGENT_LOOPS = 0;
 
 interface ChainConfig {
-  hooks?: Record<string, string[]>;
   flow?: Record<string, FlowEntry>;
   saveOutput?: string[];
 }
@@ -26,7 +25,6 @@ function loadChainConfig(cwd: string): ChainConfig {
     if (!content) return { saveOutput: [...DEFAULT_SAVE_AGENTS] };
     const chain = parseChainYaml(content);
     return {
-      hooks: chain.hooks,
       flow: chain.flow,
       saveOutput: chain.saveOutput && chain.saveOutput.length > 0 ? chain.saveOutput : [...DEFAULT_SAVE_AGENTS],
     };

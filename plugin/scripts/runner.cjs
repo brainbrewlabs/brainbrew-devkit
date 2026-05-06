@@ -233,33 +233,6 @@ function getUserHooks(event, cwd) {
     return [];
   }
 }
-function parseChainHooksConfig(content) {
-  const config = { hooks: {} };
-  let currentEvent = "";
-  for (const line of content.split("\n")) {
-    const eventMatch = line.match(/^\s{2}(\S+):$/);
-    if (eventMatch) {
-      currentEvent = eventMatch[1];
-      config.hooks[currentEvent] = [];
-      continue;
-    }
-    const itemMatch = line.match(/^\s{4}-\s+(.+)/);
-    if (itemMatch && currentEvent) {
-      config.hooks[currentEvent].push(itemMatch[1]);
-    }
-  }
-  return config;
-}
-function getChainHooks(event, cwd) {
-  const chainContent = readActiveChainContent(cwd);
-  if (!chainContent) return [];
-  try {
-    const config = parseChainHooksConfig(chainContent);
-    return (config.hooks[event] || []).map((s) => resolveScriptPath(s, cwd)).filter((p) => p !== null);
-  } catch {
-    return [];
-  }
-}
 function runHook(hookPath, stdin) {
   if (!(0, import_fs3.existsSync)(hookPath)) {
     console.error(`[runner] Hook not found: ${hookPath}`);
@@ -495,10 +468,37 @@ Do NOT stop. Do NOT ask the user. Follow the chain.
       }
     }
   }
+  if (eventArg === "SubagentStart") {
+    const startPath = (0, import_path4.join)(PLUGIN_SCRIPTS, "subagent-start.cjs");
+    if ((0, import_fs3.existsSync)(startPath)) {
+      try {
+        const result = runHook(startPath, stdin);
+        if (result.output) {
+          console.log(result.output);
+          process.exit(result.exit2 ? 2 : 0);
+        }
+      } catch (e) {
+        logToProject(cwd, `SubagentStart subagent-start error: ${e.message}`);
+      }
+    }
+  }
+  if (eventArg === "SubagentStop") {
+    const stopPath = (0, import_path4.join)(PLUGIN_SCRIPTS, "subagent-stop.cjs");
+    if ((0, import_fs3.existsSync)(stopPath)) {
+      try {
+        const result = runHook(stopPath, stdin);
+        if (result.output) {
+          console.log(result.output);
+          process.exit(result.block ? 0 : result.exit2 ? 2 : 0);
+        }
+      } catch (e) {
+        logToProject(cwd, `SubagentStop subagent-stop error: ${e.message}`);
+      }
+    }
+  }
   const userHooks = getUserHooks(eventArg, cwd);
-  const chainHooks = getChainHooks(eventArg, cwd);
-  const hooks = [...userHooks, ...chainHooks];
-  logToProject(cwd, `${eventArg} | cwd=${cwd} | userHooks=${userHooks.length} | chainHooks=${chainHooks.length} | total=${hooks.length}`);
+  const hooks = userHooks;
+  logToProject(cwd, `${eventArg} | cwd=${cwd} | userHooks=${userHooks.length} | total=${hooks.length}`);
   if (hooks.length === 0) process.exit(0);
   for (const hookPath of hooks) {
     const result = runHook(hookPath, stdin);

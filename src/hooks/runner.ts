@@ -42,11 +42,6 @@ function logToProject(_cwd: string, msg: string): void {
 const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || dirname(dirname(__filename));
 const PLUGIN_SCRIPTS = join(PLUGIN_ROOT, 'scripts');
 
-interface HookConfig {
-  hooks: Record<string, string[]>;
-}
-
-
 function parseSimpleYaml(content: string): Record<string, string[]> {
   const result: Record<string, string[]> = {};
   let currentKey = '';
@@ -97,40 +92,6 @@ function getUserHooks(event: string, cwd: string): string[] {
     const config = parseSimpleYaml(content);
     const scripts = config[event] || [];
     return scripts
-      .map(s => resolveScriptPath(s, cwd))
-      .filter((p): p is string => p !== null);
-  } catch {
-    return [];
-  }
-}
-
-
-function parseChainHooksConfig(content: string): HookConfig {
-  const config: HookConfig = { hooks: {} };
-  let currentEvent = '';
-
-  for (const line of content.split('\n')) {
-    const eventMatch = line.match(/^\s{2}(\S+):$/);
-    if (eventMatch) {
-      currentEvent = eventMatch[1];
-      config.hooks[currentEvent] = [];
-      continue;
-    }
-    const itemMatch = line.match(/^\s{4}-\s+(.+)/);
-    if (itemMatch && currentEvent) {
-      config.hooks[currentEvent].push(itemMatch[1]);
-    }
-  }
-  return config;
-}
-
-function getChainHooks(event: string, cwd: string): string[] {
-  const chainContent = readActiveChainContent(cwd);
-  if (!chainContent) return [];
-
-  try {
-    const config = parseChainHooksConfig(chainContent);
-    return (config.hooks[event] || [])
       .map(s => resolveScriptPath(s, cwd))
       .filter((p): p is string => p !== null);
   } catch {
@@ -360,11 +321,40 @@ function main(): void {
     }
   }
 
-  const userHooks = getUserHooks(eventArg, cwd);
-  const chainHooks = getChainHooks(eventArg, cwd);
-  const hooks = [...userHooks, ...chainHooks];
+  if (eventArg === 'SubagentStart') {
+    const startPath = join(PLUGIN_SCRIPTS, 'subagent-start.cjs');
+    if (existsSync(startPath)) {
+      try {
+        const result = runHook(startPath, stdin);
+        if (result.output) {
+          console.log(result.output);
+          process.exit(result.exit2 ? 2 : 0);
+        }
+      } catch (e: unknown) {
+        logToProject(cwd, `SubagentStart subagent-start error: ${(e as Error).message}`);
+      }
+    }
+  }
 
-  logToProject(cwd, `${eventArg} | cwd=${cwd} | userHooks=${userHooks.length} | chainHooks=${chainHooks.length} | total=${hooks.length}`);
+  if (eventArg === 'SubagentStop') {
+    const stopPath = join(PLUGIN_SCRIPTS, 'subagent-stop.cjs');
+    if (existsSync(stopPath)) {
+      try {
+        const result = runHook(stopPath, stdin);
+        if (result.output) {
+          console.log(result.output);
+          process.exit(result.block ? 0 : (result.exit2 ? 2 : 0));
+        }
+      } catch (e: unknown) {
+        logToProject(cwd, `SubagentStop subagent-stop error: ${(e as Error).message}`);
+      }
+    }
+  }
+
+  const userHooks = getUserHooks(eventArg, cwd);
+  const hooks = userHooks;
+
+  logToProject(cwd, `${eventArg} | cwd=${cwd} | userHooks=${userHooks.length} | total=${hooks.length}`);
 
   if (hooks.length === 0) process.exit(0);
 

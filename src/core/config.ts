@@ -67,7 +67,6 @@ export interface ChainDef {
   agents: AgentDef[];
   flow: Record<string, FlowEntry>;
   verification?: Record<string, VerificationEntry>;
-  hooks?: Record<string, string[]>;
   saveOutput?: string[];
 }
 
@@ -78,7 +77,6 @@ interface RawChainYaml {
   agents?: Array<Record<string, unknown>>;
   flow?: Record<string, Record<string, unknown>>;
   verification?: Record<string, Record<string, unknown>>;
-  hooks?: Record<string, string[]>;
   saveOutput?: string[];
 }
 
@@ -246,14 +244,6 @@ export function parseChainYaml(content: string): ChainDef {
       if (arr) ve.requiredAny = arr;
       chain.verification[name] = ve;
     }
-  }
-
-  if (raw.hooks && typeof raw.hooks === 'object') {
-    const hooks: Record<string, string[]> = {};
-    for (const [k, v] of Object.entries(raw.hooks)) {
-      if (Array.isArray(v)) hooks[k] = v.map(String);
-    }
-    chain.hooks = hooks;
   }
 
   if (Array.isArray(raw.saveOutput)) {

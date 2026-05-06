@@ -7674,13 +7674,6 @@ function parseChainYaml(content) {
       chain.verification[name] = ve;
     }
   }
-  if (raw.hooks && typeof raw.hooks === "object") {
-    const hooks = {};
-    for (const [k, v] of Object.entries(raw.hooks)) {
-      if (Array.isArray(v)) hooks[k] = v.map(String);
-    }
-    chain.hooks = hooks;
-  }
   if (Array.isArray(raw.saveOutput)) {
     chain.saveOutput = raw.saveOutput.map((s) => String(s).toLowerCase());
   }
@@ -7698,7 +7691,6 @@ function loadChainConfig(cwd) {
     if (!content) return { saveOutput: [...DEFAULT_SAVE_AGENTS] };
     const chain = parseChainYaml(content);
     return {
-      hooks: chain.hooks,
       flow: chain.flow,
       saveOutput: chain.saveOutput && chain.saveOutput.length > 0 ? chain.saveOutput : [...DEFAULT_SAVE_AGENTS]
     };

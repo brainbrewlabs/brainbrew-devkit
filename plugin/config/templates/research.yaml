@@ -3,14 +3,6 @@
 #
 # Usage: /chain-builder bump research
 
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-  SubagentStart:
-    - plugin:subagent-start.cjs
-  SubagentStop:
-    - plugin:subagent-stop.cjs
-
 flow:
   topic-researcher:
     routes:

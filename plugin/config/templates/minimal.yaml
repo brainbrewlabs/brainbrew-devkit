@@ -3,14 +3,6 @@
 #
 # Usage: /chain-builder bump minimal
 
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-  SubagentStart:
-    - plugin:subagent-start.cjs
-  SubagentStop:
-    - plugin:subagent-stop.cjs
-
 # Add your own flow here:
 # flow:
 #   your-agent:

@@ -1,20 +1,14 @@
 # Hook System
 
-## 2-Layer Architecture
+`runner.cjs` dispatches built-in chain scripts (`post-agent`, `subagent-start`, `subagent-stop`, `post-tool-use`) inline for the relevant events. Chain template files only contain a `flow:` section — no `hooks:` block.
 
-Hooks run through `runner.cjs` in order:
+For user customization, create `.claude/hooks.yaml` to register additional scripts that run after the built-ins for any lifecycle event.
 
-| Layer | Source | When |
-|-------|--------|------|
-| 1. User hooks | `.claude/hooks.yaml` | If file exists |
-| 2. Chain hooks | Active chain's `hooks:` section | Only when active chain file exists |
-
-User hooks: create `.claude/hooks.yaml` to customize any lifecycle event.
-Chain hooks: fire when an active chain file (`.claude/chains/{name}.yaml`) exists and has a `hooks:` section. Chain routing (MANDATORY NEXT STEP) only triggers when the agent type is defined in the chain's `flow:` section.
+Chain routing (MANDATORY NEXT STEP) triggers when the agent type is defined in the active chain's `flow:` section.
 
 ### Chain Enforcement (built into runner.cjs)
 
-Before running any user or chain hooks, `runner.cjs` enforces pending chain steps:
+Before running user hooks, `runner.cjs` enforces pending chain steps:
 
 - **PreToolUse:** Blocks all non-Agent tool calls when a chain step is pending. Returns a block decision with a reminder to spawn the required agent.
 - **Stop:** Blocks session stop when a chain step is pending. Returns a MANDATORY NEXT STEP reminder.
