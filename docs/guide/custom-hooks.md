@@ -1,38 +1,33 @@
 # Custom Hooks
 
-Extend the chain engine with custom hook scripts that run at specific lifecycle events.
+Run your own scripts at lifecycle events alongside Brainbrew's built-ins.
 
 ## Overview
 
-You can inject your own hook scripts alongside the built-in ones (`runner`, `post-agent`, `subagent-start`, `subagent-stop`). Place scripts in `.claude/hooks/` and register them in your chain config.
+The plugin's `runner.cjs` dispatches built-in chain logic (`post-agent`, `subagent-start`, `subagent-stop`, `post-tool-use`) inline for each event. Chain files only contain a `flow:` section — there is **no** `hooks:` block in the chain YAML.
 
-## Registering Hooks
+For your own scripts, create `.claude/hooks.yaml` at the project root. Scripts there run **after** the built-ins for the matching event.
 
-Edit your chain file in `.claude/chains/`:
+## Registering User Hooks
+
+`.claude/hooks.yaml`:
 
 ```yaml
-hooks:
-  PreToolUse:
-    - plugin:runner.cjs            # built-in: previous agent output injection
-  PostToolUse:
-    - plugin:post-agent.cjs        # built-in: chain routing
-    - ./my-post-validator.js       # your custom script
-  SubagentStart:
-    - plugin:subagent-start.cjs    # built-in: context injection
-    - ./inject-env-context.js      # your custom script
-  SubagentStop:
-    - plugin:subagent-stop.cjs     # built-in: output verification
-  SessionEnd:
-    - ./cleanup.js                 # your custom cleanup
+PostToolUse:
+  - ./my-post-validator.js
+SubagentStart:
+  - ./inject-env-context.js
+SessionEnd:
+  - ./cleanup.js
 ```
 
 ## Script Path Resolution
 
 | Prefix | Resolves to | Example |
 |--------|-------------|---------|
-| `plugin:` | Plugin's built-in scripts | `plugin:post-agent.cjs` |
 | `./` | `{cwd}/.claude/hooks/` | `./my-hook.js` |
 | `/absolute` | Absolute path | `/usr/local/hooks/lint.js` |
+| `plugin:` | Plugin's built-in scripts | `plugin:post-agent.cjs` (rarely needed — built-ins run automatically) |
 
 ## Script Contract
 
@@ -59,7 +54,7 @@ console.log(JSON.stringify({
 }));
 ```
 
-Save this as `.claude/hooks/inject-env-context.js` and register in your chain config.
+Save as `.claude/hooks/inject-env-context.js` and register in `.claude/hooks.yaml`.
 
 ## Example: Block Dangerous Commands
 
@@ -76,46 +71,21 @@ if (cmd.includes('deploy') && cmd.includes('production')) {
 }
 ```
 
-Save as `.claude/hooks/block-prod-deploy.js` and add to `PostToolUse` in your chain config.
+Save as `.claude/hooks/block-prod-deploy.js` and add under `PostToolUse` in `.claude/hooks.yaml`.
 
-## Built-in Hooks
+## Built-in Behaviour (no config required)
 
-### post-agent.cjs (PostToolUse)
+### post-agent (PostToolUse)
 
-Fires after agent completes. Reads `decide:` prompt, calls Haiku, picks next agent.
+Fires after an agent completes. Reads the active chain's `decide:` prompt, calls Haiku, picks the next agent, and emits the MANDATORY NEXT STEP instruction.
 
-**Behavior:**
-1. Agent completes
-2. Load chain config from `.claude/chains/{active}.yaml`
-3. If `decide` prompt exists → call Haiku with routing rules
-4. Haiku returns `{"route": "agent-name", "reason": "..."}`
-5. Emit MANDATORY NEXT STEP instruction
+### runner / subagent-start (PreToolUse + SubagentStart)
 
-### runner.cjs (PreToolUse)
-
-Fires before an Agent tool call. Injects the previous agent's full output directly into the next agent's prompt.
-
-**Behavior:**
-1. PreToolUse fires before an `Agent` tool call
-2. Reads chain state to find the most recent previous agent and its saved output (`~/.claude/tmp/agent-outputs/{id}.md`)
-3. Appends `\n\n---\n\n## Previous Agent Output (type)\n\n{output}` to the agent's `prompt` field
-4. Returns `updatedInput` with the modified prompt so the spawned agent starts with full context
-
-This is the primary mechanism for automatic agent-to-agent context passing. No extra configuration required.
-
-### subagent-start.cjs (SubagentStart)
-
-Injects context when agent spawns.
-
-**Injected Context:**
-- Chain state
-- Team context (if part of a parallel team)
-- Shared context from previous agents
-- Chain-specific instructions from `context:` field in the flow node
+PreToolUse injects the previous agent's full output into the next agent's prompt under a `## Previous Agent Output (type)` section. SubagentStart adds chain state, team context, and any per-node `context:` field as a `<system-reminder>` block. No setup needed.
 
 #### Per-Agent Context Injection
 
-Use the `context:` field on any flow node to inject agent-specific instructions into its system-reminder at spawn time:
+Use `context:` on a flow node to inject agent-specific instructions:
 
 ```yaml
 flow:
@@ -127,27 +97,20 @@ flow:
       code-reviewer: "Done"
 ```
 
-The value is injected via `subagent-start.cjs` as a `<system-reminder>` block. Useful for enforcing project conventions on specific agents without modifying the agent definition file.
+### subagent-stop (SubagentStop)
 
-### subagent-stop.cjs (SubagentStop)
+Verifies output quality and blocks incomplete work with retry feedback.
 
-Verifies output quality, blocks incomplete work with retry feedback.
+### session-end (SessionEnd)
 
-**Quality Checks:**
-- Output not empty
-- No critical errors
-- Task appears complete
-
-### session-end.cjs (SessionEnd)
-
-Cleans up Memory Bus session data. Runs automatically, no config needed.
+Cleans up Memory Bus session data.
 
 ## Hook Events
 
 | Event | When it fires |
 |-------|---------------|
+| `PreToolUse` | Before any tool runs |
 | `PostToolUse` | After any tool completes |
 | `SubagentStart` | When a subagent spawns |
 | `SubagentStop` | When a subagent completes |
-| `SessionEnd` | When Claude Code session ends |
-| `PreToolUse` | Before any tool runs |
+| `SessionEnd` | When the Claude Code session ends |

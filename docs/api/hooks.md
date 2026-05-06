@@ -1,31 +1,29 @@
 # Hooks Reference
 
-Built-in hooks that power the chain engine.
+Built-in hooks that power the chain engine. They are dispatched inline by `runner.cjs` — no chain-level configuration is required.
 
-## PostToolUse: post-agent.cjs
+## post-agent (PostToolUse)
 
-Fires after agent completes. Reads `decide:` prompt, calls Haiku, picks next agent.
+Fires after an agent completes. Reads the active chain's `decide:` prompt, calls Haiku, picks the next agent.
 
 **Behavior:**
 
 1. Agent completes
-2. Load chain config from `.claude/chains/{active}.yaml`
+2. Load active chain from `.claude/chains/{active}.yaml`
 3. If `decide` prompt exists → call Haiku with routing rules
 4. Haiku returns `{"route": "agent-name", "reason": "..."}`
 5. Emit MANDATORY NEXT STEP instruction
 
-## SubagentStart: subagent-start.cjs
+## runner (PreToolUse) + subagent-start (SubagentStart)
 
-Injects context when agent spawns.
+Injects context when an agent spawns:
 
-**Injected Context:**
-
+- Previous agent's full output (auto-injected into the new agent's `prompt`)
 - Chain state
 - Team context (if part of a parallel team)
-- Shared context from previous agents
-- Chain-specific instructions from `context:` field in the flow node
+- Per-node `context:` field as a `<system-reminder>` block
 
-## SubagentStop: subagent-stop.cjs
+## subagent-stop (SubagentStop)
 
 Verifies output quality, blocks incomplete work with retry feedback.
 
@@ -35,20 +33,22 @@ Verifies output quality, blocks incomplete work with retry feedback.
 - No critical errors
 - Task appears complete
 
-## SessionEnd: session-end.cjs
+## session-end (SessionEnd)
 
-Cleans up Memory Bus session data. Runs automatically, no config needed.
+Cleans up Memory Bus session data. Runs automatically.
 
-## Custom Hooks
+## User Hooks
 
-Place scripts in `.claude/hooks/` and register in chain config:
+To run your own scripts at any lifecycle event, create `.claude/hooks.yaml`:
 
 ```yaml
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-    - ./my-validator.js
+PostToolUse:
+  - ./my-validator.js
+SubagentStart:
+  - ./inject-env.js
 ```
+
+User hooks run **after** the built-ins. See [Custom Hooks](/guide/custom-hooks) for the full guide.
 
 ## Hook Contract
 
@@ -65,45 +65,16 @@ Your script receives the hook event payload via **stdin** (JSON) and communicate
 
 | Prefix | Resolves to | Example |
 |--------|-------------|---------|
-| `plugin:` | Plugin's built-in scripts | `plugin:post-agent.cjs` |
 | `./` | `{cwd}/.claude/hooks/` | `./my-hook.js` |
 | `/absolute` | Absolute path | `/usr/local/hooks/lint.js` |
-
-## Example: Context Injection Hook
-
-```js
-const stdin = require('fs').readFileSync(0, 'utf-8');
-const payload = JSON.parse(stdin);
-
-console.log(JSON.stringify({
-  hookSpecificOutput: {
-    hookEventName: 'SubagentStart',
-    additionalContext: `<system-reminder>Environment: ${process.env.NODE_ENV}</system-reminder>`,
-  },
-}));
-```
-
-## Example: Blocking Hook
-
-```js
-const stdin = require('fs').readFileSync(0, 'utf-8');
-const payload = JSON.parse(stdin);
-const cmd = payload.tool_input?.command || '';
-
-if (cmd.includes('deploy') && cmd.includes('production')) {
-  console.log(JSON.stringify({
-    decision: 'block',
-    reason: 'Production deploys require manual approval',
-  }));
-}
-```
+| `plugin:` | Plugin's built-in scripts | `plugin:post-agent.cjs` |
 
 ## Hook Events
 
 | Event | When it fires |
 |-------|---------------|
+| `PreToolUse` | Before any tool runs |
 | `PostToolUse` | After any tool completes |
 | `SubagentStart` | When a subagent spawns |
 | `SubagentStop` | When a subagent completes |
-| `SessionEnd` | When Claude Code session ends |
-| `PreToolUse` | Before any tool runs |
+| `SessionEnd` | When the Claude Code session ends |

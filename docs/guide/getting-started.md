@@ -17,7 +17,18 @@ Instead of manually deciding what agent to run next, Brainbrew uses AI-powered r
 /plugin install brainbrew-devkit
 ```
 
-### 2. Set Up a Workflow
+### 2. Build a Chain (recommended)
+
+The included templates are **examples, not best practice**. Every project has its own workflow — ask **chain-builder** to design one that fits:
+
+```
+"Build me a chain for this project"
+"I need: design review → implement → security scan → deploy"
+```
+
+Need a specific capability? Ask **skill-finder** — it searches Vercel Skills, GitHub, and Anthropic's official skills, then installs a match.
+
+Or start from a template:
 
 ```
 "Set up a development workflow"

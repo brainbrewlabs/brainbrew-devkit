@@ -80,6 +80,52 @@ Switch the active chain.
 mcp__brainbrew__chain_switch(chain: "discovery")
 ```
 
+### chain_run
+
+Activate a chain and enforce spawning its first agent immediately. Switches the active chain, clears previous state, and instructs Claude to spawn the first agent.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| chain | string | Yes | Chain name to run |
+
+**Example:**
+
+```
+mcp__brainbrew__chain_run(chain: "develop")
+```
+
+### stop_chain
+
+Stop the active chain. Clears all pending chain-state files so PreToolUse/Stop guards no longer block. MCP equivalent of typing `skip chain` — but global, not per-session.
+
+**Parameters:** None
+
+**Example:**
+
+```
+mcp__brainbrew__stop_chain()
+```
+
+## Setup Tools
+
+### init
+
+Register brainbrew chain hooks in `~/.claude/settings.json`. Required once for opencode users (Claude Code reads hooks directly from the plugin manifest, so this is optional under Claude Code).
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| events | string[] | No | Subset of events to register. Defaults to all. |
+
+**Example:**
+
+```
+mcp__brainbrew__init()
+```
+
 ## Memory Bus Tools
 
 ### memory_add

@@ -34,7 +34,7 @@ mcp__brainbrew__template_bump(template: "develop")
 | `data` | data-collector → cleaner → analyzer → visualizer → reporter |
 | `moderation` | content-scanner → classifier → flagger → reviewer → actioner |
 | `review` | code-reviewer → END |
-| `minimal` | hooks only (add your own) |
+| `minimal` | empty — add your own |
 
 ## Show Chain Flow
 
@@ -72,7 +72,7 @@ The project uses a pointer file + chain directory:
 ```
 .claude/chain-config.yaml       # pointer to active chain
 .claude/chains/
-  develop.yaml                  # chain definition (hooks + flow)
+  develop.yaml                  # chain definition (flow only)
   discovery.yaml                # another chain
 ```
 
@@ -83,17 +83,9 @@ active: develop
 chains_dir: .claude/chains/
 ```
 
-Each chain file in `.claude/chains/` has the same format:
+Each chain file in `.claude/chains/` only contains a `flow:` section. Hook dispatch is handled by `runner.cjs` automatically.
 
 ```yaml
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-  SubagentStart:
-    - plugin:subagent-start.cjs
-  SubagentStop:
-    - plugin:subagent-stop.cjs
-
 flow:
   agent-name:
     routes:

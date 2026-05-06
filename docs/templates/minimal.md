@@ -1,6 +1,6 @@
 # Minimal Template
 
-Bare-bones template with hooks only — add your own agents and chain.
+Blank-slate template — add your own agents and chain.
 
 ## Chain Flow
 
@@ -12,9 +12,9 @@ None. Create your own agents.
 
 ## Features
 
-- **Hooks only** — Built-in chain hooks ready to use
 - **Blank slate** — Define your own workflow
 - **Maximum flexibility** — Complete control over chain design
+- **Built-ins included** — `runner.cjs` handles routing automatically; no hook setup needed
 
 ## Usage
 
@@ -48,14 +48,6 @@ Instructions for the agent...
 Edit `.claude/chains/minimal.yaml`:
 
 ```yaml
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-  SubagentStart:
-    - plugin:subagent-start.cjs
-  SubagentStop:
-    - plugin:subagent-stop.cjs
-
 flow:
   my-agent:
     routes:

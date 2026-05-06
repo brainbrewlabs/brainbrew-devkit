@@ -9,7 +9,7 @@ The project uses a pointer file plus a chain directory:
 ```
 .claude/chain-config.yaml       # pointer to active chain
 .claude/chains/
-  develop.yaml                  # chain definition (hooks + flow)
+  develop.yaml                  # chain definition (flow only)
   discovery.yaml                # another chain
 ```
 
@@ -24,17 +24,9 @@ chains_dir: .claude/chains/
 
 ### Chain File
 
-Each chain file in `.claude/chains/` has the same format:
+Each chain file in `.claude/chains/` only contains a `flow:` section. Hook dispatch is handled by `runner.cjs` automatically.
 
 ```yaml
-hooks:
-  PostToolUse:
-    - plugin:post-agent.cjs
-  SubagentStart:
-    - plugin:subagent-start.cjs
-  SubagentStop:
-    - plugin:subagent-stop.cjs
-
 flow:
   agent-name:
     routes:

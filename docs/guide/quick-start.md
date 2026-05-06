@@ -1,5 +1,15 @@
 # Quick Start
 
+::: tip Build your own (recommended)
+Templates are **examples, not best practice**. For a chain that fits your project, ask **chain-builder**:
+
+```
+"Build me a chain for this project"
+```
+
+The agent reads your codebase, asks a few questions, and writes a chain. Use templates only as a quick starting point.
+:::
+
 ## 1. Pick a Template
 
 After installing the plugin, set up a workflow template:
@@ -49,7 +59,7 @@ That's it. The chain handles routing, error recovery, and coordination.
 | **data** | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
 | **moderation** | 5 | content-scanner → classifier → flagger → reviewer → actioner |
 | **review** | 1 | code-reviewer → END |
-| **minimal** | 0 | hooks only (add your own) |
+| **minimal** | 0 | empty — add your own |
 
 ## Next Steps
 

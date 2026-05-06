@@ -10,18 +10,22 @@ You watch. Approve the PR. Done.
 
 ```mermaid
 flowchart LR
-    You([/code]) --> Plan[planner]
-    Plan --> Code[implementer]
-    Code --> Check{code-reviewer}
-    Check -- pass --> Test{tester}
-    Check -- issues --> Code
-    Test -- pass --> Save[git-manager]
-    Test -- fail --> Fix[debugger]
-    Fix --> Test
-    Save --> Done([PR ready])
+    A[Agent runs] --> B[PostToolUse hook]
+    B --> C[Read chain<br/>decide + routes]
+    C --> D{{Haiku picks<br/>next agent}}
+    D --> E[MANDATORY<br/>NEXT STEP]
+    E --> F[PreToolUse hook<br/>injects prev output]
+    F --> A
+    D -- route: END --> G([Done])
 ```
 
-Each box is an agent. Arrows are auto-routes — Haiku reads each agent's output and picks the next step. Failures loop back until they pass.
+That's the whole engine. Each lap of the loop = one agent step.
+
+- **You** define the chain (`flow:` in YAML — agents and their routes).
+- **Hooks** fire automatically — no glue code.
+- **Haiku** reads the agent's output against the `decide:` prompt and picks the next route.
+- **Context** carries forward — previous agent's full output is injected into the next agent's prompt.
+- **Failure** is just another route — point it at a `debugger` agent and the chain self-corrects.
 
 ## Quick start
 
