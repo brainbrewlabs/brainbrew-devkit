@@ -48,6 +48,28 @@ Each box is a robot. Arrows are how they pass work. If something fails, the chai
 
 That's it. Watch the robots take turns.
 
+## Build your own (recommended)
+
+Templates below are **examples, not best practice**. Every project is different — your real workflow probably needs a different chain.
+
+Just describe it:
+
+```
+"Build me a chain for my project"
+"I need: design review → implement → security check → deploy"
+```
+
+The **chain-builder** robot will read your project, ask a few questions, and write a chain that fits. That's the right path.
+
+Need a robot for a specific task? Ask **skill-finder** — it searches Vercel Skills, GitHub, and Anthropic's official skills, then installs the one that matches:
+
+```
+"Find a skill for writing tests"
+"Install a skill that handles database migrations"
+```
+
+Templates are useful when you want a quick start to copy from.
+
 ## Teams you can pick
 
 | Name | What they do |
