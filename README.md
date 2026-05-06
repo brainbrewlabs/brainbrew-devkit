@@ -1,6 +1,6 @@
 # brainbrew-devkit
 
-**Self-correcting agent chains for Claude Code.**
+**Self-correcting agent chains for Claude Code and opencode.**
 
 A chain of agents takes turns. One plans, one codes, one reviews, one tests, one commits. If an agent fails, another agent fixes it and the chain retries — automatically.
 
@@ -29,7 +29,7 @@ That's the whole engine. Each lap of the loop = one agent step.
 
 ## Quick start
 
-**Requires** [Claude Code](https://docs.claude.com/en/docs/claude-code) + Node.js 18+.
+**Requires** [Claude Code](https://docs.claude.com/en/docs/claude-code) or [opencode](https://opencode.ai) + Node.js 18+.
 
 **Install** (then restart Claude Code):
 
@@ -87,18 +87,18 @@ Use templates only as a starting point to copy from.
 
 ## Templates
 
-| Name | Chain |
-|------|-------|
-| **develop** | plan → code → review → test → commit |
-| **devops** | scan → secure → test → deploy |
-| **marketing** | research → write → edit → publish |
-| **research** | gather → analyze → report |
-| **docs** | scan code → write → review |
-| **support** | classify → answer → review |
-| **data** | collect → clean → chart → report |
-| **moderation** | scan → classify → flag → act |
-| **review** | code-reviewer only |
-| **skill-dev** | build new agent skills |
+| Template | Agents | Chain |
+|----------|--------|-------|
+| **develop** | 12 | planner → plan-reviewer → implementer → **parallel-review** (team) → tester → git-manager |
+| **devops** | 10 | code-scanner → security-auditor → test-runner → deployer → monitor |
+| **marketing** | 6 | researcher → content-writer → editor → seo-optimizer → publisher → analyzer |
+| **research** | 5 | topic-researcher → source-gatherer → analyzer → synthesizer → report-writer |
+| **docs** | 5 | code-scanner → doc-generator → doc-reviewer → formatter → publisher |
+| **support** | 5 | ticket-classifier → router → knowledge-searcher → response-drafter → reviewer |
+| **data** | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
+| **moderation** | 5 | content-scanner → classifier → flagger → reviewer → actioner |
+| **review** | 1 | code-reviewer → END |
+| **skill-dev** | 4 | skill-finder → skill-creator → skill-reviewer (PASS=END, FIX→skill-improver) |
 
 ## Define a chain manually
 

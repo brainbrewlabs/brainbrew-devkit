@@ -67,18 +67,18 @@ Claude Code reads hooks directly from the plugin manifest — step 2 is **only**
 
 ## Available Templates
 
-| Template | Chain |
-|----------|-------|
-| **develop** | plan → code → review → test → commit |
-| **devops** | scan → secure → test → deploy |
-| **marketing** | research → write → edit → publish |
-| **research** | gather → analyze → report |
-| **docs** | scan code → write → review |
-| **support** | classify → answer → review |
-| **data** | collect → clean → chart → report |
-| **moderation** | scan → classify → flag → act |
-| **review** | code-reviewer only |
-| **skill-dev** | build new agent skills |
+| Template | Agents | Chain |
+|----------|--------|-------|
+| **develop** | 12 | planner → plan-reviewer → implementer → **parallel-review** (team) → tester → git-manager |
+| **devops** | 10 | code-scanner → security-auditor → test-runner → deployer → monitor |
+| **marketing** | 6 | researcher → content-writer → editor → seo-optimizer → publisher → analyzer |
+| **research** | 5 | topic-researcher → source-gatherer → analyzer → synthesizer → report-writer |
+| **docs** | 5 | code-scanner → doc-generator → doc-reviewer → formatter → publisher |
+| **support** | 5 | ticket-classifier → router → knowledge-searcher → response-drafter → reviewer |
+| **data** | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
+| **moderation** | 5 | content-scanner → classifier → flagger → reviewer → actioner |
+| **review** | 1 | code-reviewer → END |
+| **skill-dev** | 4 | skill-finder → skill-creator → skill-reviewer (PASS=END, FIX→skill-improver) |
 
 ## Next Steps
 

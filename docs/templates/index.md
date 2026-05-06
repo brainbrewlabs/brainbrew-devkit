@@ -6,18 +6,18 @@ Pre-built agent chains for common workflows.
 Every project is different — your real workflow needs its own chain. Ask **chain-builder**: *"Build me a chain for this project"*. It reads your codebase, asks a few questions, and writes a chain that fits. Use templates as a starting point to copy from.
 :::
 
-| Template | Chain |
-|----------|-------|
-| [develop](/templates/develop) | plan → code → review → test → commit |
-| [devops](/templates/devops) | scan → secure → test → deploy |
-| [marketing](/templates/marketing) | research → write → edit → publish |
-| [research](/templates/research) | gather → analyze → report |
-| [docs](/templates/docs) | scan code → write → review |
-| [support](/templates/support) | classify → answer → review |
-| [data](/templates/data) | collect → clean → chart → report |
-| [moderation](/templates/moderation) | scan → classify → flag → act |
-| [review](/templates/review) | code-reviewer only |
-| [skill-dev](/templates/skill-dev) | build new agent skills |
+| Template | Agents | Chain |
+|----------|--------|-------|
+| [develop](/templates/develop) | 12 | planner → plan-reviewer → implementer → **parallel-review** (team) → tester → git-manager |
+| [devops](/templates/devops) | 10 | code-scanner → security-auditor → test-runner → deployer → monitor |
+| [marketing](/templates/marketing) | 6 | researcher → content-writer → editor → seo-optimizer → publisher → analyzer |
+| [research](/templates/research) | 5 | topic-researcher → source-gatherer → analyzer → synthesizer → report-writer |
+| [docs](/templates/docs) | 5 | code-scanner → doc-generator → doc-reviewer → formatter → publisher |
+| [support](/templates/support) | 5 | ticket-classifier → router → knowledge-searcher → response-drafter → reviewer |
+| [data](/templates/data) | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
+| [moderation](/templates/moderation) | 5 | content-scanner → classifier → flagger → reviewer → actioner |
+| [review](/templates/review) | 1 | code-reviewer → END |
+| [skill-dev](/templates/skill-dev) | 4 | skill-finder → skill-creator → skill-reviewer (PASS=END, FIX→skill-improver) |
 
 ## Usage
 
