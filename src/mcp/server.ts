@@ -109,9 +109,8 @@ const TOOLS = [
       type: 'object',
       properties: {
         chain: { type: 'string', description: 'Chain name to run' },
-        session_id: { type: 'string', description: 'Current session ID' },
       },
-      required: ['chain', 'session_id'],
+      required: ['chain'],
     },
   },
 
@@ -483,7 +482,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'chain_run': {
         const chain = args?.chain as string;
-        const sessionId = args?.session_id as string;
         const chains = listChains(cwd);
 
         if (!chains.includes(chain)) {
@@ -509,20 +507,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         if (!firstAgent) {
           return error(`Chain "${chain}" has no flow agents defined.`);
-        }
-
-        if (sessionId) {
-          const stateDir = join(homedir(), '.claude', 'tmp', 'chain-state');
-          if (!existsSync(stateDir)) mkdirSync(stateDir, { recursive: true });
-          const statePath = join(stateDir, `${sessionId}.json`);
-          let state: Record<string, unknown> = { previousAgents: [] };
-          if (existsSync(statePath)) {
-            try { state = JSON.parse(readFileSync(statePath, 'utf-8')); } catch {}
-          }
-          state.currentAgent = firstAgent;
-          state.chainBlockCount = 0;
-          state.previousAgents = [];
-          writeFileSync(statePath, JSON.stringify(state, null, 2));
         }
 
         return success(`Chain "${chain}" activated: ${allAgents}\n\nYou MUST now spawn: Agent(subagent_type="${firstAgent}")`);

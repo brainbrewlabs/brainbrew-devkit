@@ -28850,10 +28850,9 @@ var TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        chain: { type: "string", description: "Chain name to run" },
-        session_id: { type: "string", description: "Current session ID" }
+        chain: { type: "string", description: "Chain name to run" }
       },
-      required: ["chain", "session_id"]
+      required: ["chain"]
     }
   },
   // ─── Init / Setup ───
@@ -29189,7 +29188,6 @@ ${lines.join("\n")}`);
       }
       case "chain_run": {
         const chain = args?.chain;
-        const sessionId = args?.session_id;
         const chains = listChains(cwd);
         if (!chains.includes(chain)) {
           return error2(`Chain "${chain}" not found. Available: ${chains.join(", ")}`);
@@ -29211,22 +29209,6 @@ ${lines.join("\n")}`);
         }
         if (!firstAgent) {
           return error2(`Chain "${chain}" has no flow agents defined.`);
-        }
-        if (sessionId) {
-          const stateDir = (0, import_path5.join)((0, import_os3.homedir)(), ".claude", "tmp", "chain-state");
-          if (!(0, import_fs4.existsSync)(stateDir)) (0, import_fs4.mkdirSync)(stateDir, { recursive: true });
-          const statePath2 = (0, import_path5.join)(stateDir, `${sessionId}.json`);
-          let state = { previousAgents: [] };
-          if ((0, import_fs4.existsSync)(statePath2)) {
-            try {
-              state = JSON.parse((0, import_fs4.readFileSync)(statePath2, "utf-8"));
-            } catch {
-            }
-          }
-          state.currentAgent = firstAgent;
-          state.chainBlockCount = 0;
-          state.previousAgents = [];
-          (0, import_fs4.writeFileSync)(statePath2, JSON.stringify(state, null, 2));
         }
         return success2(`Chain "${chain}" activated: ${allAgents}
 
