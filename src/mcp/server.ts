@@ -9,7 +9,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, copyFileSync, statSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, copyFileSync, statSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { resolveActiveChain, listChains, getActiveChainName, writePointer, migrateToMultiChain } from '../utils/chain-resolver.js';
@@ -111,6 +111,14 @@ const TOOLS = [
         chain: { type: 'string', description: 'Chain name to run' },
       },
       required: ['chain'],
+    },
+  },
+  {
+    name: 'stop_chain',
+    description: 'Stop the active chain. Clears all pending chain-state files so PreToolUse/Stop hooks no longer block, and unblocks any wrong-agent guards. Equivalent to typing "skip chain" — but global, not per-session.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
     },
   },
 
@@ -510,6 +518,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         return success(`Chain "${chain}" activated: ${allAgents}\n\nYou MUST now spawn: Agent(subagent_type="${firstAgent}")`);
+      }
+
+      case 'stop_chain': {
+        const stateDir = join(homedir(), '.claude', 'tmp', 'chain-state');
+        if (!existsSync(stateDir)) {
+          return success('No active chain state — nothing to stop.');
+        }
+        const files = readdirSync(stateDir).filter(f => f.endsWith('.json'));
+        let cleared = 0;
+        for (const f of files) {
+          try { unlinkSync(join(stateDir, f)); cleared++; } catch {}
+        }
+        return success(`Chain stopped. Cleared ${cleared} pending state file(s). PreToolUse/Stop guards are now off.`);
       }
 
       // ─── memory_add ───

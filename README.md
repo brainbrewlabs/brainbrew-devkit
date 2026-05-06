@@ -1,389 +1,108 @@
 # brainbrew-devkit
 
-**Agent pipelines that fix themselves.**
+**Robots that take turns doing your work.**
 
-The pipeline layer Claude Code was missing. Self-correcting agent chains with automatic routing, retry, and coordination — running on your existing Claude Code subscription.
+You say "go." A team of little robots takes turns. One plans. One writes code. One checks it. One tests it. One saves it. If a robot makes a mistake, another robot fixes it.
 
+You just watch.
+
+## How it works
+
+```mermaid
+flowchart LR
+    You([You: /code]) --> Plan[🧠 Plan]
+    Plan --> Code[⚒️ Write code]
+    Code --> Check{🔍 Check}
+    Check -- looks good --> Test{🧪 Test}
+    Check -- oops --> Code
+    Test -- works --> Save[💾 Save]
+    Test -- broken --> Fix[🔧 Fix]
+    Fix --> Test
+    Save --> Done([✅ Done])
 ```
-/code implement login feature
 
-[Pipeline runs automatically — you don't touch anything]
-→ planner: creates plan
-→ plan-reviewer: approves ✓
-→ implementer: writes code
-→ code-reviewer: 2 issues → auto-routes back to implementer
-→ implementer: fixes
-→ code-reviewer: passes ✓
-→ tester: FAILS → auto-routes to debugger
-→ debugger: fixes
-→ tester: PASSES ✓
-→ git-manager: commits + creates PR
+Each box is a robot. Arrows are how they pass work. If something fails, the chain loops back until it works.
 
-[You only approve the final PR]
-```
+## Try it
 
-## Why Brainbrew?
+**You need:** [Claude Code](https://docs.claude.com/en/docs/claude-code) and Node.js (18+).
 
-### What it adds to Claude Code
+**Install** (then restart Claude Code):
 
-Claude Code has agents and teams. Brainbrew adds the **orchestration layer**:
-
-| | Vanilla Claude Code | With Brainbrew |
-|---|---|---|
-| **Agent chaining** | Manual (you decide next step) | Automatic (Haiku routing) |
-| **Failure recovery** | None (you see error, you fix) | Built-in (debugger → retry) |
-| **Quality gates** | None | Haiku QA + auto-retry |
-| **Parallel agents** | Teams (manual trigger) | Teams (auto in chain) |
-| **Inter-agent state** | None | Auto prev-output injection |
-
-### vs. LangChain / CrewAI
-
-Same orchestration power. Different tradeoffs:
-
-| | Brainbrew | LangChain/CrewAI |
-|---|---|---|
-| **Config format** | YAML + Markdown | Python code |
-| **Cost model** | Your CC subscription | Per-token API billing |
-| **Learning curve** | Pick template, start working | Learn framework, write code |
-| **Runs inside** | Claude Code | Standalone runtime |
-
-### 10 templates. 60+ agents. Ready to run.
-
-No blank-page problem. Pick a template:
-
-- **develop** — plan → review → implement → parallel(code-quality + security) → test → [fix if fail] → commit
-- **devops** — scan → security → test → deploy → monitor → [rollback if alert]
-- **marketing** — research → write → edit → SEO → publish → analyze
-- **research** — gather → analyze → synthesize → report
-- And 7 more (docs, support, data, moderation, review, skill-dev, minimal)
-
-### Declared in YAML. Your agents stay with you.
-
-Chain config lives in git. Agents are markdown files in `.claude/agents/`. No vendor lock-in on your components — only the routing engine is brainbrew-specific.
-
-## Features
-
-- **Self-correcting pipelines** — failures auto-route to fixers, then re-enter the chain
-- **AI-powered routing** — Haiku analyzes output and picks the next step
-- **Agent teams** — parallel execution with coordinated synthesis
-- **Quality gates** — `subagent-stop` hook validates output, retries up to 2x
-- **Auto context passing** — previous agent output injected directly into next agent's prompt
-- **Loop detection** — prevents infinite cycles (MAX_AGENT_LOOPS=0, off by default)
-- **Chain enforcement** — PreToolUse/Stop hooks block until chain steps are followed
-
-## Quick Start
-
-**Prerequisite:** Node.js (>= 18) must be installed — the chain engine, hooks, and MCP server all run on Node.
-
-**1. Install the plugin** (then restart Claude Code):
 ```
 /plugin marketplace add brainbrewlabs/brainbrew-devkit
 /plugin install brainbrew-devkit
 ```
 
-**2. Pick a template:**
-```
-"Set up a development workflow"   → Full dev pipeline with 22 agents
-"I need a CI/CD pipeline"         → DevOps chain with auto-rollback
-```
-
-**3. Start working:**
-```
-/code implement feature X         → Pipeline runs: plan → code → review → test → commit
-```
-
-That's it. The chain handles routing, error recovery, and coordination.
-
-### opencode users
-
-brainbrew-devkit also runs under [opencode](https://opencode.ai) via the [oh-my-opencode (OHO)](https://github.com/code-yeongyu/oh-my-opencode) plugin.
-
-> **Prerequisite:** you must install the plugin in **Claude Code** first (steps 1 above). opencode itself has no plugin marketplace — OHO discovers brainbrew-devkit from `~/.claude/plugins/` after Claude Code installs it.
-
-Then, in addition:
-
-1. Add OHO to your opencode config (`~/.config/opencode/opencode.json`):
-   ```json
-   { "plugin": ["oh-my-openagent@latest"] }
-   ```
-2. Run `/brainbrew-devkit:init` — this calls the `init` MCP tool which writes hook entries to `~/.claude/settings.json` (OHO only dispatches hooks declared there, not from plugin manifests).
-3. Restart opencode.
-
-Claude Code reads hooks directly from the plugin manifest, so step 2 is **only** required for opencode. See [docs/guide/installation.md](docs/guide/installation.md#opencode-support) for details.
-
-### Natural Language Commands
+**Pick a team** — just ask:
 
 ```
-"Create an agent for API testing"      → create_agent(...)
-"Build me a deployment skill"          → create_skill(...)
-"Tell implementer to fix the bug"      → memory_add(target: agent:implementer)
-"What agents do I have?"               → list_agents()
+"Set up a development workflow"
 ```
 
-## MCP Tools
+**Tell them to start:**
 
-All functionality exposed via MCP - no CLI install needed:
+```
+/code add a login button
+```
 
-| Tool | Description |
-|------|-------------|
-| `template_bump` | Set up workflow template |
-| `template_list` | Show available templates |
-| `chain_validate` | Validate chain config (agents exist, team nodes valid, routes correct) |
-| `chain_list` | List available chains and show active |
-| `chain_switch` | Switch active chain |
-| `chain_run` | Activate chain and enforce first agent |
-| `memory_add` | Send message to agents via Memory Bus |
-| `memory_list` | List messages in Memory Bus |
-| `memory_clear` | Clear messages from Memory Bus |
+That's it. Watch the robots take turns.
 
-Agents, skills, and chain config are just files — Claude reads/writes them directly.
+## Teams you can pick
 
-## Workflow Templates
+| Name | What they do |
+|------|--------------|
+| **develop** | Plan → code → review → test → save |
+| **devops** | Scan → secure → test → deploy |
+| **marketing** | Research → write → edit → publish |
+| **research** | Gather → analyze → report |
+| **docs** | Read code → write docs → review |
+| **support** | Sort tickets → answer → review |
+| **data** | Collect → clean → chart → report |
+| **moderation** | Scan → classify → flag → act |
+| **review** | Just review code |
+| **skill-dev** | Build new robot skills |
+| **minimal** | Empty — bring your own robots |
 
-| Template | Agents | Chain |
-|----------|--------|-------|
-| **develop** | 22 | planner → plan-reviewer → implementer → **parallel-review** (team) → tester → git-manager |
-| **devops** | 10 | code-scanner → security-auditor → test-runner → deployer → monitor |
-| **marketing** | 6 | researcher → content-writer → editor → seo-optimizer → publisher → analyzer |
-| **research** | 5 | topic-researcher → source-gatherer → analyzer → synthesizer → report-writer |
-| **docs** | 5 | code-scanner → doc-generator → doc-reviewer → formatter → publisher |
-| **support** | 5 | ticket-classifier → router → knowledge-searcher → response-drafter → reviewer |
-| **data** | 5 | data-collector → cleaner → analyzer → visualizer → reporter |
-| **moderation** | 5 | content-scanner → classifier → flagger → reviewer → actioner |
-| **review** | 1 | code-reviewer → END |
-| **skill-dev** | 4 | skill-finder → skill-creator → skill-reviewer (PASS=END, FIX→skill-improver) |
-| **minimal** | 0 | hooks only (add your own) |
+## Make your own team
 
-> **Note:** After bumping a template (`template_bump`), restart your Claude Code session for the new hooks, agents, and chain config to take effect.
+Ask:
 
-## Flow Config
+```
+"Create a chain: researcher → writer → editor → publisher"
+```
 
-Each template includes a `flow:` section with AI-powered routing:
+Or write `.claude/chains/my-chain.yaml`:
 
 ```yaml
 flow:
-  code-reviewer:
-    routes:
-      tester: "Code approved, ready for testing"
-      implementer: "Code has issues, needs fixes"
-    decide: |
-      If code is APPROVED → "tester"
-      If ANY bugs, issues → "implementer"
-```
-
-- **routes:** Maps agent names to descriptions (multiple routes allowed)
-- **decide:** AI prompt sent to Haiku to pick which route based on output
-
-### Agent Teams
-
-Use `type: team` to run multiple agents in parallel at a chain step:
-
-```yaml
-flow:
-  parallel-review:
-    type: team
-    teammates:
-      - name: code-quality
-        agent: code-reviewer
-        prompt: "Review code for bugs and quality"
-      - name: security-check
-        agent: security-scan
-        prompt: "Scan for security vulnerabilities"
-    routes:
-      tester: "All reviews passed"
-      implementer: "Issues found, needs fixes"
-    decide: |
-      If ALL reviews PASSED → "tester"
-      If ANY review found issues → "implementer"
-```
-
-Teammates run as a Claude Code [agent team](https://code.claude.com/docs/en/agent-teams) — each gets its own context, they can message each other, and results are synthesized before routing to the next step. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.
-
-## Customization
-
-### Create Custom Agent
-
-Just ask:
-```
-"Create an agent for API testing"
-"I need an agent that reviews SQL queries"
-"Make me a documentation agent"
-```
-
-Or manually create `.claude/agents/my-agent.md`:
-
-```markdown
----
-name: my-agent
-description: >-
-  What this agent does and when Claude should delegate to it.
-tools: Bash, Read, Edit
-model: sonnet
----
-
-When invoked:
-1. Step 1
-2. Step 2
-
-Output: structured results.
-```
-
-### Create Custom Skill
-
-Just ask:
-```
-"Create a skill for deploying to AWS"
-"I need a skill for running database migrations"
-"Make a skill that formats my code"
-```
-
-Or manually create `.claude/skills/my-skill/SKILL.md`:
-
-```markdown
----
-name: my-skill
-description: >-
-  When to trigger this skill. Triggers on 'X', 'Y'.
-allowed-tools: Read, Grep, Bash
----
-
-## When to Use
-- Scenario 1
-
-## When NOT to Use
-- Anti-pattern
-
-## Instructions
-1. Step 1
-2. Step 2
-```
-
-### Create Custom Chain
-
-Just ask:
-```
-"Create a workflow: researcher → writer → editor → publisher"
-"I need a chain for: scan code → review → test → deploy"
-"Build me a support workflow with ticket routing"
-```
-
-Or edit `.claude/chain-config.yaml`:
-
-```yaml
-flow:
-  # Your custom chain
   researcher:
     routes:
-      writer: "Research complete"
+      writer: "Research done"
 
   writer:
     routes:
-      reviewer: "Draft complete"
-      researcher: "Need more research"
-    decide: |
-      If draft COMPLETE → "reviewer"
-      If needs MORE INFO → "researcher"
+      editor: "Draft done"
 
-  reviewer:
+  editor:
     routes:
-      publisher: "Approved"
-      writer: "Needs revision"
-    decide: |
-      If APPROVED → "publisher"
-      If REVISION needed → "writer"
-
-  publisher:
-    routes:
-      END: "Published"
+      END: "Looks good"
 ```
 
-### Mix & Match Templates
+Each robot is just a markdown file in `.claude/agents/`. They live with your project.
 
-```bash
-# Start with one template
-/chain-builder bump develop
+## Why use it
 
-# Copy agents from another template manually
-cp ~/.claude/plugins/cache/.../devops/agents/deployer.md .claude/agents/
+| Without brainbrew | With brainbrew |
+|---|---|
+| You tell each robot what to do | Robots pass work themselves |
+| You spot the mistakes | Robots catch them |
+| You retry when it breaks | Robots retry |
+| You glue it all together | YAML does that |
 
-# Add to your flow in chain-config.yaml
-```
+It runs on your Claude Code subscription — no extra bills.
 
-## Directory Structure
+## More
 
-```
-brainbrew-devkit/
-  src/              # TypeScript source
-  dist/             # Compiled output
-  plugin/           # Distributable Claude Code plugin
-    scripts/        # Chain engine (runner, hooks)
-    hooks/          # Hook declarations
-    agents/         # Management agents
-    skills/         # Management skills (chain-builder, skill-creator, etc.)
-    config/
-      templates/    # Workflow templates
-        develop/    # Full dev chain
-        devops/     # CI/CD pipeline
-        marketing/  # Content marketing
-        ...
-```
-
-## Development
-
-```bash
-npm install        # Install dependencies
-npm run build      # Compile TypeScript
-npm run dev        # Watch mode
-```
-
-## Memory Bus - Inter-Agent Communication
-
-Agents can communicate via the Memory Bus:
-
-```bash
-# Tell specific agent
-"Tell the implementer to fix the auth bug"
-
-# Next agent (queue)
-"Next agent should check security"
-
-# Permanent learning
-"Remember to always use TypeScript"
-
-# Chain handoff
-"After this chain, deploy to staging"
-```
-
-| Target | Who receives |
-|--------|--------------|
-| `global` | All agents |
-| `next` | Next agent only (consumed) |
-| `agent:NAME` | Specific agent type |
-| `chain:NAME` | All agents in chain |
-
-| Persistence | Behavior | Auto-cleanup |
-|-------------|----------|--------------|
-| `session` | **Default** - temporary | ✅ On exit |
-| `once` | Queue - consumed after read | ✅ After delivery |
-| `permanent` | Forever (rules, knowledge) | ❌ Never |
-
-## Architecture
-
-Hook-driven chain engine with a single **runner** that dispatches to script hooks:
-
-**Built-in hooks (3 + 1):**
-
-1. **post-agent.cjs** — Fires after agent completes; reads `decide:` prompt, calls Haiku, picks next agent
-2. **subagent-start.cjs** — Injects context (chain state, Memory Bus messages) when agent spawns
-3. **subagent-stop.cjs** — Verifies output quality, blocks incomplete work with retry feedback
-4. **session-end.cjs** — Cleans up Memory Bus session data (runs automatically, no config needed)
-
-**Runner flow:**
-
-```
-Claude Code event → hooks.json → runner.cjs → loads chain-config.yaml → runs scripts sequentially
-                                                 ├─ built-in plugin scripts
-                                                 └─ user custom scripts (.claude/hooks/)
-```
-
-Flow config and custom hooks are read from `{cwd}/.claude/chain-config.yaml`.
+- [Full docs](docs/) — every knob and dial
+- [opencode users](docs/guide/installation.md#opencode-support) — works there too, run `/brainbrew-devkit:init` after install

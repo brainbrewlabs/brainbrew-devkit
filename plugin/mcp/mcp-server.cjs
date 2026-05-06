@@ -28848,6 +28848,14 @@ var TOOLS = [
       required: ["chain"]
     }
   },
+  {
+    name: "stop_chain",
+    description: 'Stop the active chain. Clears all pending chain-state files so PreToolUse/Stop hooks no longer block, and unblocks any wrong-agent guards. Equivalent to typing "skip chain" \u2014 but global, not per-session.',
+    inputSchema: {
+      type: "object",
+      properties: {}
+    }
+  },
   // ─── Init / Setup ───
   {
     name: "init",
@@ -29206,6 +29214,22 @@ ${lines.join("\n")}`);
         return success2(`Chain "${chain}" activated: ${allAgents}
 
 You MUST now spawn: Agent(subagent_type="${firstAgent}")`);
+      }
+      case "stop_chain": {
+        const stateDir = (0, import_path5.join)((0, import_os3.homedir)(), ".claude", "tmp", "chain-state");
+        if (!(0, import_fs4.existsSync)(stateDir)) {
+          return success2("No active chain state \u2014 nothing to stop.");
+        }
+        const files = (0, import_fs4.readdirSync)(stateDir).filter((f) => f.endsWith(".json"));
+        let cleared = 0;
+        for (const f of files) {
+          try {
+            (0, import_fs4.unlinkSync)((0, import_path5.join)(stateDir, f));
+            cleared++;
+          } catch {
+          }
+        }
+        return success2(`Chain stopped. Cleared ${cleared} pending state file(s). PreToolUse/Stop guards are now off.`);
       }
       // ─── memory_add ───
       case "memory_add": {
