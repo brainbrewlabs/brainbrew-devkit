@@ -73,6 +73,8 @@ Chain config lives in git. Agents are markdown files in `.claude/agents/`. No ve
 
 ## Quick Start
 
+**Prerequisite:** Node.js (>= 18) must be installed — the chain engine, hooks, and MCP server all run on Node.
+
 **1. Install the plugin** (then restart Claude Code):
 ```
 /plugin marketplace add brainbrewlabs/brainbrew-devkit
