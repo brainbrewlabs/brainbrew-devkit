@@ -1,6 +1,6 @@
 # Introduction
 
-**Self-correcting agent chains for Claude Code.**
+**Self-correcting agent chains for Claude Code and opencode.**
 
 A chain of agents takes turns. One plans, one codes, one reviews, one tests, one commits. If an agent fails, another agent fixes it and the chain retries — automatically.
 
@@ -70,9 +70,9 @@ Same orchestration power. Different tradeoffs:
 | **Config format** | YAML + Markdown | Python code |
 | **Cost model** | Your CC subscription | Per-token API billing |
 | **Learning curve** | Pick template, start working | Learn framework, write code |
-| **Runs inside** | Claude Code | Standalone runtime |
+| **Runs inside** | Claude Code / opencode | Standalone runtime |
 
-### 9 templates. 60+ agents. Ready to run.
+### 10 templates. Ready to run.
 
 No blank-page problem. Pick a template:
 
@@ -80,7 +80,7 @@ No blank-page problem. Pick a template:
 - **devops** — scan → security → test → deploy → monitor → [rollback if alert]
 - **marketing** — research → write → edit → SEO → publish → analyze
 - **research** — gather → analyze → synthesize → report
-- And 5 more (docs, support, data, moderation, review)
+- And 6 more (docs, support, data, moderation, review, skill-dev)
 
 ### Declared in YAML. Your agents stay with you.
 

@@ -4,13 +4,13 @@ This guide will help you get up and running with Brainbrew Devkit in minutes.
 
 ## What is Brainbrew?
 
-**Self-correcting agent chains for Claude Code.** A chain of agents takes turns. One plans, one codes, one reviews, one tests, one commits. If an agent fails, another fixes it and the chain retries — automatically.
+**Self-correcting agent chains for Claude Code and opencode.** A chain of agents takes turns. One plans, one codes, one reviews, one tests, one commits. If an agent fails, another fixes it and the chain retries — automatically.
 
 Instead of manually deciding what agent to run next, Brainbrew uses AI-powered routing (via Haiku) to analyze each agent's output and pick the appropriate next step.
 
 ## Prerequisites
 
-- [Claude Code](https://docs.claude.com/en/docs/claude-code)
+- [Claude Code](https://docs.claude.com/en/docs/claude-code) or [opencode](https://opencode.ai)
 - Node.js 18+
 
 ## Quick Setup
@@ -22,7 +22,7 @@ Instead of manually deciding what agent to run next, Brainbrew uses AI-powered r
 /plugin install brainbrew-devkit
 ```
 
-After installation, **restart Claude Code** for hooks, agents, and the chain config to take effect.
+After installation, **restart Claude Code** (or opencode) for hooks, agents, and the chain config to take effect.
 
 ### 2. Build a Chain (recommended)
 

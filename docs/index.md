@@ -2,7 +2,7 @@
 layout: home
 hero:
   name: Brainbrew Devkit
-  text: Self-correcting agent chains for Claude Code
+  text: Self-correcting agent chains for Claude Code and opencode
   tagline: Agents take turns — one plans, one codes, one reviews, one tests, one commits. If an agent fails, another fixes it and the chain retries automatically.
   actions:
     - theme: brand
@@ -26,6 +26,6 @@ features:
   - title: Memory Bus
     details: Inter-agent state sharing across chain runs and sessions.
   - title: No Vendor Lock-in
-    details: Chains live as YAML in your repo. Agents are markdown. Runs on your Claude Code subscription.
+    details: Chains live as YAML in your repo. Agents are markdown. Runs on your Claude Code or opencode subscription.
 ---
 
