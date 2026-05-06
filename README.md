@@ -1,31 +1,31 @@
 # brainbrew-devkit
 
-**Robots that take turns doing your work.**
+**Self-correcting agent chains for Claude Code.**
 
-You say "go." A team of little robots takes turns. One plans. One writes code. One checks it. One tests it. One saves it. If a robot makes a mistake, another robot fixes it.
+A chain of agents takes turns. One plans, one codes, one reviews, one tests, one commits. If an agent fails, another agent fixes it and the chain retries — automatically.
 
-You just watch.
+You watch. Approve the PR. Done.
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    You([You: /code]) --> Plan[🧠 Plan]
-    Plan --> Code[⚒️ Write code]
-    Code --> Check{🔍 Check}
-    Check -- looks good --> Test{🧪 Test}
-    Check -- oops --> Code
-    Test -- works --> Save[💾 Save]
-    Test -- broken --> Fix[🔧 Fix]
+    You([/code]) --> Plan[planner]
+    Plan --> Code[implementer]
+    Code --> Check{code-reviewer}
+    Check -- pass --> Test{tester}
+    Check -- issues --> Code
+    Test -- pass --> Save[git-manager]
+    Test -- fail --> Fix[debugger]
     Fix --> Test
-    Save --> Done([✅ Done])
+    Save --> Done([PR ready])
 ```
 
-Each box is a robot. Arrows are how they pass work. If something fails, the chain loops back until it works.
+Each box is an agent. Arrows are auto-routes — Haiku reads each agent's output and picks the next step. Failures loop back until they pass.
 
-## Try it
+## Quick start
 
-**You need:** [Claude Code](https://docs.claude.com/en/docs/claude-code) and Node.js (18+).
+**Requires** [Claude Code](https://docs.claude.com/en/docs/claude-code) + Node.js 18+.
 
 **Install** (then restart Claude Code):
 
@@ -34,67 +34,55 @@ Each box is a robot. Arrows are how they pass work. If something fails, the chai
 /plugin install brainbrew-devkit
 ```
 
-**Pick a team** — just ask:
-
-```
-"Set up a development workflow"
-```
-
-**Tell them to start:**
+**Run:**
 
 ```
 /code add a login button
 ```
 
-That's it. Watch the robots take turns.
+The chain handles routing, retries, and coordination.
 
-## Build your own (recommended)
+## Build your own chain (recommended)
 
-Templates below are **examples, not best practice**. Every project is different — your real workflow probably needs a different chain.
+Templates are **reference examples, not best practice**. Every project is different — your real workflow needs its own chain.
 
 Just describe it:
 
 ```
-"Build me a chain for my project"
-"I need: design review → implement → security check → deploy"
+"Build me a chain for this project"
+"I need: design review → implement → security scan → deploy"
 ```
 
-The **chain-builder** robot will read your project, ask a few questions, and write a chain that fits. That's the right path.
+The **chain-builder** agent reads your codebase, asks a few questions, and writes a chain that fits.
 
-Need a robot for a specific task? Ask **skill-finder** — it searches Vercel Skills, GitHub, and Anthropic's official skills, then installs the one that matches:
+Need a specific capability? Ask **skill-finder** — it searches Vercel Skills, GitHub, and Anthropic's official skills, then installs a match:
 
 ```
 "Find a skill for writing tests"
-"Install a skill that handles database migrations"
+"Install a skill for database migrations"
 ```
 
-Templates are useful when you want a quick start to copy from.
+Use templates only as a starting point to copy from.
 
-## Teams you can pick
+## Templates
 
-| Name | What they do |
-|------|--------------|
-| **develop** | Plan → code → review → test → save |
-| **devops** | Scan → secure → test → deploy |
-| **marketing** | Research → write → edit → publish |
-| **research** | Gather → analyze → report |
-| **docs** | Read code → write docs → review |
-| **support** | Sort tickets → answer → review |
-| **data** | Collect → clean → chart → report |
-| **moderation** | Scan → classify → flag → act |
-| **review** | Just review code |
-| **skill-dev** | Build new robot skills |
-| **minimal** | Empty — bring your own robots |
+| Name | Chain |
+|------|-------|
+| **develop** | plan → code → review → test → commit |
+| **devops** | scan → secure → test → deploy |
+| **marketing** | research → write → edit → publish |
+| **research** | gather → analyze → report |
+| **docs** | scan code → write → review |
+| **support** | classify → answer → review |
+| **data** | collect → clean → chart → report |
+| **moderation** | scan → classify → flag → act |
+| **review** | code-reviewer only |
+| **skill-dev** | build new agent skills |
+| **minimal** | empty — bring your own |
 
-## Make your own team
+## Define a chain manually
 
-Ask:
-
-```
-"Create a chain: researcher → writer → editor → publisher"
-```
-
-Or write `.claude/chains/my-chain.yaml`:
+`.claude/chains/my-chain.yaml`:
 
 ```yaml
 flow:
@@ -108,23 +96,22 @@ flow:
 
   editor:
     routes:
-      END: "Looks good"
+      END: "Approved"
 ```
 
-Each robot is just a markdown file in `.claude/agents/`. They live with your project.
+Each agent is a markdown file in `.claude/agents/`. Chains live in your repo — version-controlled, no vendor lock-in.
 
-## Why use it
+## vs. Vanilla Claude Code
 
-| Without brainbrew | With brainbrew |
-|---|---|
-| You tell each robot what to do | Robots pass work themselves |
-| You spot the mistakes | Robots catch them |
-| You retry when it breaks | Robots retry |
-| You glue it all together | YAML does that |
-
-It runs on your Claude Code subscription — no extra bills.
+| | Vanilla | Brainbrew |
+|---|---|---|
+| Agent chaining | manual | auto (Haiku-routed) |
+| Failure recovery | none | built-in (debugger → retry) |
+| Quality gates | none | post-agent verification |
+| Inter-agent context | none | auto-injected |
+| Cost | — | your CC subscription, no extra bills |
 
 ## More
 
 - [Full docs](docs/) — every knob and dial
-- [opencode users](docs/guide/installation.md#opencode-support) — works there too, run `/brainbrew-devkit:init` after install
+- [opencode](docs/guide/installation.md#opencode-support) — supported; run `/brainbrew-devkit:init` after install
