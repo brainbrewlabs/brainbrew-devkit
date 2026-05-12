@@ -45,6 +45,7 @@ export interface FlowEntry {
   routes?: Record<string, string>;
   decide?: string;
   context?: string;
+  config_keys?: string[];
   saveOutput?: boolean;
   reset_counters?: boolean;
   next?: string | null;
@@ -141,6 +142,9 @@ function normalizeFlowEntry(nodeId: string, raw: Record<string, unknown>, versio
   }
   if (raw.decide !== undefined) entry.decide = asString(raw.decide);
   if (raw.context !== undefined) entry.context = asString(raw.context);
+  if (Array.isArray(raw.config_keys)) {
+    entry.config_keys = (raw.config_keys as unknown[]).map(String).filter(Boolean);
+  }
   const save = asBool(raw.saveOutput);
   if (save !== undefined) entry.saveOutput = save;
   const reset = asBool(raw.reset_counters);
@@ -180,7 +184,7 @@ function normalizeFlowEntry(nodeId: string, raw: Record<string, unknown>, versio
   for (const [k, v] of Object.entries(raw)) {
     if (
       k === 'type' || k === 'teammates' || k === 'routes' || k === 'decide' ||
-      k === 'context' || k === 'saveOutput' || k === 'reset_counters' ||
+      k === 'context' || k === 'config_keys' || k === 'saveOutput' || k === 'reset_counters' ||
       k === 'next' || k === 'on_issues' || k === 'on_fail' ||
       k === 'spec' || k === 'inputs' || k === 'outputs' || k === 'routing' ||
       k === 'timeout' || k === 'retry'

@@ -28263,6 +28263,9 @@ function normalizeFlowEntry(nodeId, raw, version2) {
   }
   if (raw.decide !== void 0) entry.decide = asString(raw.decide);
   if (raw.context !== void 0) entry.context = asString(raw.context);
+  if (Array.isArray(raw.config_keys)) {
+    entry.config_keys = raw.config_keys.map(String).filter(Boolean);
+  }
   const save = asBool(raw.saveOutput);
   if (save !== void 0) entry.saveOutput = save;
   const reset = asBool(raw.reset_counters);
@@ -28298,7 +28301,7 @@ function normalizeFlowEntry(nodeId, raw, version2) {
     if (entry.type === "agent" && !entry.spec) entry.spec = { name: nodeId };
   }
   for (const [k, v] of Object.entries(raw)) {
-    if (k === "type" || k === "teammates" || k === "routes" || k === "decide" || k === "context" || k === "saveOutput" || k === "reset_counters" || k === "next" || k === "on_issues" || k === "on_fail" || k === "spec" || k === "inputs" || k === "outputs" || k === "routing" || k === "timeout" || k === "retry") continue;
+    if (k === "type" || k === "teammates" || k === "routes" || k === "decide" || k === "context" || k === "config_keys" || k === "saveOutput" || k === "reset_counters" || k === "next" || k === "on_issues" || k === "on_fail" || k === "spec" || k === "inputs" || k === "outputs" || k === "routing" || k === "timeout" || k === "retry") continue;
     if (!(k in entry)) entry[k] = v;
   }
   return entry;
@@ -28777,6 +28780,7 @@ function copyDirRecursive(src, dest) {
 }
 var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || (0, import_path5.dirname)((0, import_path5.dirname)(__filename));
 var TEMPLATES_DIR = (0, import_path5.join)(PLUGIN_ROOT, "config", "templates");
+var CONFIG_TEMPLATE = (0, import_path5.join)(PLUGIN_ROOT, "config", "config.yaml");
 var PLUGINS_DIR = (0, import_path5.join)((0, import_path5.dirname)(PLUGIN_ROOT), "plugins");
 var server = new Server(
   {
@@ -28985,14 +28989,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         (0, import_fs4.copyFileSync)(templateYaml, (0, import_path5.join)(cwd, ".claude/chains", `${template}.yaml`));
         writePointer(cwd, template);
+        const projectConfigPath = (0, import_path5.join)(cwd, ".claude", "config.yaml");
+        let configScaffolded = false;
+        if (!(0, import_fs4.existsSync)(projectConfigPath) && (0, import_fs4.existsSync)(CONFIG_TEMPLATE)) {
+          (0, import_fs4.copyFileSync)(CONFIG_TEMPLATE, projectConfigPath);
+          configScaffolded = true;
+        }
         const config2 = (0, import_fs4.readFileSync)(templateYaml, "utf-8");
         const flowMatch = config2.match(/flow:[\s\S]*/);
         const flow = flowMatch ? flowMatch[0].substring(0, 500) : "";
+        const configNote = configScaffolded ? `
+Project config: .claude/config.yaml (new \u2014 edit values for this project)` : `
+Project config: .claude/config.yaml (kept existing)`;
         return success2(`Template "${template}" set up!
 
 Agents: ${agentCount}
 Skills: ${skillCount}
-Active chain: ${template}
+Active chain: ${template}${configNote}
 
 ${flow}`);
       }

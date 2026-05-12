@@ -1,0 +1,80 @@
+# Project-level configuration. Shared defaults for the whole project.
+# Scaffolded on first `template_bump`. Subsequent bumps DO NOT overwrite.
+# Commit this file — teammates inherit the same defaults.
+
+# ─── User ────────────────────────────────────────────────────────────────
+user:
+  # Your short handle (e.g. "quandv19"). Lowercase, no spaces.
+  # Available as {username} anywhere a template references it
+  # (branch names, commit/PR templates, custom workflows, etc.).
+  username: ""
+
+# ─── Git ─────────────────────────────────────────────────────────────────
+git:
+  # Default branch to checkout for new product bug fixes.
+  default_branch: main
+
+  # Branch naming templates. Placeholders: {refs}, {username}, {type}
+  # {refs} = all ticket/issue references joined by "-" (e.g. "PROJ-123-PROJ-125",
+  # "42-58", "BUG-7"). Tracker-agnostic — works for Jira, GitHub, Linear, etc.
+  # Refs ALSO go in commit messages (see commit_format).
+  fix_format: "fix/{username}-{refs}"
+  hotfix_format: "hotfix/{username}-{refs}"
+  feature_format: "feat/{username}-{refs}"
+
+  # Commit message template. Placeholders: {ref}, {summary}
+  commit_format: "{type}({ref}): {summary}"
+
+  # PR title template. Placeholders: {refs_bracketed}, {summary}
+  # {refs_bracketed} = each ref wrapped in square brackets, concatenated
+  # (e.g. "[PROJ-123][PROJ-125]", "[#42][#58]").
+  # Forbidden verbs (see pr_forbidden_keywords below) are stripped from
+  # {summary} before substitution to avoid triggering tracker smart-commit
+  # transitions or GitHub auto-close on PR merge.
+  pr_title_format: "{refs_bracketed} {summary}"
+
+  # PR target branch — branch the PR merges INTO. Defaults to
+  # default_branch above. Override here if your team uses a different
+  # integration branch (e.g. "develop", "staging").
+  pr_base_branch: ""
+
+  # Verbs banned from PR title AND PR body. Tracker smart-commits /
+  # GitHub auto-close fire on these words next to a ref and trigger
+  # unwanted transitions. "fix" / "fixes" are allowed — they don't
+  # close tickets by default. Match is case-insensitive, whole-word.
+  pr_forbidden_keywords:
+    - resolve
+    - resolves
+    - resolved
+    - resolving
+    - close
+    - closes
+    - closed
+    - closing
+
+  # Repo paths per scope — REQUIRED when the working directory is a parent
+  # folder containing multiple git repos (e.g. separate frontend + backend
+  # repos). Paths are relative to cwd. Leave BOTH empty for a single-repo
+  # project (operations run in cwd).
+  #
+  # Scope → path routing:
+  #   frontend scope  → repos.frontend
+  #   backend  scope  → repos.backend
+  #   fullstack scope → both
+  repos:
+    frontend: "./frontend"
+    backend: "./backend"
+
+# ─── Local Dev Servers ───────────────────────────────────────────────────
+# Commands to start local dev servers for runtime checks. cwd defaults
+# to git.repos.{frontend,backend}. Leave command empty to disable that
+# side. Port is REQUIRED when command is set — used to poll for
+# readiness AND to force-kill dangling processes on teardown
+# (`lsof -ti tcp:<port> | xargs kill -9`).
+servers:
+  frontend:
+    command: ""   # e.g. "npm run dev"
+    port: 0       # e.g. 5173
+  backend:
+    command: ""   # e.g. "npm run start:dev"
+    port: 0       # e.g. 3000
