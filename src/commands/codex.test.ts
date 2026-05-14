@@ -29,15 +29,43 @@ function makePluginRoot(): string {
   const root = tempDir('brainbrew plugin root ');
   mkdirSync(join(root, 'plugin', '.codex-plugin'), { recursive: true });
   mkdirSync(join(root, 'plugin', '.claude-plugin'), { recursive: true });
+  mkdirSync(join(root, 'plugin', 'agents'), { recursive: true });
+  mkdirSync(join(root, 'plugin', 'codex', 'agents'), { recursive: true });
+  mkdirSync(join(root, 'plugin', 'commands'), { recursive: true });
+  mkdirSync(join(root, 'plugin', 'codex'), { recursive: true });
+  mkdirSync(join(root, 'plugin', 'codex', 'skills', 'memory'), { recursive: true });
   mkdirSync(join(root, 'plugin', 'scripts'), { recursive: true });
+  mkdirSync(join(root, 'plugin', 'mcp'), { recursive: true });
   mkdirSync(join(root, 'plugin', 'skills', 'memory'), { recursive: true });
   mkdirSync(join(root, 'plugin', 'config', 'templates', 'alpha', 'skills', 'shared'), { recursive: true });
   mkdirSync(join(root, 'plugin', 'config', 'templates', 'beta', 'skills', 'shared'), { recursive: true });
   mkdirSync(join(root, 'plugin', 'config', 'templates', 'alpha', 'agents'), { recursive: true });
   mkdirSync(join(root, 'plugin', 'config', 'templates', 'beta', 'agents'), { recursive: true });
-  writeFileSync(join(root, 'plugin', '.codex-plugin', 'plugin.json'), '{}');
+  writeFileSync(join(root, 'plugin', '.codex-plugin', 'plugin.json'), JSON.stringify({
+    name: 'brainbrew-devkit',
+    agents: './codex/agents/',
+    commands: './commands/',
+    skills: './codex/skills/',
+    hooks: './codex/hooks.json',
+    mcpServers: './.mcp.json',
+  }));
+  writeFileSync(join(root, 'plugin', '.mcp.json'), JSON.stringify({
+    mcpServers: { brainbrew: { type: 'stdio' } },
+  }));
   writeFileSync(join(root, 'plugin', '.claude-plugin', 'plugin.json'), '{}');
+  writeFileSync(join(root, 'plugin', 'agents', 'brainbrew-codex-coordinator.md'), '---\nname: brainbrew-codex-coordinator\n---\n');
+  writeFileSync(join(root, 'plugin', 'codex', 'agents', 'brainbrew-codex-coordinator.md'), '---\nname: brainbrew-codex-coordinator\n---\n');
+  writeFileSync(join(root, 'plugin', 'commands', 'codex-status.md'), '---\ndescription: Status\n---\n');
+  writeFileSync(join(root, 'plugin', 'codex', 'hooks.json'), JSON.stringify({ hooks: {} }));
+  writeFileSync(join(root, 'plugin', 'codex', 'skills', 'memory', 'SKILL.md'), `---
+name: memory
+description: Codex-safe memory support.
+---
+
+Use shared memory in Codex.
+`);
   writeFileSync(join(root, 'plugin', 'scripts', 'codex-runner.cjs'), '');
+  writeFileSync(join(root, 'plugin', 'mcp', 'mcp-server.cjs'), '');
   writeFileSync(join(root, 'plugin', 'skills', 'memory', 'SKILL.md'), `---
 name: memory
 description: Memory support.
@@ -95,6 +123,7 @@ afterEach(() => {
 
 describe('codex runtime hooks', () => {
   it('declares the exact supported and unsupported hook lists', () => {
+    expect(codexRuntime.projectMemoryDirName).toBe('.codex/brainbrew');
     expect(codexRuntime.supportedHooks).toEqual([
       'SessionStart',
       'UserPromptSubmit',
@@ -267,6 +296,66 @@ describe('codex command/status behavior', () => {
     codexCommand(['status'], { 'plugin-root': pluginRoot, home: codexHome });
     const output = vi.mocked(console.log).mock.calls.flat().join('\n');
     expect(output).toContain('Runner: missing');
+  });
+
+  it('status reports plugin-native assets and current project state', () => {
+    const pluginRoot = makePluginRoot();
+    const codexHome = tempDir();
+    const cwd = tempDir();
+    const originalCwd = process.cwd();
+    mkdirSync(join(cwd, codexRuntime.projectMemoryDirName), { recursive: true });
+
+    try {
+      process.chdir(cwd);
+      codexCommand(['status'], { 'plugin-root': pluginRoot, home: codexHome });
+      const output = vi.mocked(console.log).mock.calls.flat().join('\n');
+      expect(output).toContain('Plugin manifest: present');
+      expect(output).toContain('Plugin commands: 1 declared, present');
+      expect(output).toContain('Plugin agents: 1 declared, present');
+      expect(output).toContain('Plugin-native skills: 1 declared, present');
+      expect(output).toContain('Plugin MCP servers: 1 declared, present');
+      expect(output).toContain('Plugin hooks template: 1 declared, present');
+      expect(output).toContain('Plugin apps: none declared');
+      expect(output).toContain('Plugin assets: none declared');
+      expect(output).toContain('Project state: initialized (.codex/brainbrew)');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  it('status reports legacy project state for older Codex V1 workspaces', () => {
+    const pluginRoot = makePluginRoot();
+    const codexHome = tempDir();
+    const cwd = tempDir();
+    const originalCwd = process.cwd();
+    mkdirSync(join(cwd, '.codex', 'memory'), { recursive: true });
+
+    try {
+      process.chdir(cwd);
+      codexCommand(['status'], { 'plugin-root': pluginRoot, home: codexHome });
+      const output = vi.mocked(console.log).mock.calls.flat().join('\n');
+      expect(output).toContain('Project state: legacy initialized (.codex/memory)');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  it('status reports present project state when workflow state exists', () => {
+    const pluginRoot = makePluginRoot();
+    const codexHome = tempDir();
+    const cwd = tempDir();
+    const originalCwd = process.cwd();
+    mkdirSync(join(cwd, codexRuntime.projectMemoryDirName), { recursive: true });
+    writeFileSync(join(cwd, codexRuntime.projectMemoryDirName, 'workflow-state.json'), '{}');
+
+    try {
+      process.chdir(cwd);
+      codexCommand(['status'], { 'plugin-root': pluginRoot, home: codexHome });
+      const output = vi.mocked(console.log).mock.calls.flat().join('\n');
+      expect(output).toContain('Project state: present (.codex/brainbrew)');
+    } finally {
+      process.chdir(originalCwd);
+    }
   });
 
   it('brainbrew help still lists existing commands', async () => {

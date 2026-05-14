@@ -20,7 +20,7 @@ export const codexRuntime: RuntimeProfile = {
   configFile: join(homeDir, 'config.toml'),
   hooksFile: join(homeDir, 'hooks.json'),
   skillsDir: join(homeDir, 'skills'),
-  projectMemoryDirName: '.codex/memory',
+  projectMemoryDirName: '.codex/brainbrew',
   supportedHooks: [
     'SessionStart',
     'UserPromptSubmit',

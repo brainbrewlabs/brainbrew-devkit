@@ -35,7 +35,7 @@ import { publish, list, clear } from '../memory/bus.js';
 import { MessageTarget, MessagePersistence, MessagePriority } from '../memory/types.js';
 
 // Plugin root from env
-const PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || dirname(dirname(__filename));
+const PLUGIN_ROOT = process.env.BRAINBREW_PLUGIN_ROOT || process.env.CODEX_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT || dirname(dirname(__filename));
 const TEMPLATES_DIR = join(PLUGIN_ROOT, 'config', 'templates');
 const CONFIG_TEMPLATE = join(PLUGIN_ROOT, 'config', 'config.yaml');
 const PLUGINS_DIR = join(dirname(PLUGIN_ROOT), 'plugins');

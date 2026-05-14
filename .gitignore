@@ -5,3 +5,4 @@ settings.local.json
 docs/.vitepress/cache/
 docs/.vitepress/dist/
 .codex/memory/
+.codex/brainbrew/

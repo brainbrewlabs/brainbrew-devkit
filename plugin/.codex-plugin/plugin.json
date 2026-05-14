@@ -11,17 +11,27 @@
     "workflow",
     "devkit",
     "hooks",
+    "agents",
     "skills",
+    "mcp",
     "codex"
   ],
+  "homepage": "https://github.com/brainbrewlabs/brainbrew-devkit",
+  "repository": "https://github.com/brainbrewlabs/brainbrew-devkit",
+  "agents": "./codex/agents/",
+  "commands": "./commands/",
+  "skills": "./codex/skills/",
+  "hooks": "./codex/hooks.json",
+  "mcpServers": "./codex/mcp.json",
   "interface": {
     "displayName": "BrainBrew DevKit",
-    "shortDescription": "Workflow recipes and skills for Codex.",
-    "longDescription": "Adds Codex-first workflow recipes, role skills, diagnostics, and supported global hooks without copying Claude-only lifecycle behavior.",
+    "shortDescription": "Workflow recipes, agents, and skills for Codex.",
+    "longDescription": "Adds Codex-first workflow recipe skills, role guidance agents, command prompts, diagnostics, MCP setup guidance, and supported global hooks without copying Claude-only lifecycle behavior.",
     "developerName": "BrainBrew Labs",
     "category": "Coding",
     "capabilities": [
       "Interactive",
+      "Read",
       "Write"
     ],
     "defaultPrompt": [
@@ -29,6 +39,8 @@
       "Use a BrainBrew workflow recipe for this task",
       "Sync BrainBrew skills for Codex"
     ],
-    "brandColor": "#2563EB"
+    "websiteURL": "https://github.com/brainbrewlabs/brainbrew-devkit",
+    "brandColor": "#2563EB",
+    "screenshots": []
   }
 }

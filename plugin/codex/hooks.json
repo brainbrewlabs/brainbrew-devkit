@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node '{{PLUGIN_ROOT}}/scripts/codex-runner.cjs' SessionStart",
+            "command": "node \"{{PLUGIN_ROOT}}/scripts/codex-runner.cjs\" SessionStart",
             "timeout": 30
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node '{{PLUGIN_ROOT}}/scripts/codex-runner.cjs' UserPromptSubmit",
+            "command": "node \"{{PLUGIN_ROOT}}/scripts/codex-runner.cjs\" UserPromptSubmit",
             "timeout": 30
           }
         ]
@@ -30,7 +30,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node '{{PLUGIN_ROOT}}/scripts/codex-runner.cjs' PreToolUse",
+            "command": "node \"{{PLUGIN_ROOT}}/scripts/codex-runner.cjs\" PreToolUse",
             "timeout": 30
           }
         ]
@@ -42,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node '{{PLUGIN_ROOT}}/scripts/codex-runner.cjs' PermissionRequest",
+            "command": "node \"{{PLUGIN_ROOT}}/scripts/codex-runner.cjs\" PermissionRequest",
             "timeout": 30
           }
         ]
@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node '{{PLUGIN_ROOT}}/scripts/codex-runner.cjs' PostToolUse",
+            "command": "node \"{{PLUGIN_ROOT}}/scripts/codex-runner.cjs\" PostToolUse",
             "timeout": 60
           }
         ]
@@ -66,7 +66,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node '{{PLUGIN_ROOT}}/scripts/codex-runner.cjs' Stop",
+            "command": "node \"{{PLUGIN_ROOT}}/scripts/codex-runner.cjs\" Stop",
             "timeout": 30
           }
         ]

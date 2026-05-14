@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from 'fs';
 import { homedir } from 'os';
-import { dirname, join, relative, resolve } from 'path';
+import { dirname, isAbsolute, join, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { CODEX_UNSUPPORTED_HOOKS, codexRuntime } from '../core/runtimes/codex.js';
 import { isOwnedHookEntry } from '../core/runtimes/types.js';
@@ -61,6 +61,16 @@ type SkillManifestEntry = {
   generatedAt: string;
 };
 
+type CodexPluginManifest = {
+  agents?: string | Array<{ name?: string; path?: string; description?: string }>;
+  commands?: string | Array<{ name?: string; path?: string; description?: string }>;
+  skills?: string | Array<{ name?: string; path?: string; description?: string }>;
+  mcpServers?: string | Record<string, unknown>;
+  hooks?: string | Record<string, unknown>;
+  apps?: string | Array<{ name?: string; path?: string }>;
+  assets?: string | Array<string | { path?: string }>;
+};
+
 type CodexPaths = {
   codexHome: string;
   configFile: string;
@@ -93,7 +103,8 @@ Commands:
 
 Options:
   --plugin-root <path>   Override plugin root
-  --home <path>          Override Codex home directory for tests`);
+  --home <path>          Override Codex home directory for tests
+  --project-root <path>  Override project root for BrainBrew state`);
 }
 
 function codexPaths(flags: Record<string, string>): CodexPaths {
@@ -104,6 +115,10 @@ function codexPaths(flags: Record<string, string>): CodexPaths {
     hooksFile: join(codexHome, 'hooks.json'),
     skillsDir: join(codexHome, 'skills'),
   };
+}
+
+function projectRoot(flags: Record<string, string>): string {
+  return flags['project-root'] ? resolve(flags['project-root']) : process.cwd();
 }
 
 function codexInit(flags: Record<string, string>): void {
@@ -134,7 +149,7 @@ function codexInit(flags: Record<string, string>): void {
   writeCodexHooksFile(paths.hooksFile, merged);
 
   try {
-    mkdirSync(join(process.cwd(), codexRuntime.projectMemoryDirName), { recursive: true });
+    mkdirSync(join(projectRoot(flags), codexRuntime.projectMemoryDirName), { recursive: true });
   } catch {}
 
   console.log(`Codex hooks installed: ${codexRuntime.supportedHooks.length}/${codexRuntime.supportedHooks.length}`);
@@ -160,6 +175,15 @@ function codexStatus(flags: Record<string, string>): void {
   const unsupported = hooks ? Object.keys(hooks.hooks).filter(h => CODEX_UNSUPPORTED_HOOKS.includes(h as (typeof CODEX_UNSUPPORTED_HOOKS)[number])) : [];
   const manifest = readSkillManifest(join(paths.codexHome, MANIFEST_RELATIVE_PATH));
   const missingSkills = manifest.filter(entry => !existsSync(join(paths.skillsDir, entry.skillName, 'SKILL.md')));
+  const pluginManifestPath = pluginRoot ? join(pluginRoot, codexRuntime.pluginManifestPath) : '';
+  const pluginManifest = pluginManifestPath ? readCodexPluginManifest(pluginManifestPath) : null;
+  const mcpStatus = pluginRoot ? getMcpStatus(pluginRoot, pluginManifest) : { count: 0, missing: [] as string[] };
+  const nativeSkillStatus = pluginRoot ? getNativeSkillStatus(pluginRoot, pluginManifest) : { count: 0, missing: [] as string[] };
+  const commandStatus = pluginRoot ? getNativeDirectoryStatus(pluginRoot, pluginManifest?.commands, '.md') : { count: 0, missing: [] as string[] };
+  const agentStatus = pluginRoot ? getNativeDirectoryStatus(pluginRoot, pluginManifest?.agents) : { count: 0, missing: [] as string[] };
+  const assetStatus = pluginRoot ? getNativeAssetStatus(pluginRoot, pluginManifest) : { count: 0, missing: [] as string[] };
+  const appStatus = pluginRoot ? getNativeAppStatus(pluginRoot, pluginManifest) : { count: 0, missing: [] as string[] };
+  const projectState = getProjectStateStatus(projectRoot(flags));
 
   console.log('Codex runtime status');
   console.log(`Config: ${existsSync(paths.configFile) ? 'present' : 'missing'} (${paths.configFile})`);
@@ -169,9 +193,17 @@ function codexStatus(flags: Record<string, string>): void {
   console.log(`BrainBrew hooks: ${brainbrewHooks}/${codexRuntime.supportedHooks.length}`);
   console.log(`Unsupported hooks: ${unsupported.length ? unsupported.join(', ') : 'none'}`);
   console.log(`Runner: ${runnerPath && existsSync(runnerPath) ? 'present' : 'missing'}${runnerPath ? ` (${runnerPath})` : ''}`);
+  console.log(`Plugin manifest: ${pluginManifest ? 'present' : 'missing'}${pluginManifestPath ? ` (${pluginManifestPath})` : ''}`);
+  console.log(`Plugin commands: ${formatNativeStatus(commandStatus.count, commandStatus.missing)}`);
+  console.log(`Plugin agents: ${formatNativeStatus(agentStatus.count, agentStatus.missing)}`);
+  console.log(`Plugin-native skills: ${formatNativeStatus(nativeSkillStatus.count, nativeSkillStatus.missing)}`);
+  console.log(`Plugin MCP servers: ${formatNativeStatus(mcpStatus.count, mcpStatus.missing)}`);
+  console.log(`Plugin hooks template: ${pluginRoot ? formatNativeStatus(1, getManifestPathMissing(pluginRoot, pluginManifest?.hooks ?? `./${relative(join(pluginRoot, 'plugin'), join(pluginRoot, codexRuntime.hookTemplatePath))}`)) : 'none declared'}`);
+  console.log(`Plugin apps: ${formatNativeStatus(appStatus.count, appStatus.missing)}`);
+  console.log(`Plugin assets: ${formatNativeStatus(assetStatus.count, assetStatus.missing)}`);
   console.log(`BrainBrew skills: ${manifest.length}`);
   console.log(`Stale or missing generated skills: ${missingSkills.length}`);
-  console.log(`Project memory: ${existsSync(join(process.cwd(), codexRuntime.projectMemoryDirName)) ? 'present' : 'missing'}`);
+  console.log(`Project state: ${projectState}`);
 }
 
 export function quoteCommandPath(path: string): string {
@@ -492,6 +524,119 @@ function readSkillManifest(manifestPath: string): SkillManifestEntry[] {
   } catch {
     return [];
   }
+}
+
+function readCodexPluginManifest(manifestPath: string): CodexPluginManifest | null {
+  if (!existsSync(manifestPath)) return null;
+  try {
+    const parsed = JSON.parse(readFileSync(manifestPath, 'utf-8')) as unknown;
+    return parsed && typeof parsed === 'object' ? parsed as CodexPluginManifest : null;
+  } catch {
+    return null;
+  }
+}
+
+function getNativeSkillStatus(pluginRoot: string, manifest: CodexPluginManifest | null): { count: number; missing: string[] } {
+  return getNativeDirectoryStatus(pluginRoot, manifest?.skills, 'SKILL.md');
+}
+
+function getMcpStatus(pluginRoot: string, manifest: CodexPluginManifest | null): { count: number; missing: string[] } {
+  const manifestPathMissing = getManifestPathMissing(pluginRoot, manifest?.mcpServers);
+  const mcpConfigPath = typeof manifest?.mcpServers === 'string' ? manifest.mcpServers : './.mcp.json';
+  const mcpConfig = readCodexPluginManifest(resolvePluginPath(pluginRoot, mcpConfigPath));
+  const configServers = mcpConfig?.mcpServers && typeof mcpConfig.mcpServers === 'object' && !Array.isArray(mcpConfig.mcpServers)
+    ? Object.keys(mcpConfig.mcpServers)
+    : [];
+  const serverMissing = existsSync(join(pluginRoot, 'plugin', 'mcp', 'mcp-server.cjs')) ? [] : ['mcp/mcp-server.cjs'];
+  return { count: configServers.length, missing: [...manifestPathMissing, ...(configServers.length ? serverMissing : [])] };
+}
+
+function getNativeAppStatus(pluginRoot: string, manifest: CodexPluginManifest | null): { count: number; missing: string[] } {
+  return getNativeDirectoryStatus(pluginRoot, manifest?.apps);
+}
+
+function getNativeAssetStatus(pluginRoot: string, manifest: CodexPluginManifest | null): { count: number; missing: string[] } {
+  const assets = manifest?.assets;
+  if (!assets) return { count: 0, missing: [] };
+  if (typeof assets === 'string') {
+    return { count: existsSync(resolvePluginPath(pluginRoot, assets)) ? 1 : 0, missing: getManifestPathMissing(pluginRoot, assets) };
+  }
+  const paths = assets
+    .map(asset => typeof asset === 'string' ? asset : asset.path)
+    .filter((path): path is string => typeof path === 'string' && path.length > 0);
+  const missing = paths.filter(path => !existsSync(resolvePluginPath(pluginRoot, path)));
+  return { count: paths.length, missing };
+}
+
+function getNativeDirectoryStatus(
+  pluginRoot: string,
+  declaration: string | Array<{ name?: string; path?: string; description?: string }> | undefined,
+  extension?: string,
+): { count: number; missing: string[] } {
+  if (!declaration) return { count: 0, missing: [] };
+  if (typeof declaration === 'string') {
+    const target = resolvePluginPath(pluginRoot, declaration);
+    if (!existsSync(target)) return { count: 0, missing: [declaration] };
+    if (!statSync(target).isDirectory()) return { count: 1, missing: [] };
+    return { count: countDeclaredEntries(target, extension), missing: [] };
+  }
+  const paths = declaration
+    .map(item => item.path)
+    .filter((path): path is string => typeof path === 'string' && path.length > 0);
+  const missing = paths.filter(path => !existsSync(resolvePluginPath(pluginRoot, path)));
+  return { count: declaration.length, missing };
+}
+
+function resolvePluginPath(pluginRoot: string, pluginRelativePath: string): string {
+  if (isAbsolute(pluginRelativePath)) return join(pluginRoot, 'plugin', '__invalid_absolute_path__');
+  const normalized = pluginRelativePath.replace(/^\.\//, '');
+  const pluginDir = resolve(pluginRoot, 'plugin');
+  const resolved = resolve(pluginDir, normalized);
+  return resolved === pluginDir || resolved.startsWith(`${pluginDir}/`) ? resolved : join(pluginDir, '__invalid_relative_path__');
+}
+
+function getManifestPathMissing(pluginRoot: string, declaration: string | Record<string, unknown> | undefined): string[] {
+  if (!declaration || typeof declaration !== 'string') return [];
+  return existsSync(resolvePluginPath(pluginRoot, declaration)) ? [] : [declaration];
+}
+
+function countDeclaredEntries(dir: string, extension?: string): number {
+  if (extension === 'SKILL.md') {
+    return sortedFilesRecursive(dir, 'SKILL.md').length;
+  }
+  return sortedFilesRecursive(dir, extension).length;
+}
+
+function sortedFilesRecursive(dir: string, extension?: string): string[] {
+  if (!existsSync(dir)) return [];
+  const result: string[] = [];
+  for (const name of readdirSync(dir).sort()) {
+    const fullPath = join(dir, name);
+    const stat = statSync(fullPath);
+    if (stat.isDirectory()) {
+      result.push(...sortedFilesRecursive(fullPath, extension));
+    } else if (!extension || name.endsWith(extension)) {
+      result.push(fullPath);
+    }
+  }
+  return result;
+}
+
+function formatNativeStatus(count: number, missing: string[]): string {
+  if (count === 0) return 'none declared';
+  return missing.length ? `${count} declared, ${missing.length} missing` : `${count} declared, present`;
+}
+
+function getProjectStateStatus(cwd: string): string {
+  const current = join(cwd, codexRuntime.projectMemoryDirName);
+  const currentState = join(current, 'workflow-state.json');
+  const legacy = join(cwd, '.codex', 'memory');
+  const legacyState = join(legacy, 'workflow-state.json');
+  if (existsSync(currentState)) return `present (${codexRuntime.projectMemoryDirName})`;
+  if (existsSync(current)) return `initialized (${codexRuntime.projectMemoryDirName})`;
+  if (existsSync(legacyState)) return 'legacy present (.codex/memory)';
+  if (existsSync(legacy)) return 'legacy initialized (.codex/memory)';
+  return `missing (${codexRuntime.projectMemoryDirName})`;
 }
 
 function sortedDirs(dir: string): string[] {

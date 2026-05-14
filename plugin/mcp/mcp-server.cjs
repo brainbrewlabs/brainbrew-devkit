@@ -28778,7 +28778,7 @@ function copyDirRecursive(src, dest) {
     }
   }
 }
-var PLUGIN_ROOT = process.env.CLAUDE_PLUGIN_ROOT || (0, import_path5.dirname)((0, import_path5.dirname)(__filename));
+var PLUGIN_ROOT = process.env.BRAINBREW_PLUGIN_ROOT || process.env.CODEX_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT || (0, import_path5.dirname)((0, import_path5.dirname)(__filename));
 var TEMPLATES_DIR = (0, import_path5.join)(PLUGIN_ROOT, "config", "templates");
 var CONFIG_TEMPLATE = (0, import_path5.join)(PLUGIN_ROOT, "config", "config.yaml");
 var PLUGINS_DIR = (0, import_path5.join)((0, import_path5.dirname)(PLUGIN_ROOT), "plugins");
