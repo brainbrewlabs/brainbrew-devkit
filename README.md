@@ -73,7 +73,14 @@ Codex support is first-class, but the runtime mechanism is different:
 | opencode | OHO bridge support |
 | Codex | recipe-guided workflows with global skills and supported hooks |
 
-Install the brainbrew package/plugin first, then run:
+Install the BrainBrew plugin in Codex:
+
+```
+/plugins marketplace add brainbrewlabs/brainbrew-devkit
+/plugins install brainbrew-devkit
+```
+
+Then enable BrainBrew's Codex runtime support:
 
 ```bash
 brainbrew codex init

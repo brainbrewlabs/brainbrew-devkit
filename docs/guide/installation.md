@@ -73,6 +73,15 @@ brainbrew-devkit also supports Codex with global hooks, global skills, and workf
 
 ### Setup
 
+Install the BrainBrew plugin from the Codex marketplace:
+
+```
+/plugins marketplace add brainbrewlabs/brainbrew-devkit
+/plugins install brainbrew-devkit
+```
+
+Then enable BrainBrew's Codex runtime support:
+
 ```bash
 brainbrew codex init
 brainbrew codex sync-skills

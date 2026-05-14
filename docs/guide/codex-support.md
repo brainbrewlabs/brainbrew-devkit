@@ -21,7 +21,21 @@ Codex uses BrainBrew workflows as recipes and guidance. Use them to structure ha
 
 ## Setup
 
-Install the brainbrew package/plugin first, then enable Codex hooks:
+Install the BrainBrew plugin from the Codex marketplace:
+
+```
+/plugins marketplace add brainbrewlabs/brainbrew-devkit
+/plugins install brainbrew-devkit
+```
+
+For local development before the marketplace is published, add this repository as a local marketplace source:
+
+```
+/plugins marketplace add brainbrew-devkit /Users/phungminh/Code/brainbrew-devkit
+/plugins install brainbrew-devkit
+```
+
+Then enable BrainBrew's Codex runtime support:
 
 ```bash
 brainbrew codex init
