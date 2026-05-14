@@ -1,0 +1,34 @@
+{
+  "name": "brainbrew-devkit",
+  "version": "1.26.0",
+  "description": "BrainBrew DevKit runtime support for Codex: workflow recipes, Codex-safe skills, and supported hooks.",
+  "author": {
+    "name": "BrainBrew Labs"
+  },
+  "license": "MIT",
+  "keywords": [
+    "agent-chain",
+    "workflow",
+    "devkit",
+    "hooks",
+    "skills",
+    "codex"
+  ],
+  "interface": {
+    "displayName": "BrainBrew DevKit",
+    "shortDescription": "Workflow recipes and skills for Codex.",
+    "longDescription": "Adds Codex-first workflow recipes, role skills, diagnostics, and supported global hooks without copying Claude-only lifecycle behavior.",
+    "developerName": "BrainBrew Labs",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Set up BrainBrew DevKit for Codex",
+      "Use a BrainBrew workflow recipe for this task",
+      "Sync BrainBrew skills for Codex"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

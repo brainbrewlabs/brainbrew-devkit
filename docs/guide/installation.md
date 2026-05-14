@@ -60,6 +60,29 @@ You must install the plugin in **Claude Code** first (the [Install the Plugin](#
 Claude Code reads hooks directly from the plugin manifest, so you don't need `brainbrew init` for Claude Code — only for opencode.
 :::
 
+## Codex Support
+
+brainbrew-devkit also supports Codex with global hooks, global skills, and workflow recipe guidance. Codex does not run Claude's automatic subagent lifecycle, so BrainBrew chains are projected as Codex-safe skills and recipes.
+
+### Prerequisites
+
+- The brainbrew package/plugin is available locally.
+- Codex has a config file at `~/.codex/config.toml`.
+- `hooks = true` is enabled in that config.
+- `plugin_hooks = false` is acceptable because BrainBrew writes supported hooks to `~/.codex/hooks.json`.
+
+### Setup
+
+```bash
+brainbrew codex init
+brainbrew codex sync-skills
+brainbrew codex status
+```
+
+`brainbrew codex init` merges BrainBrew-owned hook entries into `~/.codex/hooks.json` and preserves unrelated user hooks. `brainbrew codex sync-skills` writes active skills to `~/.codex/skills`, because Codex active skills are global rather than plugin-local.
+
+See [Codex Support](/guide/codex-support) for command details and troubleshooting.
+
 ## Next Steps
 
 - [Quick Start](/guide/quick-start) — Set up your first workflow
