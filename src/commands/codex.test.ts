@@ -27,6 +27,12 @@ function tempDir(name = 'brainbrew-codex-'): string {
 
 function makePluginRoot(): string {
   const root = tempDir('brainbrew plugin root ');
+  mkdirSync(join(root, 'plugin-codex', '.codex-plugin'), { recursive: true });
+  mkdirSync(join(root, 'plugin-codex', 'agents'), { recursive: true });
+  mkdirSync(join(root, 'plugin-codex', 'commands'), { recursive: true });
+  mkdirSync(join(root, 'plugin-codex', 'skills', 'memory'), { recursive: true });
+  mkdirSync(join(root, 'plugin-codex', 'scripts'), { recursive: true });
+  mkdirSync(join(root, 'plugin-codex', 'mcp'), { recursive: true });
   mkdirSync(join(root, 'plugin', '.codex-plugin'), { recursive: true });
   mkdirSync(join(root, 'plugin', '.claude-plugin'), { recursive: true });
   mkdirSync(join(root, 'plugin', 'agents'), { recursive: true });
@@ -41,18 +47,31 @@ function makePluginRoot(): string {
   mkdirSync(join(root, 'plugin', 'config', 'templates', 'beta', 'skills', 'shared'), { recursive: true });
   mkdirSync(join(root, 'plugin', 'config', 'templates', 'alpha', 'agents'), { recursive: true });
   mkdirSync(join(root, 'plugin', 'config', 'templates', 'beta', 'agents'), { recursive: true });
-  writeFileSync(join(root, 'plugin', '.codex-plugin', 'plugin.json'), JSON.stringify({
+  const codexManifest = JSON.stringify({
     name: 'brainbrew-devkit',
-    agents: './codex/agents/',
+    agents: './agents/',
     commands: './commands/',
-    skills: './codex/skills/',
-    hooks: './codex/hooks.json',
-    mcpServers: './.mcp.json',
-  }));
+    skills: './skills/',
+    hooks: './hooks.json',
+  });
+  writeFileSync(join(root, 'plugin-codex', '.codex-plugin', 'plugin.json'), codexManifest);
+  writeFileSync(join(root, 'plugin', '.codex-plugin', 'plugin.json'), codexManifest);
   writeFileSync(join(root, 'plugin', '.mcp.json'), JSON.stringify({
     mcpServers: { brainbrew: { type: 'stdio' } },
   }));
   writeFileSync(join(root, 'plugin', '.claude-plugin', 'plugin.json'), '{}');
+  writeFileSync(join(root, 'plugin-codex', 'agents', 'brainbrew-codex-coordinator.md'), '---\nname: brainbrew-codex-coordinator\n---\n');
+  writeFileSync(join(root, 'plugin-codex', 'commands', 'codex-status.md'), '---\ndescription: Status\n---\n');
+  writeFileSync(join(root, 'plugin-codex', 'hooks.json'), JSON.stringify({ hooks: {} }));
+  writeFileSync(join(root, 'plugin-codex', 'skills', 'memory', 'SKILL.md'), `---
+name: memory
+description: Codex-safe memory support.
+---
+
+Use shared memory in Codex.
+`);
+  writeFileSync(join(root, 'plugin-codex', 'scripts', 'codex-runner.cjs'), '');
+  writeFileSync(join(root, 'plugin-codex', 'mcp', 'mcp-server.cjs'), '');
   writeFileSync(join(root, 'plugin', 'agents', 'brainbrew-codex-coordinator.md'), '---\nname: brainbrew-codex-coordinator\n---\n');
   writeFileSync(join(root, 'plugin', 'codex', 'agents', 'brainbrew-codex-coordinator.md'), '---\nname: brainbrew-codex-coordinator\n---\n');
   writeFileSync(join(root, 'plugin', 'commands', 'codex-status.md'), '---\ndescription: Status\n---\n');

@@ -23,6 +23,16 @@ export default defineConfig([
     splitting: false,
     noExternal: [/.*/],
   },
+  // Codex MCP Server
+  {
+    entry: { 'mcp-server': 'src/mcp/server.ts' },
+    format: ['cjs'],
+    outDir: 'plugin-codex/mcp',
+    sourcemap: false,
+    minify: false,
+    splitting: false,
+    noExternal: [/.*/],
+  },
   // Hook entries → plugin/scripts/ for Claude Code plugin
   {
     entry: {
@@ -37,6 +47,16 @@ export default defineConfig([
     },
     format: ['cjs'],
     outDir: 'plugin/scripts',
+    sourcemap: false,
+    minify: false,
+    splitting: false,
+    noExternal: [/.*/],
+  },
+  // Codex hook entry → dedicated Codex plugin package
+  {
+    entry: { 'codex-runner': 'src/hooks/codex-runner.ts' },
+    format: ['cjs'],
+    outDir: 'plugin-codex/scripts',
     sourcemap: false,
     minify: false,
     splitting: false,

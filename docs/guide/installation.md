@@ -94,7 +94,7 @@ After plugin install, Codex can also discover BrainBrew prompt commands such as 
 
 ### MCP
 
-BrainBrew ships Codex MCP metadata in `plugin/codex/mcp.json` and Claude/opencode MCP metadata in `plugin/.mcp.json`. If your Codex build does not auto-register plugin MCP servers, register the installed server explicitly:
+BrainBrew packages a Codex MCP server in `plugin-codex/mcp/mcp-server.cjs` and keeps Claude/opencode MCP metadata in `plugin/.mcp.json`. For the Codex beta, register the installed server explicitly:
 
 ```bash
 codex mcp add brainbrew -- node <installed-plugin-root>/mcp/mcp-server.cjs

@@ -4,11 +4,11 @@ BrainBrew supports Codex as a first-class runtime with a Codex-specific setup pa
 
 ## What Is Included
 
-- A Codex plugin manifest under `plugin/.codex-plugin/plugin.json`.
-- Plugin-native prompt commands under `plugin/commands/`.
-- Plugin-native Codex agent guidance under `plugin/codex/agents/`.
-- Curated Codex-safe BrainBrew skills under `plugin/codex/skills/`.
-- MCP config guidance through `plugin/codex/mcp.json` and `plugin/.mcp.json`.
+- A dedicated Codex plugin package under `plugin-codex/`.
+- Plugin-native prompt commands under `plugin-codex/commands/`.
+- Plugin-native Codex agent guidance under `plugin-codex/agents/`.
+- Curated Codex-safe BrainBrew skills under `plugin-codex/skills/`.
+- Packaged MCP server under `plugin-codex/mcp/`.
 - Global hook integration through `~/.codex/hooks.json`.
 - Global skill sync into `~/.codex/skills`.
 - Workflow recipe skills generated from BrainBrew templates.
@@ -61,10 +61,10 @@ After plugin install, Codex can discover BrainBrew assets directly from the plug
 
 | Asset | Path | Purpose |
 |-------|------|---------|
-| Commands | `plugin/commands/brainbrew-*.md`, `plugin/commands/codex-*.md` | Prompt shortcuts for setup, chain-run guidance, template bumping, skill sync, diagnostics, and recipe-guided workflow use |
-| Agents | `plugin/codex/agents/openai.yaml`, `plugin/codex/agents/brainbrew-codex-*.md` | Codex-facing role guidance for setup coordination and diagnostics |
-| Skills | `plugin/codex/skills/brainbrew-*` | Curated setup, workflow, and MCP guidance that is safe for Codex |
-| MCP | `plugin/codex/mcp.json`, `plugin/.mcp.json` | Codex server definition plus Claude/opencode server definition and registration guidance |
+| Commands | `plugin-codex/commands/brainbrew-*.md`, `plugin-codex/commands/codex-*.md` | Prompt shortcuts for setup, chain-run guidance, template bumping, skill sync, diagnostics, and recipe-guided workflow use |
+| Agents | `plugin-codex/agents/openai.yaml`, `plugin-codex/agents/brainbrew-codex-*.md` | Codex-facing role guidance for setup coordination and diagnostics |
+| Skills | `plugin-codex/skills/brainbrew-*` | Curated setup, workflow, and MCP guidance that is safe for Codex |
+| MCP | `plugin-codex/mcp/mcp-server.cjs` | Packaged MCP server for manual `codex mcp add` registration |
 
 These assets do not replace the global sync step. `brainbrew codex sync-skills` still projects template skills, template agents, and workflow YAML into `~/.codex/skills` so Codex can trigger them reliably across projects.
 
@@ -121,10 +121,10 @@ Reports config, hook, runner, and skill health:
 BrainBrew's MCP server is packaged at:
 
 ```text
-plugin/mcp/mcp-server.cjs
+plugin-codex/mcp/mcp-server.cjs
 ```
 
-Codex plugin metadata points to `plugin/codex/mcp.json`, which uses a Codex plugin-root variable when the installed Codex build supports plugin MCP loading. Claude Code and opencode continue to use the existing `${CLAUDE_PLUGIN_ROOT}` entry in `plugin/.mcp.json`.
+For the Codex beta, MCP registration is explicit instead of auto-loaded from the plugin manifest. This avoids relying on unverified plugin-root variable expansion in Codex MCP configs. Claude Code and opencode continue to use the existing `${CLAUDE_PLUGIN_ROOT}` entry in `plugin/.mcp.json`.
 
 In Codex, check whether BrainBrew is already registered:
 

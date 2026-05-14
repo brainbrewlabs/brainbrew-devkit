@@ -88,7 +88,7 @@ brainbrew codex sync-skills
 brainbrew codex status
 ```
 
-The Codex plugin also ships native prompt commands (`/brainbrew:init`, `/brainbrew:chain-run`, `/brainbrew:template-bump`, `/brainbrew:codex-sync-skills`, `/brainbrew:status`), role agents, and curated BrainBrew skills. Codex workflow YAML is guidance, not an executable chain state machine. See [docs/guide/codex-support.md](docs/guide/codex-support.md) for setup, MCP registration, and troubleshooting.
+The dedicated Codex plugin package also ships native prompt commands (`/brainbrew:init`, `/brainbrew:chain-run`, `/brainbrew:template-bump`, `/brainbrew:codex-sync-skills`, `/brainbrew:status`), role agents, and curated BrainBrew skills. Codex workflow YAML is guidance, not an executable chain state machine. See [docs/guide/codex-support.md](docs/guide/codex-support.md) for setup, MCP registration, and troubleshooting.
 
 ## Build your own chain (recommended)
 

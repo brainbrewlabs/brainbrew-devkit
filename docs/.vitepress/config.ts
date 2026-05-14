@@ -22,6 +22,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Codex Support', link: '/guide/codex-support' },
+            { text: 'Codex Beta Notes', link: '/guide/codex-beta-release-notes' },
             { text: 'Quick Start', link: '/guide/quick-start' }
           ]
         },

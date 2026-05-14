@@ -124,7 +124,7 @@ function projectRoot(flags: Record<string, string>): string {
 function codexInit(flags: Record<string, string>): void {
   const paths = codexPaths(flags);
   const pluginRoot = resolvePluginRoot(flags);
-  const runnerPath = join(pluginRoot, 'plugin', 'scripts', codexRuntime.runnerScriptName);
+  const runnerPath = resolveRunnerPath(pluginRoot);
 
   if (!existsSync(runnerPath)) {
     console.error(`Codex runner not found at ${runnerPath}. Run npm run build before brainbrew codex init.`);
@@ -170,7 +170,7 @@ function codexStatus(flags: Record<string, string>): void {
   const paths = codexPaths(flags);
   const config = existsSync(paths.configFile) ? readFileSync(paths.configFile, 'utf-8') : '';
   const hooks = safeReadHooks(paths.hooksFile);
-  const runnerPath = pluginRoot ? join(pluginRoot, 'plugin', 'scripts', codexRuntime.runnerScriptName) : '';
+  const runnerPath = pluginRoot ? resolveRunnerPath(pluginRoot) : '';
   const brainbrewHooks = hooks ? countBrainbrewHooks(hooks) : 0;
   const unsupported = hooks ? Object.keys(hooks.hooks).filter(h => CODEX_UNSUPPORTED_HOOKS.includes(h as (typeof CODEX_UNSUPPORTED_HOOKS)[number])) : [];
   const manifest = readSkillManifest(join(paths.codexHome, MANIFEST_RELATIVE_PATH));
@@ -211,7 +211,7 @@ export function quoteCommandPath(path: string): string {
 }
 
 export function buildCodexHookEntry(pluginRoot: string, eventName: string): CodexHookEntry {
-  const runnerPath = join(pluginRoot, 'plugin', 'scripts', codexRuntime.runnerScriptName);
+  const runnerPath = resolveRunnerPath(pluginRoot);
   return {
     matcher: eventName === 'PreToolUse' || eventName === 'PostToolUse' ? CODEX_TOOL_MATCHER : '.*',
     hooks: [
@@ -488,6 +488,12 @@ function hasPluginRoot(root: string): boolean {
   );
 }
 
+function resolveRunnerPath(pluginRoot: string): string {
+  const codexRunner = join(pluginRoot, 'plugin-codex', 'scripts', codexRuntime.runnerScriptName);
+  if (existsSync(codexRunner)) return codexRunner;
+  return join(pluginRoot, 'plugin', 'scripts', codexRuntime.runnerScriptName);
+}
+
 function hasTomlBoolean(content: string, key: string, value: boolean): boolean {
   const pattern = new RegExp(`^\\s*${key}\\s*=\\s*${value ? 'true' : 'false'}\\s*(?:#.*)?$`, 'm');
   return pattern.test(content);
@@ -547,8 +553,11 @@ function getMcpStatus(pluginRoot: string, manifest: CodexPluginManifest | null):
   const configServers = mcpConfig?.mcpServers && typeof mcpConfig.mcpServers === 'object' && !Array.isArray(mcpConfig.mcpServers)
     ? Object.keys(mcpConfig.mcpServers)
     : [];
-  const serverMissing = existsSync(join(pluginRoot, 'plugin', 'mcp', 'mcp-server.cjs')) ? [] : ['mcp/mcp-server.cjs'];
-  return { count: configServers.length, missing: [...manifestPathMissing, ...(configServers.length ? serverMissing : [])] };
+  const packagedServer = existsSync(join(pluginRoot, 'plugin-codex', 'mcp', 'mcp-server.cjs')) ||
+    existsSync(join(pluginRoot, 'plugin', 'mcp', 'mcp-server.cjs'));
+  const serverMissing = packagedServer ? [] : ['mcp/mcp-server.cjs'];
+  const count = configServers.length || (packagedServer ? 1 : 0);
+  return { count, missing: [...manifestPathMissing, ...(count ? serverMissing : [])] };
 }
 
 function getNativeAppStatus(pluginRoot: string, manifest: CodexPluginManifest | null): { count: number; missing: string[] } {
@@ -590,7 +599,7 @@ function getNativeDirectoryStatus(
 function resolvePluginPath(pluginRoot: string, pluginRelativePath: string): string {
   if (isAbsolute(pluginRelativePath)) return join(pluginRoot, 'plugin', '__invalid_absolute_path__');
   const normalized = pluginRelativePath.replace(/^\.\//, '');
-  const pluginDir = resolve(pluginRoot, 'plugin');
+  const pluginDir = resolve(pluginRoot, codexRuntime.pluginManifestPath.split('/.codex-plugin/')[0]);
   const resolved = resolve(pluginDir, normalized);
   return resolved === pluginDir || resolved.startsWith(`${pluginDir}/`) ? resolved : join(pluginDir, '__invalid_relative_path__');
 }
