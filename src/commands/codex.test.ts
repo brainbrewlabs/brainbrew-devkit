@@ -266,6 +266,17 @@ describe('codex skill projection', () => {
     expect(manifest.skills.some((entry: { skillName: string; kind: string }) => entry.skillName === 'memory' && entry.kind === 'plugin-skill')).toBe(true);
   });
 
+  it('prefers canonical plugin-codex skills over duplicate plugin skills', () => {
+    const pluginRoot = makePluginRoot();
+    const codexHome = tempDir();
+
+    syncCodexSkills({ pluginRoot, codexHome, now: new Date('2026-05-14T00:00:00Z') });
+
+    const syncedSkill = readFileSync(join(codexHome, 'skills', 'memory', 'SKILL.md'), 'utf-8');
+    expect(syncedSkill).toContain('Codex-safe memory support.');
+    expect(syncedSkill).not.toContain('Store active skills in .claude/skills');
+  });
+
   it('does not delete a destination skill when only stale manifest ownership exists', () => {
     const pluginRoot = makePluginRoot();
     const codexHome = tempDir();
@@ -332,7 +343,8 @@ describe('codex command/status behavior', () => {
       expect(output).toContain('Plugin commands: 1 declared, present');
       expect(output).toContain('Plugin agents: 1 declared, present');
       expect(output).toContain('Plugin-native skills: 1 declared, present');
-      expect(output).toContain('Plugin MCP servers: 1 declared, present');
+      expect(output).toContain('Plugin MCP declaration: none declared');
+      expect(output).toContain('Packaged MCP server: present');
       expect(output).toContain('Plugin hooks template: 1 declared, present');
       expect(output).toContain('Plugin apps: none declared');
       expect(output).toContain('Plugin assets: none declared');

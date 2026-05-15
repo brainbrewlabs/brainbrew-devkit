@@ -21,7 +21,6 @@
   "agents": "./agents/",
   "commands": "./commands/",
   "skills": "./skills/",
-  "hooks": "./hooks.json",
   "interface": {
     "displayName": "BrainBrew DevKit",
     "shortDescription": "Workflow recipes, agents, and skills for Codex.",

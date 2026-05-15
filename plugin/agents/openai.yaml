@@ -1,4 +1,0 @@
-interface:
-  display_name: "BrainBrew DevKit"
-  short_description: "Recipe-guided workflows, Codex-safe skills, commands, and MCP setup for BrainBrew"
-  default_prompt: "Use BrainBrew when setting up Codex hooks, syncing workflow skills, diagnosing BrainBrew status, or following a recipe-guided development chain."

@@ -1,6 +1,6 @@
 # Codex Support
 
-BrainBrew supports Codex as a first-class runtime with a Codex-specific setup path. The support level is the same as Claude Code and opencode, but the mechanism is different.
+BrainBrew supports Codex as a first-class runtime with a Codex-specific setup path. The integration uses Codex-native mechanisms where available and keeps Claude Code and opencode behavior on their stronger native paths.
 
 ## What Is Included
 

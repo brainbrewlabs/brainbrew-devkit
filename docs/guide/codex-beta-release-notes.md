@@ -14,7 +14,7 @@ BrainBrew DevKit now includes beta support for Codex as a first-class runtime. T
   - `/brainbrew:template-bump`
 - Codex-safe agents under `plugin-codex/agents/`
 - Codex-safe skills under `plugin-codex/skills/`
-- Codex-supported hook template under `plugin-codex/hooks.json`
+- Codex-supported hook template under `plugin-codex/hooks.json` for `brainbrew codex init`
 - Codex hook runner state under `.codex/brainbrew/`
 - Global skill projection through `brainbrew codex sync-skills`
 

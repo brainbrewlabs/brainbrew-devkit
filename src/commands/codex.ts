@@ -177,7 +177,7 @@ function codexStatus(flags: Record<string, string>): void {
   const missingSkills = manifest.filter(entry => !existsSync(join(paths.skillsDir, entry.skillName, 'SKILL.md')));
   const pluginManifestPath = pluginRoot ? join(pluginRoot, codexRuntime.pluginManifestPath) : '';
   const pluginManifest = pluginManifestPath ? readCodexPluginManifest(pluginManifestPath) : null;
-  const mcpStatus = pluginRoot ? getMcpStatus(pluginRoot, pluginManifest) : { count: 0, missing: [] as string[] };
+  const mcpStatus = pluginRoot ? getMcpStatus(pluginRoot, pluginManifest) : { declared: 0, packaged: false, missing: [] as string[] };
   const nativeSkillStatus = pluginRoot ? getNativeSkillStatus(pluginRoot, pluginManifest) : { count: 0, missing: [] as string[] };
   const commandStatus = pluginRoot ? getNativeDirectoryStatus(pluginRoot, pluginManifest?.commands, '.md') : { count: 0, missing: [] as string[] };
   const agentStatus = pluginRoot ? getNativeDirectoryStatus(pluginRoot, pluginManifest?.agents) : { count: 0, missing: [] as string[] };
@@ -197,7 +197,8 @@ function codexStatus(flags: Record<string, string>): void {
   console.log(`Plugin commands: ${formatNativeStatus(commandStatus.count, commandStatus.missing)}`);
   console.log(`Plugin agents: ${formatNativeStatus(agentStatus.count, agentStatus.missing)}`);
   console.log(`Plugin-native skills: ${formatNativeStatus(nativeSkillStatus.count, nativeSkillStatus.missing)}`);
-  console.log(`Plugin MCP servers: ${formatNativeStatus(mcpStatus.count, mcpStatus.missing)}`);
+  console.log(`Plugin MCP declaration: ${formatMcpDeclarationStatus(pluginManifest)}`);
+  console.log(`Packaged MCP server: ${formatPackagedMcpStatus(mcpStatus)}`);
   console.log(`Plugin hooks template: ${pluginRoot ? formatNativeStatus(1, getManifestPathMissing(pluginRoot, pluginManifest?.hooks ?? `./${relative(join(pluginRoot, 'plugin'), join(pluginRoot, codexRuntime.hookTemplatePath))}`)) : 'none declared'}`);
   console.log(`Plugin apps: ${formatNativeStatus(appStatus.count, appStatus.missing)}`);
   console.log(`Plugin assets: ${formatNativeStatus(assetStatus.count, assetStatus.missing)}`);
@@ -269,9 +270,23 @@ export function collectCodexSkillSources(pluginRoot: string): SkillSource[] {
   const pluginDir = join(pluginRoot, 'plugin');
   const candidates: SkillSource[] = [];
 
+  const codexPluginSkillsDir = join(pluginRoot, 'plugin-codex', 'skills');
+  if (existsSync(codexPluginSkillsDir)) {
+    for (const name of sortedSkillDirs(codexPluginSkillsDir)) {
+      candidates.push({
+        skillName: name,
+        rawName: name,
+        sourcePath: join(codexPluginSkillsDir, name),
+        kind: 'plugin-skill',
+      });
+    }
+  }
+
   const pluginSkillsDir = join(pluginDir, 'skills');
   if (existsSync(pluginSkillsDir)) {
-    for (const name of sortedDirs(pluginSkillsDir)) {
+    const existingSkillNames = new Set(candidates.map(candidate => candidate.skillName));
+    for (const name of sortedSkillDirs(pluginSkillsDir)) {
+      if (existingSkillNames.has(name)) continue;
       candidates.push({
         skillName: name,
         rawName: name,
@@ -546,7 +561,7 @@ function getNativeSkillStatus(pluginRoot: string, manifest: CodexPluginManifest 
   return getNativeDirectoryStatus(pluginRoot, manifest?.skills, 'SKILL.md');
 }
 
-function getMcpStatus(pluginRoot: string, manifest: CodexPluginManifest | null): { count: number; missing: string[] } {
+function getMcpStatus(pluginRoot: string, manifest: CodexPluginManifest | null): { declared: number; packaged: boolean; missing: string[] } {
   const manifestPathMissing = getManifestPathMissing(pluginRoot, manifest?.mcpServers);
   const mcpConfigPath = typeof manifest?.mcpServers === 'string' ? manifest.mcpServers : './.mcp.json';
   const mcpConfig = readCodexPluginManifest(resolvePluginPath(pluginRoot, mcpConfigPath));
@@ -555,9 +570,19 @@ function getMcpStatus(pluginRoot: string, manifest: CodexPluginManifest | null):
     : [];
   const packagedServer = existsSync(join(pluginRoot, 'plugin-codex', 'mcp', 'mcp-server.cjs')) ||
     existsSync(join(pluginRoot, 'plugin', 'mcp', 'mcp-server.cjs'));
-  const serverMissing = packagedServer ? [] : ['mcp/mcp-server.cjs'];
-  const count = configServers.length || (packagedServer ? 1 : 0);
-  return { count, missing: [...manifestPathMissing, ...(count ? serverMissing : [])] };
+  return { declared: configServers.length, packaged: packagedServer, missing: manifestPathMissing };
+}
+
+function formatMcpDeclarationStatus(manifest: CodexPluginManifest | null): string {
+  if (!manifest?.mcpServers) return 'none declared';
+  if (typeof manifest.mcpServers === 'string') return 'declared by config file';
+  const count = Object.keys(manifest.mcpServers).length;
+  return formatNativeStatus(count, []);
+}
+
+function formatPackagedMcpStatus(status: { packaged: boolean; missing: string[] }): string {
+  if (status.missing.length) return `present, ${status.missing.length} declaration path missing`;
+  return status.packaged ? 'present' : 'missing';
 }
 
 function getNativeAppStatus(pluginRoot: string, manifest: CodexPluginManifest | null): { count: number; missing: string[] } {
@@ -651,6 +676,10 @@ function getProjectStateStatus(cwd: string): string {
 function sortedDirs(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir).filter(name => statSync(join(dir, name)).isDirectory()).sort();
+}
+
+function sortedSkillDirs(dir: string): string[] {
+  return sortedDirs(dir).filter(name => existsSync(join(dir, name, 'SKILL.md')));
 }
 
 function sortedFiles(dir: string, extension: string): string[] {
