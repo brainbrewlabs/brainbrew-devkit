@@ -148,6 +148,7 @@ Then update the previous agent's routes to point to the new agent.
 | `decide` | No | AI prompt sent to Haiku to pick route based on agent output |
 | `reset_counters` | No | Reset loop counters when routing (for approval gates). Loop protection is off by default. |
 | `context` | No | Extra context injected into the agent's system-reminder via SubagentStart. Supports inline text or multiline block (`\|`). |
+| `config_keys` | No | List of top-level keys from `.claude/config.yaml` to inject for this agent. Omit or leave empty → no config injected. Example: `[user, git]`. |
 | `saveOutput` | No | Set to `true` to save this agent's output to `.claude/outputs/{agent}/{timestamp}.md` regardless of the top-level `saveOutput:` list. |
 | `next` | No | Legacy: simple next agent (use `routes` instead) |
 | `on_fail` | No | Legacy: fallback on failure keywords |
@@ -356,7 +357,12 @@ After `template_bump`, review and tune these files:
 - Add project-specific rules and patterns
 - Reference common patterns from `.claude/skills/common/`
 
-### 4. Validate
+### 4. Project Config (`.claude/config.yaml`)
+- Scaffolded on first bump; tune values for this project.
+- Personal overrides → `.claude/config.local.yaml` (deep-merged; add to `.gitignore` yourself).
+- Inject per agent via `config_keys: [user, git, ...]` in the chain flow.
+
+### 5. Validate
 ```
 mcp__brainbrew__chain_validate()
 ```

@@ -4,6 +4,8 @@ import { log, logEvent } from '../utils/logger.js';
 import { CHAIN_CONFIG_FILE, VERIFICATION_RULES_FILE, TMP_DIR } from '../utils/paths.js';
 import { readActiveChainContent } from '../utils/chain-resolver.js';
 import { parseChainYaml } from '../core/config.js';
+import { loadProjectConfig } from '../utils/project-config.js';
+import { stringify as stringifyYaml } from 'yaml';
 import { join } from 'path';
 
 const LOG_FILE = join(TMP_DIR, 'subagent-start.log');
@@ -44,6 +46,26 @@ function parseFlowContext(content: string): Record<string, string> {
     }
   } catch { /* ignore */ }
   return result;
+}
+
+function getConfigKeysForAgent(chainContent: string, agentType: string): string[] {
+  try {
+    const chain = parseChainYaml(chainContent);
+    const entry = chain.flow[agentType.toLowerCase()];
+    return entry?.config_keys ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// Slice a parsed config object to only the requested top-level keys.
+// Returns null if no requested keys are present.
+function sliceConfig(cfg: Record<string, unknown>, keys: string[]): Record<string, unknown> | null {
+  const sliced: Record<string, unknown> = {};
+  for (const k of keys) {
+    if (k in cfg) sliced[k] = cfg[k];
+  }
+  return Object.keys(sliced).length > 0 ? sliced : null;
 }
 
 
@@ -151,8 +173,42 @@ ${JSON.stringify(state.sharedContext, null, 2)}
     }
 
     const cwd = p.cwd ?? process.cwd();
+
+    let chainContent: string | null = null;
     try {
-      const chainContent = readActiveChainContent(cwd);
+      chainContent = readActiveChainContent(cwd);
+    } catch (e) {
+      log(LOG_FILE, `[CONTEXT] Error reading chain: ${(e as Error).message}`);
+    }
+
+    // Inject project-level config — merge of .claude/config.yaml (shared)
+    // and .claude/config.local.yaml (personal, gitignored; local wins),
+    // then sliced to the top-level keys this agent declared in its chain
+    // flow entry (`config_keys: [user, git, ...]`). Agents with no
+    // `config_keys` get no config (opt-in per agent).
+    try {
+      if (chainContent) {
+        const keys = getConfigKeysForAgent(chainContent, type);
+        if (keys.length > 0) {
+          const loaded = loadProjectConfig(cwd);
+          if (loaded) {
+            const sliced = sliceConfig(loaded.data, keys);
+            if (sliced) {
+              const yamlOut = stringifyYaml(sliced).trim();
+              const sourcesNote = loaded.sources.join(' + ');
+              context += `\n## Project Config\nShared project settings from ${sourcesNote} (keys: ${keys.join(', ')}). Respect these values — do not hardcode alternates.\n\n\`\`\`yaml\n${yamlOut}\n\`\`\`\n`;
+              log(LOG_FILE, `[CONFIG] Injected keys=${keys.join(',')} sources=${sourcesNote} for ${type}`);
+            } else {
+              log(LOG_FILE, `[CONFIG] No matching keys in config for ${type} (requested: ${keys.join(',')})`);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      log(LOG_FILE, `[CONFIG] Error: ${(e as Error).message}`);
+    }
+
+    try {
       if (chainContent) {
         const config = parseFlowContext(chainContent);
         const nodeContext = config[type.toLowerCase()];

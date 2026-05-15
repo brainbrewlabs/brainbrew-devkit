@@ -7334,7 +7334,7 @@ var require_dist = __commonJS({
 });
 
 // src/hooks/subagent-start.ts
-var import_fs4 = require("fs");
+var import_fs5 = require("fs");
 
 // src/utils/state.ts
 var import_fs = require("fs");
@@ -7535,6 +7535,9 @@ function normalizeFlowEntry(nodeId, raw, version) {
   }
   if (raw.decide !== void 0) entry.decide = asString(raw.decide);
   if (raw.context !== void 0) entry.context = asString(raw.context);
+  if (Array.isArray(raw.config_keys)) {
+    entry.config_keys = raw.config_keys.map(String).filter(Boolean);
+  }
   const save = asBool(raw.saveOutput);
   if (save !== void 0) entry.saveOutput = save;
   const reset = asBool(raw.reset_counters);
@@ -7570,7 +7573,7 @@ function normalizeFlowEntry(nodeId, raw, version) {
     if (entry.type === "agent" && !entry.spec) entry.spec = { name: nodeId };
   }
   for (const [k, v] of Object.entries(raw)) {
-    if (k === "type" || k === "teammates" || k === "routes" || k === "decide" || k === "context" || k === "saveOutput" || k === "reset_counters" || k === "next" || k === "on_issues" || k === "on_fail" || k === "spec" || k === "inputs" || k === "outputs" || k === "routing" || k === "timeout" || k === "retry") continue;
+    if (k === "type" || k === "teammates" || k === "routes" || k === "decide" || k === "context" || k === "config_keys" || k === "saveOutput" || k === "reset_counters" || k === "next" || k === "on_issues" || k === "on_fail" || k === "spec" || k === "inputs" || k === "outputs" || k === "routing" || k === "timeout" || k === "retry") continue;
     if (!(k in entry)) entry[k] = v;
   }
   return entry;
@@ -7631,15 +7634,57 @@ function parseChainYaml(content) {
   return chain;
 }
 
-// src/hooks/subagent-start.ts
+// src/utils/project-config.ts
+var import_fs4 = require("fs");
 var import_path5 = require("path");
-var LOG_FILE = (0, import_path5.join)(TMP_DIR, "subagent-start.log");
+var import_yaml2 = __toESM(require_dist(), 1);
+function isPlainObject2(v) {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+function deepMerge(base, override) {
+  const out = { ...base };
+  for (const [k, v] of Object.entries(override)) {
+    if (isPlainObject2(v) && isPlainObject2(out[k])) {
+      out[k] = deepMerge(out[k], v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+function readYamlSafe(path) {
+  if (!(0, import_fs4.existsSync)(path)) return null;
+  try {
+    const raw = (0, import_fs4.readFileSync)(path, "utf-8");
+    const parsed = (0, import_yaml2.parse)(raw);
+    return isPlainObject2(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function loadProjectConfig(cwd) {
+  const sharedPath = (0, import_path5.join)(cwd, ".claude", "config.yaml");
+  const localPath = (0, import_path5.join)(cwd, ".claude", "config.local.yaml");
+  const shared = readYamlSafe(sharedPath);
+  const local = readYamlSafe(localPath);
+  if (!shared && !local) return null;
+  const sources = [];
+  if (shared) sources.push(".claude/config.yaml");
+  if (local) sources.push(".claude/config.local.yaml");
+  const merged = deepMerge(shared ?? {}, local ?? {});
+  return { data: merged, sources };
+}
+
+// src/hooks/subagent-start.ts
+var import_yaml3 = __toESM(require_dist(), 1);
+var import_path6 = require("path");
+var LOG_FILE = (0, import_path6.join)(TMP_DIR, "subagent-start.log");
 var CONFIG = { agents: {} };
 try {
-  CONFIG = JSON.parse((0, import_fs4.readFileSync)(CHAIN_CONFIG_FILE, "utf-8"));
+  CONFIG = JSON.parse((0, import_fs5.readFileSync)(CHAIN_CONFIG_FILE, "utf-8"));
 } catch {
   try {
-    const oldRules = JSON.parse((0, import_fs4.readFileSync)(VERIFICATION_RULES_FILE, "utf-8"));
+    const oldRules = JSON.parse((0, import_fs5.readFileSync)(VERIFICATION_RULES_FILE, "utf-8"));
     for (const [type, rule] of Object.entries(oldRules)) {
       CONFIG.agents[type] = { chainNext: rule.chainNext };
     }
@@ -7660,9 +7705,25 @@ function parseFlowContext(content) {
   }
   return result;
 }
+function getConfigKeysForAgent(chainContent, agentType) {
+  try {
+    const chain = parseChainYaml(chainContent);
+    const entry = chain.flow[agentType.toLowerCase()];
+    return entry?.config_keys ?? [];
+  } catch {
+    return [];
+  }
+}
+function sliceConfig(cfg, keys) {
+  const sliced = {};
+  for (const k of keys) {
+    if (k in cfg) sliced[k] = cfg[k];
+  }
+  return Object.keys(sliced).length > 0 ? sliced : null;
+}
 function main() {
   try {
-    const stdin = (0, import_fs4.readFileSync)(0, "utf-8").trim();
+    const stdin = (0, import_fs5.readFileSync)(0, "utf-8").trim();
     if (!stdin) process.exit(0);
     const p = JSON.parse(stdin);
     const type = p.agent_type ?? p.subagent_type ?? p.tool_input?.subagent_type ?? p.metadata?.agent ?? p.agentName ?? p.agent_name ?? p.agent ?? "";
@@ -7731,8 +7792,41 @@ ${JSON.stringify(state.sharedContext, null, 2)}
 `;
     }
     const cwd = p.cwd ?? process.cwd();
+    let chainContent = null;
     try {
-      const chainContent = readActiveChainContent(cwd);
+      chainContent = readActiveChainContent(cwd);
+    } catch (e) {
+      log(LOG_FILE, `[CONTEXT] Error reading chain: ${e.message}`);
+    }
+    try {
+      if (chainContent) {
+        const keys = getConfigKeysForAgent(chainContent, type);
+        if (keys.length > 0) {
+          const loaded = loadProjectConfig(cwd);
+          if (loaded) {
+            const sliced = sliceConfig(loaded.data, keys);
+            if (sliced) {
+              const yamlOut = (0, import_yaml3.stringify)(sliced).trim();
+              const sourcesNote = loaded.sources.join(" + ");
+              context += `
+## Project Config
+Shared project settings from ${sourcesNote} (keys: ${keys.join(", ")}). Respect these values \u2014 do not hardcode alternates.
+
+\`\`\`yaml
+${yamlOut}
+\`\`\`
+`;
+              log(LOG_FILE, `[CONFIG] Injected keys=${keys.join(",")} sources=${sourcesNote} for ${type}`);
+            } else {
+              log(LOG_FILE, `[CONFIG] No matching keys in config for ${type} (requested: ${keys.join(",")})`);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      log(LOG_FILE, `[CONFIG] Error: ${e.message}`);
+    }
+    try {
       if (chainContent) {
         const config = parseFlowContext(chainContent);
         const nodeContext = config[type.toLowerCase()];
