@@ -84,8 +84,8 @@ export function codexCommand(args: string[], flags: Record<string, string>): voi
   switch (sub) {
     case 'init':
       return codexInit(flags);
-    case 'sync-skills':
-      return codexSyncSkills(flags);
+    case 'sync-brainbrew-skills':
+      return codexSyncBrainbrewSkills(flags);
     case 'status':
       return codexStatus(flags);
     default:
@@ -98,7 +98,7 @@ function printHelp(): void {
 
 Commands:
   init                   Install Codex hook entries
-  sync-skills            Sync BrainBrew skills into ~/.codex/skills
+  sync-brainbrew-skills  Sync BrainBrew-owned workflow, role, and helper skills into Codex
   status                 Check Codex runtime support
 
 Options:
@@ -156,7 +156,7 @@ function codexInit(flags: Record<string, string>): void {
   console.log(`Updated: ${paths.hooksFile}`);
 }
 
-function codexSyncSkills(flags: Record<string, string>): void {
+function codexSyncBrainbrewSkills(flags: Record<string, string>): void {
   const pluginRoot = resolvePluginRoot(flags);
   const paths = codexPaths(flags);
   const result = syncCodexSkills({ pluginRoot, codexHome: paths.codexHome, now: new Date() });
@@ -199,7 +199,7 @@ function codexStatus(flags: Record<string, string>): void {
   console.log(`Plugin-native skills: ${formatNativeStatus(nativeSkillStatus.count, nativeSkillStatus.missing)}`);
   console.log(`Plugin MCP declaration: ${formatMcpDeclarationStatus(pluginManifest)}`);
   console.log(`Packaged MCP server: ${formatPackagedMcpStatus(mcpStatus)}`);
-  console.log(`Plugin hooks template: ${pluginRoot ? formatNativeStatus(1, getManifestPathMissing(pluginRoot, pluginManifest?.hooks ?? `./${relative(join(pluginRoot, 'plugin'), join(pluginRoot, codexRuntime.hookTemplatePath))}`)) : 'none declared'}`);
+  console.log(`Packaged hook template: ${pluginRoot ? formatNativeStatus(1, getManifestPathMissing(pluginRoot, `./${relative(resolve(pluginRoot, codexRuntime.pluginManifestPath.split('/.codex-plugin/')[0]), join(pluginRoot, codexRuntime.hookTemplatePath))}`)) : 'none declared'}`);
   console.log(`Plugin apps: ${formatNativeStatus(appStatus.count, appStatus.missing)}`);
   console.log(`Plugin assets: ${formatNativeStatus(assetStatus.count, assetStatus.missing)}`);
   console.log(`BrainBrew skills: ${manifest.length}`);

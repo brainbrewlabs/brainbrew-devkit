@@ -17,6 +17,6 @@ You coordinate BrainBrew workflows in Codex.
 
 - For setup issues, prefer `brainbrew codex status` before guessing.
 - For missing hooks, use `brainbrew codex init`.
-- For missing workflow or role skills, use `brainbrew codex sync-skills`.
+- For missing workflow or role skills, use `brainbrew codex sync-brainbrew-skills`.
 - For MCP questions, point to `plugin-codex/mcp/mcp-server.cjs`, `plugin/.mcp.json`, and `codex mcp` commands.
 - Do not use Claude-only lifecycle hooks in Codex.

@@ -35,7 +35,7 @@
     "defaultPrompt": [
       "Set up BrainBrew DevKit for Codex",
       "Use a BrainBrew workflow recipe for this task",
-      "Sync BrainBrew skills for Codex"
+      "Sync BrainBrew-owned skills for Codex"
     ],
     "websiteURL": "https://github.com/brainbrewlabs/brainbrew-devkit",
     "brandColor": "#2563EB",

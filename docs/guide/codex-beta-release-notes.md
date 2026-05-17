@@ -8,7 +8,7 @@ BrainBrew DevKit now includes beta support for Codex as a first-class runtime. T
 - Codex marketplace entry: `.agents/plugins/marketplace.json`
 - Codex plugin commands:
   - `/brainbrew:init`
-  - `/brainbrew:codex-sync-skills`
+  - `/brainbrew:sync-brainbrew-skills`
   - `/brainbrew:status`
   - `/brainbrew:chain-run`
   - `/brainbrew:template-bump`
@@ -16,7 +16,9 @@ BrainBrew DevKit now includes beta support for Codex as a first-class runtime. T
 - Codex-safe skills under `plugin-codex/skills/`
 - Codex-supported hook template under `plugin-codex/hooks.json` for `brainbrew codex init`
 - Codex hook runner state under `.codex/brainbrew/`
-- Global skill projection through `brainbrew codex sync-skills`
+- Global BrainBrew-owned skill projection through `brainbrew codex sync-brainbrew-skills`
+
+BrainBrew Codex support only installs and validates BrainBrew-owned workflow and runtime assets. Use OpenAI's curated `migrate-to-codex` skill for generic Claude Code to Codex migration.
 
 ## Supported Hooks
 
@@ -61,7 +63,7 @@ Before public production:
 
 3. Confirm these commands appear and run:
    - `/brainbrew:init`
-   - `/brainbrew:codex-sync-skills`
+   - `/brainbrew:sync-brainbrew-skills`
    - `/brainbrew:status`
    - `/brainbrew:chain-run develop`
    - `/brainbrew:template-bump develop`

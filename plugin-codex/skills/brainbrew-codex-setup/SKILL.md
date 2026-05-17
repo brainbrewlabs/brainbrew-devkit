@@ -5,7 +5,7 @@ description: Use when setting up, verifying, or repairing BrainBrew DevKit in Co
 
 # BrainBrew Codex Setup
 
-Use this skill when the user asks to install BrainBrew for Codex, repair missing hooks, sync skills, or verify that BrainBrew is available after plugin installation.
+Use this skill when the user asks to install BrainBrew for Codex, repair missing hooks, sync BrainBrew-owned skills, or verify that BrainBrew is available after plugin installation.
 
 ## Setup Flow
 
@@ -14,7 +14,7 @@ Use this skill when the user asks to install BrainBrew for Codex, repair missing
 
    ```bash
    brainbrew codex init
-   brainbrew codex sync-skills
+   brainbrew codex sync-brainbrew-skills
    brainbrew codex status
    ```
 
@@ -32,5 +32,7 @@ Use this skill when the user asks to install BrainBrew for Codex, repair missing
 - BrainBrew writes supported hook entries to `~/.codex/hooks.json`.
 - `plugin_hooks = false` is acceptable.
 - Active Codex skills live in `~/.codex/skills`.
+- `brainbrew codex sync-brainbrew-skills` syncs only BrainBrew-owned workflow, role, template, and helper skills.
 - Workflow recipes guide the work; they do not execute automatic Claude-style chain routing.
+- For generic Claude Code to Codex migration, use OpenAI's curated `migrate-to-codex` skill.
 - Do not add `SubagentStart`, `SubagentStop`, `SessionEnd`, `Notification`, `PreCompact`, or `PostCompact` to Codex hooks.

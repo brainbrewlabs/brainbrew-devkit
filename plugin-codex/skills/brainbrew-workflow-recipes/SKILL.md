@@ -24,7 +24,7 @@ BrainBrew workflows in Codex are recipe-guided. They describe phases, roles, qua
    | `moderation` | content classification and enforcement |
    | `marketing` | content, SEO, publishing, analytics |
 
-2. If synced skills are available, use the matching `*-workflow` skill.
+2. If BrainBrew-owned synced skills are available, use the matching `*-workflow` skill.
 3. Translate each recipe step into an explicit Codex phase.
 4. Run the verification gate that matches the work before reporting completion.
 
@@ -32,5 +32,6 @@ BrainBrew workflows in Codex are recipe-guided. They describe phases, roles, qua
 
 - Do not claim automatic handoff enforcement in Codex.
 - Do not use Claude-only subagent lifecycle hooks.
+- Do not treat BrainBrew skill sync as generic Claude Code or OpenCode migration.
 - Preserve project-specific instructions and user edits.
 - Keep workflow output concrete: files changed, checks run, blockers, and next steps.

@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync, symlinkSync } from 'fs';
+import { mkdtempSync, mkdirSync, readdirSync, writeFileSync, readFileSync, existsSync, rmSync, symlinkSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -61,7 +61,15 @@ function makePluginRoot(): string {
   }));
   writeFileSync(join(root, 'plugin', '.claude-plugin', 'plugin.json'), '{}');
   writeFileSync(join(root, 'plugin-codex', 'agents', 'brainbrew-codex-coordinator.md'), '---\nname: brainbrew-codex-coordinator\n---\n');
-  writeFileSync(join(root, 'plugin-codex', 'commands', 'codex-status.md'), '---\ndescription: Status\n---\n');
+  for (const commandName of [
+    'brainbrew-chain-run',
+    'brainbrew-init',
+    'brainbrew-status',
+    'brainbrew-sync-brainbrew-skills',
+    'brainbrew-template-bump',
+  ]) {
+    writeFileSync(join(root, 'plugin-codex', 'commands', `${commandName}.md`), `---\nname: ${commandName.replace(/^brainbrew-/, 'brainbrew:')}\ndescription: Test command\n---\n`);
+  }
   writeFileSync(join(root, 'plugin-codex', 'hooks.json'), JSON.stringify({ hooks: {} }));
   writeFileSync(join(root, 'plugin-codex', 'skills', 'memory', 'SKILL.md'), `---
 name: memory
@@ -340,12 +348,12 @@ describe('codex command/status behavior', () => {
       codexCommand(['status'], { 'plugin-root': pluginRoot, home: codexHome });
       const output = vi.mocked(console.log).mock.calls.flat().join('\n');
       expect(output).toContain('Plugin manifest: present');
-      expect(output).toContain('Plugin commands: 1 declared, present');
+      expect(output).toContain('Plugin commands: 5 declared, present');
       expect(output).toContain('Plugin agents: 1 declared, present');
       expect(output).toContain('Plugin-native skills: 1 declared, present');
       expect(output).toContain('Plugin MCP declaration: none declared');
       expect(output).toContain('Packaged MCP server: present');
-      expect(output).toContain('Plugin hooks template: 1 declared, present');
+      expect(output).toContain('Packaged hook template: 1 declared, present');
       expect(output).toContain('Plugin apps: none declared');
       expect(output).toContain('Plugin assets: none declared');
       expect(output).toContain('Project state: initialized (.codex/brainbrew)');
@@ -394,5 +402,28 @@ describe('codex command/status behavior', () => {
     expect(cliSource).toContain('init');
     expect(cliSource).toContain('hook <subcommand>');
     expect(cliSource).toContain('codex <subcommand>');
+  });
+
+  it('codex help exposes only the public BrainBrew-owned sync command', () => {
+    codexCommand(['sync-skills'], {});
+    const output = vi.mocked(console.log).mock.calls.flat().join('\n');
+    expect(output).toContain('sync-brainbrew-skills');
+    expect(output).not.toContain('Sync BrainBrew skills into');
+  });
+
+  it('packages only the public BrainBrew Codex prompt commands', () => {
+    const commandDir = join(process.cwd(), 'plugin-codex', 'commands');
+    const names = readdirSync(commandDir)
+      .filter(file => file.endsWith('.md'))
+      .map(file => readFileSync(join(commandDir, file), 'utf-8').match(/^name:\s*(.+)$/m)?.[1])
+      .sort();
+
+    expect(names).toEqual([
+      'brainbrew:chain-run',
+      'brainbrew:init',
+      'brainbrew:status',
+      'brainbrew:sync-brainbrew-skills',
+      'brainbrew:template-bump',
+    ]);
   });
 });
