@@ -44,7 +44,7 @@ plugin-codex/mcp/mcp-server.cjs
 For beta, register MCP explicitly:
 
 ```bash
-codex mcp add brainbrew -- node <installed-plugin-root>/mcp/mcp-server.cjs
+codex mcp add brainbrew -- node <installed-codex-plugin-root>/mcp/mcp-server.cjs
 ```
 
 This avoids depending on unverified plugin-root variable expansion for auto-loaded Codex MCP configs.
@@ -67,7 +67,7 @@ Before public production:
    - `/brainbrew:status`
    - `/brainbrew:chain-run develop`
    - `/brainbrew:template-bump develop`
-4. Register MCP manually and verify `chain_list`, `chain_run`, `chain_switch`, `chain_validate`, and `template_bump`.
+4. Register MCP manually and verify `chain_list`, `chain_run`, `chain_switch`, `chain_validate`, `template_bump`, and `template_list`.
 5. Run `brainbrew codex status` and confirm unsupported hooks are `none`.
 
 ## Known Limitations
@@ -75,3 +75,4 @@ Before public production:
 - Codex workflows are recipe-guided, not Claude-style executable chain state machines.
 - Active Codex skills are global under `~/.codex/skills`.
 - MCP auto-load through plugin metadata is not enabled in beta until Codex plugin MCP variable behavior is confirmed.
+- Codex MCP uses a dedicated Codex-safe server and does not expose the shared Claude/opencode `init` setup tool.

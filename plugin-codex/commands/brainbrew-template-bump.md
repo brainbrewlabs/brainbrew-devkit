@@ -16,7 +16,7 @@ template_bump({ "template": "<template>" })
 If MCP is not registered, tell the user to register BrainBrew MCP first:
 
 ```bash
-codex mcp add brainbrew -- node <installed-plugin-root>/mcp/mcp-server.cjs
+codex mcp add brainbrew -- node <installed-codex-plugin-root>/mcp/mcp-server.cjs
 ```
 
 Then verify with:

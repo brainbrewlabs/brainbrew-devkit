@@ -20,6 +20,8 @@ BrainBrew supports Codex as a first-class runtime with a Codex-specific setup pa
 - Automatic chain execution as a state machine.
 - Claude-only `SubagentStart` or `SubagentStop` lifecycle hooks.
 - Plugin-local active skills.
+- Generic Claude Code or OpenCode migration. Use OpenAI's curated `migrate-to-codex` skill for that.
+- Claude/opencode MCP setup tools such as the shared `init` MCP tool.
 
 Codex uses BrainBrew workflows as recipes and guidance. Use them to structure handoffs and quality gates, but do not expect Claude-style hook enforcement for every chain step.
 
@@ -82,8 +84,6 @@ Plugin-native Codex prompt commands:
 | `/brainbrew:chain-run develop` | Follow or MCP-run a BrainBrew workflow recipe |
 | `/brainbrew:template-bump develop` | Use MCP `template_bump` to set up a workflow template |
 
-BrainBrew DevKit does not perform generic Claude Code or OpenCode migration. For generic Claude Code to Codex migration, use OpenAI's curated `migrate-to-codex` skill. BrainBrew Codex commands only install and validate BrainBrew-owned workflow and runtime assets.
-
 ### `brainbrew codex init`
 
 Creates `~/.codex` if needed, checks `~/.codex/config.toml`, backs up `~/.codex/hooks.json`, and merges BrainBrew-owned hook entries for the Codex-supported hook events:
@@ -120,13 +120,15 @@ Reports config, hook, runner, and skill health:
 
 ## MCP
 
-BrainBrew's MCP server is packaged at:
+BrainBrew's Codex-safe MCP server is packaged at:
 
 ```text
 plugin-codex/mcp/mcp-server.cjs
 ```
 
-For the Codex beta, MCP registration is explicit instead of auto-loaded from the plugin manifest. This avoids relying on unverified plugin-root variable expansion in Codex MCP configs. Claude Code and opencode continue to use the existing `${CLAUDE_PLUGIN_ROOT}` entry in `plugin/.mcp.json`.
+For the Codex beta, MCP registration is explicit instead of auto-loaded from the plugin manifest. This avoids relying on unverified plugin-root variable expansion in Codex MCP configs. Claude Code and opencode continue to use the existing shared MCP server and `${CLAUDE_PLUGIN_ROOT}` entry in `plugin/.mcp.json`.
+
+The Codex MCP server is intentionally separate from the shared Claude/opencode MCP server. It does not expose Claude/opencode setup tools such as `init`, and it does not write `.claude/settings.json`.
 
 In Codex, check whether BrainBrew is already registered:
 
@@ -134,10 +136,16 @@ In Codex, check whether BrainBrew is already registered:
 codex mcp list
 ```
 
-If it is missing, register it manually with the installed plugin path:
+If it is missing, register it manually with the installed Codex plugin package path:
 
 ```bash
-codex mcp add brainbrew -- node <installed-plugin-root>/mcp/mcp-server.cjs
+codex mcp add brainbrew -- node <installed-codex-plugin-root>/mcp/mcp-server.cjs
+```
+
+For local development from this repository, use:
+
+```bash
+codex mcp add brainbrew -- node ./plugin-codex/mcp/mcp-server.cjs
 ```
 
 Then verify:
@@ -153,8 +161,9 @@ When registered, BrainBrew exposes these MCP workflow tools to Codex:
 - `chain_list`
 - `chain_run`
 - `chain_switch`
-- `template_bump`
 - `chain_validate`
+- `template_bump`
+- `template_list`
 
 ## Troubleshooting
 
@@ -200,7 +209,7 @@ Run:
 codex mcp list
 ```
 
-If `brainbrew` is not listed, register the installed server with `codex mcp add brainbrew -- node <installed-plugin-root>/mcp/mcp-server.cjs`.
+If `brainbrew` is not listed, register the installed server with `codex mcp add brainbrew -- node <installed-codex-plugin-root>/mcp/mcp-server.cjs`.
 
 ## Related
 

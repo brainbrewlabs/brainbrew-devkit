@@ -2,8 +2,10 @@
 
 ## Prerequisites
 
-- Claude Code CLI installed
 - Node.js 18+
+- Claude Code CLI installed for Claude Code plugin usage.
+- Codex CLI installed for Codex plugin usage.
+- For Codex hooks, `~/.codex/config.toml` should include `hooks = true`.
 
 ## Install the Plugin
 
@@ -96,12 +98,14 @@ BrainBrew DevKit does not perform generic Claude Code or OpenCode migration. For
 
 ### MCP
 
-BrainBrew packages a Codex MCP server in `plugin-codex/mcp/mcp-server.cjs` and keeps Claude/opencode MCP metadata in `plugin/.mcp.json`. For the Codex beta, register the installed server explicitly:
+BrainBrew packages a dedicated Codex-safe MCP server in `plugin-codex/mcp/mcp-server.cjs` and keeps Claude/opencode MCP metadata in `plugin/.mcp.json`. The Codex server does not expose Claude/opencode setup tools such as the shared `init` MCP tool. For the Codex beta, register the installed Codex plugin server explicitly:
 
 ```bash
-codex mcp add brainbrew -- node <installed-plugin-root>/mcp/mcp-server.cjs
+codex mcp add brainbrew -- node <installed-codex-plugin-root>/mcp/mcp-server.cjs
 codex mcp list
 ```
+
+For local development from this repository, use `./plugin-codex/mcp/mcp-server.cjs`.
 
 See [Codex Support](/guide/codex-support) for command details and troubleshooting.
 
