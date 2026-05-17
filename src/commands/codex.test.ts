@@ -1,6 +1,7 @@
 import { mkdtempSync, mkdirSync, readdirSync, writeFileSync, readFileSync, existsSync, rmSync, symlinkSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { spawnSync } from 'child_process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CODEX_UNSUPPORTED_HOOKS, codexRuntime } from '../core/runtimes/codex.js';
 import {
@@ -425,5 +426,32 @@ describe('codex command/status behavior', () => {
       'brainbrew:sync-brainbrew-skills',
       'brainbrew:template-bump',
     ]);
+  });
+
+  it('packaged Codex MCP server exposes only Codex-safe BrainBrew workflow tools', () => {
+    const script = join(process.cwd(), 'plugin-codex', 'mcp', 'mcp-server.cjs');
+    if (!existsSync(script)) return;
+
+    const request = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }) + '\n';
+    const result = spawnSync('node', [script], {
+      input: request,
+      encoding: 'utf-8',
+      timeout: 1000,
+    });
+
+    expect(result.stderr).toBe('');
+    const response = JSON.parse(result.stdout.trim()) as { result: { tools: Array<{ name: string }> } };
+    const names = response.result.tools.map(tool => tool.name).sort();
+    expect(names).toEqual([
+      'chain_list',
+      'chain_run',
+      'chain_switch',
+      'chain_validate',
+      'template_bump',
+      'template_list',
+    ]);
+    expect(names).not.toContain('init');
+    expect(names).not.toContain('memory_add');
+    expect(names).not.toContain('plugin_list');
   });
 });

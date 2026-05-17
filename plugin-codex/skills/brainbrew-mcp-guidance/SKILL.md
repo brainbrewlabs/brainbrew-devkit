@@ -17,13 +17,12 @@ If BrainBrew is missing, register the installed plugin's `mcp/mcp-server.cjs` wi
 
 ## Useful BrainBrew Tools
 
-- `template_bump`: copy a workflow template into the project.
-- `chain_list`: list available chain configs.
-- `chain_validate`: check chain structure.
-- `memory_add`: pass guidance to agents or future phases.
-- `memory_list`: inspect current memory.
-- `list_agents`: list project agents.
-- `list_skills`: list project skills.
+- `template_bump`: copy a workflow recipe into `.codex/brainbrew/chains`.
+- `template_list`: list packaged BrainBrew workflow templates.
+- `chain_list`: list copied BrainBrew workflow recipes.
+- `chain_switch`: set the active BrainBrew workflow recipe.
+- `chain_run`: activate a workflow recipe and return Codex guidance.
+- `chain_validate`: check the active workflow recipe structure.
 
 ## Guardrails
 

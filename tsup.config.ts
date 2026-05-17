@@ -23,9 +23,9 @@ export default defineConfig([
     splitting: false,
     noExternal: [/.*/],
   },
-  // Codex MCP Server
+  // Codex-safe MCP Server
   {
-    entry: { 'mcp-server': 'src/mcp/server.ts' },
+    entry: { 'mcp-server': 'src/mcp/codex-server.ts' },
     format: ['cjs'],
     outDir: 'plugin-codex/mcp',
     sourcemap: false,
