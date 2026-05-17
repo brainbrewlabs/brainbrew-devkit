@@ -2980,7 +2980,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve2.call(this, root, ref);
+      let _sch = resolve.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
         const { schemaId } = this.opts;
@@ -3007,7 +3007,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve2(root, ref) {
+    function resolve(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3582,7 +3582,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve2(baseURI, relativeURI, options) {
+    function resolve(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -3809,7 +3809,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve2,
+      resolve,
       resolveComponent,
       equal,
       serialize,
@@ -6772,8 +6772,8 @@ var require_dist = __commonJS({
         return ajv;
       }
       const [formats, exportName] = opts.mode === "fast" ? [formats_1.fastFormats, fastName] : [formats_1.fullFormats, fullName];
-      const list2 = opts.formats || formats_1.formatNames;
-      addFormats(ajv, list2, formats, exportName);
+      const list = opts.formats || formats_1.formatNames;
+      addFormats(ajv, list, formats, exportName);
       if (opts.keywords)
         (0, limit_1.default)(ajv);
       return ajv;
@@ -6785,11 +6785,11 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list2, fs, exportName) {
+    function addFormats(ajv, list, fs, exportName) {
       var _a2;
       var _b;
       (_a2 = (_b = ajv.opts.code).formats) !== null && _a2 !== void 0 ? _a2 : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
-      for (const f of list2)
+      for (const f of list)
         ajv.addFormat(f, fs[f]);
     }
     module2.exports = exports2 = formatsPlugin;
@@ -13097,15 +13097,15 @@ var require_parser = __commonJS({
     var node_process = require("process");
     var cst = require_cst();
     var lexer = require_lexer();
-    function includesToken(list2, type) {
-      for (let i = 0; i < list2.length; ++i)
-        if (list2[i].type === type)
+    function includesToken(list, type) {
+      for (let i = 0; i < list.length; ++i)
+        if (list[i].type === type)
           return true;
       return false;
     }
-    function findNonEmptyIndex(list2) {
-      for (let i = 0; i < list2.length; ++i) {
-        switch (list2[i].type) {
+    function findNonEmptyIndex(list) {
+      for (let i = 0; i < list.length; ++i) {
+        switch (list[i].type) {
           case "space":
           case "comment":
           case "newline":
@@ -26873,7 +26873,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error3) {
@@ -26890,7 +26890,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve, reject) => {
       const earlyReject = (error3) => {
         reject(error3);
       };
@@ -26968,7 +26968,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve2(parseResult.data);
+            resolve(parseResult.data);
           }
         } catch (error3) {
           reject(error3);
@@ -27229,12 +27229,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve2, interval);
+      const timeoutId = setTimeout(resolve, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -28104,108 +28104,42 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve2) => {
+    return new Promise((resolve) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve2();
+        resolve();
       } else {
-        this._stdout.once("drain", resolve2);
+        this._stdout.once("drain", resolve);
       }
     });
   }
 };
 
-// src/mcp/server.ts
-var import_fs4 = require("fs");
-var import_path5 = require("path");
-var import_os3 = require("os");
-
-// src/utils/chain-resolver.ts
+// src/mcp/codex-server.ts
 var import_fs = require("fs");
-var import_path = require("path");
-function resolveActiveChain(cwd) {
-  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
-  if (!(0, import_fs.existsSync)(pointerPath)) return null;
-  const content = (0, import_fs.readFileSync)(pointerPath, "utf-8");
-  if (/^(flow|hooks):/m.test(content)) {
-    return { configPath: pointerPath, chainName: "default", isLegacy: true };
-  }
-  const activeMatch = content.match(/^active:\s*(.+)/m);
-  if (!activeMatch) return null;
-  const active = activeMatch[1].trim();
-  const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
-  const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
-  if (active.includes("..") || chainsDir.includes("..")) return null;
-  const chainPath = (0, import_path.join)(cwd, chainsDir, `${active}.yaml`);
-  const resolvedPath = (0, import_path.resolve)(chainPath);
-  const expectedBase = (0, import_path.resolve)((0, import_path.join)(cwd, ".claude"));
-  if (!resolvedPath.startsWith(expectedBase)) return null;
-  if (!(0, import_fs.existsSync)(chainPath)) return null;
-  return { configPath: chainPath, chainName: active, isLegacy: false };
-}
-function listChains(cwd) {
-  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
-  if (!(0, import_fs.existsSync)(pointerPath)) return [];
-  const content = (0, import_fs.readFileSync)(pointerPath, "utf-8");
-  if (/^(flow|hooks):/m.test(content)) {
-    return ["default"];
-  }
-  const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
-  const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
-  if (chainsDir.includes("..")) return ["default"];
-  const fullDir = (0, import_path.join)(cwd, chainsDir);
-  const resolvedDir = (0, import_path.resolve)(fullDir);
-  const expectedBase = (0, import_path.resolve)((0, import_path.join)(cwd, ".claude"));
-  if (!resolvedDir.startsWith(expectedBase)) return ["default"];
-  if (!(0, import_fs.existsSync)(fullDir)) return [];
-  return (0, import_fs.readdirSync)(fullDir).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(".yaml", ""));
-}
-function getActiveChainName(cwd) {
-  const resolved = resolveActiveChain(cwd);
-  return resolved?.chainName ?? null;
-}
-function writePointer(cwd, active, chainsDir = ".claude/chains/") {
-  const validName = /^[a-zA-Z0-9_\-\/.]+$/;
-  if (!validName.test(active) || active.includes("..")) throw new Error("Invalid chain name");
-  if (!validName.test(chainsDir) || chainsDir.includes("..")) throw new Error("Invalid chains directory");
-  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
-  const content = `active: ${active}
-chains_dir: ${chainsDir}
-`;
-  (0, import_fs.writeFileSync)(pointerPath, content);
-}
-function migrateToMultiChain(cwd) {
-  const pointerPath = (0, import_path.join)(cwd, ".claude", "chain-config.yaml");
-  const chainsDir = (0, import_path.join)(cwd, ".claude", "chains");
-  (0, import_fs.mkdirSync)(chainsDir, { recursive: true });
-  const legacyPath = (0, import_path.join)(chainsDir, "legacy.yaml");
-  const content = (0, import_fs.readFileSync)(pointerPath, "utf-8");
-  (0, import_fs.writeFileSync)(legacyPath, content);
-  writePointer(cwd, "legacy");
-  return "legacy";
-}
+var import_path2 = require("path");
 
 // src/core/config.ts
 var import_yaml = __toESM(require_dist2(), 1);
 
 // src/utils/paths.ts
 var import_os = require("os");
-var import_path2 = require("path");
+var import_path = require("path");
 var HOME = (0, import_os.homedir)();
-var CLAUDE_DIR = (0, import_path2.join)(HOME, ".claude");
-var CHAINS_DIR = (0, import_path2.join)(CLAUDE_DIR, "chains");
-var BACKUP_DIR = (0, import_path2.join)(CHAINS_DIR, ".backup");
-var AGENTS_DIR = (0, import_path2.join)(CLAUDE_DIR, "agents");
-var SKILLS_DIR = (0, import_path2.join)(CLAUDE_DIR, "skills");
-var HOOKS_DIR = (0, import_path2.join)(CLAUDE_DIR, "hooks", "chains");
-var CUSTOM_HOOKS_DIR = (0, import_path2.join)(HOOKS_DIR, "custom");
-var TMP_DIR = (0, import_path2.join)(CLAUDE_DIR, "tmp");
-var PROJECTS_DIR = (0, import_path2.join)(CLAUDE_DIR, "projects");
-var SETTINGS_FILE = (0, import_path2.join)(CLAUDE_DIR, "settings.json");
-var CHAIN_CONFIG_FILE = (0, import_path2.join)(HOOKS_DIR, "chain-config.json");
-var VERIFICATION_RULES_FILE = (0, import_path2.join)(HOOKS_DIR, "verification-rules.json");
-var HOOKS_CONFIG_FILE = (0, import_path2.join)(HOOKS_DIR, "hooks-config.yaml");
-var CHAIN_EVENTS_LOG = (0, import_path2.join)(TMP_DIR, "chain-events.jsonl");
+var CLAUDE_DIR = (0, import_path.join)(HOME, ".claude");
+var CHAINS_DIR = (0, import_path.join)(CLAUDE_DIR, "chains");
+var BACKUP_DIR = (0, import_path.join)(CHAINS_DIR, ".backup");
+var AGENTS_DIR = (0, import_path.join)(CLAUDE_DIR, "agents");
+var SKILLS_DIR = (0, import_path.join)(CLAUDE_DIR, "skills");
+var HOOKS_DIR = (0, import_path.join)(CLAUDE_DIR, "hooks", "chains");
+var CUSTOM_HOOKS_DIR = (0, import_path.join)(HOOKS_DIR, "custom");
+var TMP_DIR = (0, import_path.join)(CLAUDE_DIR, "tmp");
+var PROJECTS_DIR = (0, import_path.join)(CLAUDE_DIR, "projects");
+var SETTINGS_FILE = (0, import_path.join)(CLAUDE_DIR, "settings.json");
+var CHAIN_CONFIG_FILE = (0, import_path.join)(HOOKS_DIR, "chain-config.json");
+var VERIFICATION_RULES_FILE = (0, import_path.join)(HOOKS_DIR, "verification-rules.json");
+var HOOKS_CONFIG_FILE = (0, import_path.join)(HOOKS_DIR, "hooks-config.yaml");
+var CHAIN_EVENTS_LOG = (0, import_path.join)(TMP_DIR, "chain-events.jsonl");
 
 // src/core/config.ts
 function asString(v) {
@@ -28362,454 +28296,65 @@ function parseChainYaml(content) {
   return chain;
 }
 
-// src/core/strategies/agent.ts
-function specName(spec, fallback) {
-  const v = spec?.["name"];
-  return typeof v === "string" && v ? v : fallback;
+// src/mcp/codex-server.ts
+var PLUGIN_ROOT = process.env.BRAINBREW_PLUGIN_ROOT || process.env.CODEX_PLUGIN_ROOT || (0, import_path2.dirname)((0, import_path2.dirname)(__filename));
+var TEMPLATE_ROOT = (0, import_path2.join)(PLUGIN_ROOT, "config", "templates");
+var CODEX_STATE_DIR = (0, import_path2.join)(".codex", "brainbrew");
+var CODEX_CHAINS_DIR = (0, import_path2.join)(CODEX_STATE_DIR, "chains");
+var CODEX_ACTIVE_CHAIN = (0, import_path2.join)(CODEX_STATE_DIR, "active-chain.json");
+function success2(text) {
+  return { content: [{ type: "text", text }] };
 }
-var agentStrategy = {
-  type: "agent",
-  validate(node, nodeId) {
-    const errors = [];
-    if (!specName(node.spec, nodeId)) errors.push(`agent node "${nodeId}": missing spec.name`);
-    return { ok: errors.length === 0, errors };
-  },
-  enter(nodeId, node) {
-    const agentName = specName(node.spec, nodeId);
-    const routes = node.routes ? Object.keys(node.routes).filter((r) => r !== "END") : [];
-    const altText = routes.length ? `
-Alternatively: ${routes.map((a) => `Agent(subagent_type="${a}")`).join(" or ")}` : "";
-    const instruction = `<system-reminder>
-## MANDATORY NEXT STEP
-You MUST now spawn the **${agentName}** agent to continue the chain.
-
-Command: Use Agent tool with subagent_type="${agentName}"
-${altText}
-DO NOT ask user. DO NOT skip. DO NOT background agents.
-</system-reminder>`;
-    return {
-      instruction,
-      awaiting: { kind: "subagent", agentType: agentName, nodeId }
-    };
-  }
-};
-
-// src/core/strategies/team.ts
-function readTeammates(spec, fallback) {
-  const fromSpec = spec?.["teammates"];
-  if (Array.isArray(fromSpec)) {
-    return fromSpec.filter((t) => typeof t === "object" && t !== null).map((t) => ({
-      name: String(t["name"] ?? ""),
-      agent: String(t["agent"] ?? ""),
-      prompt: typeof t["prompt"] === "string" ? t["prompt"] : void 0,
-      model: typeof t["model"] === "string" ? t["model"] : void 0
-    }));
-  }
-  return fallback ?? [];
+function error2(text) {
+  return { content: [{ type: "text", text }], isError: true };
 }
-var teamStrategy = {
-  type: "team",
-  validate(node, nodeId) {
-    const errors = [];
-    const teammates = readTeammates(node.spec, node.teammates);
-    if (teammates.length === 0) errors.push(`team node "${nodeId}": no teammates`);
-    for (const t of teammates) {
-      if (!t.name) errors.push(`team node "${nodeId}": teammate missing name`);
-      if (!t.agent) errors.push(`team node "${nodeId}": teammate "${t.name}" missing agent`);
-    }
-    return { ok: errors.length === 0, errors };
-  },
-  enter(nodeId, node) {
-    const teammates = readTeammates(node.spec, node.teammates);
-    const teamInstruction = teammates.map((t) => `- Teammate "${t.name}" using agent type "${t.agent}"${t.prompt ? `: ${t.prompt}` : ""}${t.model ? ` (model: ${t.model})` : ""}`).join("\n");
-    const routesList = node.routes ? Object.entries(node.routes).map(([a, d]) => `- "${a}" \u2192 ${d}`).join("\n") : "";
-    const instruction = `<system-reminder>
-## MANDATORY NEXT STEP \u2014 AGENT TEAM
-You MUST now create an agent team for the **${nodeId}** step.
-
-Create a team with these teammates:
-${teamInstruction}
-
-Each teammate should work in parallel. After all teammates complete, synthesize their results and continue the chain.
-
-Use the TeamCreate tool to create the team with the above configuration.
-${routesList ? `
-After the team completes, route based on:
-${routesList}` : ""}
-${node.decide ? `
-Routing rules:
-${node.decide}` : ""}
-DO NOT ask user. DO NOT skip. Wait for all teammates to finish before proceeding.
-</system-reminder>`;
-    return {
-      instruction,
-      awaiting: { kind: "subagent", agentType: nodeId, nodeId }
-    };
-  }
-};
-
-// src/core/strategies/mcp.ts
-function buildToolName(spec) {
-  const server2 = spec?.["server"];
-  const tool = spec?.["tool"];
-  if (typeof server2 !== "string" || typeof tool !== "string") return null;
-  if (!server2 || !tool) return null;
-  return `mcp__${server2}__${tool}`;
+function templateNames() {
+  if (!(0, import_fs.existsSync)(TEMPLATE_ROOT)) return [];
+  return (0, import_fs.readdirSync)(TEMPLATE_ROOT).filter((file2) => file2.endsWith(".yaml") && (0, import_fs.statSync)((0, import_path2.join)(TEMPLATE_ROOT, file2)).isFile()).map((file2) => file2.replace(/\.yaml$/, "")).sort();
 }
-var mcpStrategy = {
-  type: "mcp",
-  validate(node, nodeId) {
-    const errors = [];
-    const server2 = node.spec?.["server"];
-    const tool = node.spec?.["tool"];
-    if (typeof server2 !== "string" || !server2) errors.push(`mcp node "${nodeId}": missing spec.server`);
-    if (typeof tool !== "string" || !tool) errors.push(`mcp node "${nodeId}": missing spec.tool`);
-    if (typeof server2 === "string" && !/^[a-z0-9_-]+$/.test(server2)) errors.push(`mcp node "${nodeId}": invalid server name "${server2}"`);
-    if (typeof tool === "string" && !/^[a-z0-9_-]+$/.test(tool)) errors.push(`mcp node "${nodeId}": invalid tool name "${tool}"`);
-    return { ok: errors.length === 0, errors };
-  },
-  enter(nodeId, node) {
-    const toolName = buildToolName(node.spec);
-    if (!toolName) {
-      return { instruction: `Chain error: mcp node "${nodeId}" has invalid spec.` };
-    }
-    const inputJson = JSON.stringify(node.spec?.["input"] ?? {}, null, 2);
-    const instruction = `<system-reminder>
-## MANDATORY NEXT STEP \u2014 MCP TOOL CALL
-Chain node **${nodeId}** requires calling MCP tool: \`${toolName}\`
-
-Call the tool with this input:
-\`\`\`json
-${inputJson}
-\`\`\`
-
-The chain will advance automatically when the tool returns.
-DO NOT ask user. DO NOT skip. Call the tool now.
-</system-reminder>`;
-    return {
-      instruction,
-      awaiting: { kind: "mcp", toolName, nodeId }
-    };
-  },
-  onComplete(_nodeId, node, ctx) {
-    const payload = ctx.eventPayload;
-    const goto = node.routing?.next ?? node.next ?? null;
-    return { outputs: payload?.toolResponse ?? null, goto };
-  }
-};
-
-// src/core/strategies/tool.ts
-var ALLOWED_TOOLS = /* @__PURE__ */ new Set(["Bash", "Read", "Write", "Edit", "Grep", "Glob"]);
-var toolStrategy = {
-  type: "tool",
-  validate(node, nodeId) {
-    const errors = [];
-    const tool = node.spec?.["tool"];
-    if (typeof tool !== "string" || !tool) {
-      errors.push(`tool node "${nodeId}": missing spec.tool`);
-    } else if (!ALLOWED_TOOLS.has(tool)) {
-      errors.push(`tool node "${nodeId}": tool "${tool}" not in allowlist [${[...ALLOWED_TOOLS].join(", ")}]`);
-    }
-    return { ok: errors.length === 0, errors };
-  },
-  enter(nodeId, node) {
-    const tool = String(node.spec?.["tool"] ?? "");
-    const params = JSON.stringify(node.spec?.["params"] ?? {}, null, 2);
-    const instruction = `<system-reminder>
-## MANDATORY NEXT STEP \u2014 TOOL CALL
-Chain node **${nodeId}** requires calling tool: \`${tool}\`
-
-Call \`${tool}\` with:
-\`\`\`json
-${params}
-\`\`\`
-
-The chain will advance automatically when the tool returns.
-DO NOT ask user. DO NOT skip.
-</system-reminder>`;
-    return {
-      instruction,
-      awaiting: { kind: "tool", toolName: tool, nodeId }
-    };
-  },
-  onComplete(_nodeId, node, ctx) {
-    const payload = ctx.eventPayload;
-    const goto = node.routing?.next ?? node.next ?? null;
-    return { outputs: payload?.toolResponse ?? null, goto };
-  }
-};
-
-// src/core/strategies/transform.ts
-var import_vm = require("vm");
-
-// src/utils/state.ts
-var import_fs2 = require("fs");
-var import_path3 = require("path");
-var STATE_DIR = (0, import_path3.join)(TMP_DIR, "chain-state");
-function statePath(sessionId) {
-  return (0, import_path3.join)(STATE_DIR, `${sessionId}.json`);
+function ensureState(cwd) {
+  (0, import_fs.mkdirSync)((0, import_path2.join)(cwd, CODEX_CHAINS_DIR), { recursive: true });
 }
-function isPlainObject3(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+function chainPath(cwd, chain) {
+  return (0, import_path2.join)(cwd, CODEX_CHAINS_DIR, `${chain}.yaml`);
 }
-function sanitize(raw) {
-  if (!isPlainObject3(raw)) return null;
-  const out = { previousAgents: [] };
-  if (Array.isArray(raw.previousAgents)) {
-    out.previousAgents = raw.previousAgents.filter(
-      (entry) => isPlainObject3(entry) && typeof entry.type === "string"
-    );
-  }
-  if (typeof raw.currentAgent === "string") out.currentAgent = raw.currentAgent;
-  if (isPlainObject3(raw.sharedContext)) out.sharedContext = raw.sharedContext;
-  if (isPlainObject3(raw.phaseTracking) && typeof raw.phaseTracking.totalPhases === "number" && typeof raw.phaseTracking.completedPhases === "number" && Array.isArray(raw.phaseTracking.phases)) {
-    out.phaseTracking = raw.phaseTracking;
-  }
-  if (isPlainObject3(raw.activeTeam)) out.activeTeam = raw.activeTeam;
-  if (typeof raw.chainBlockCount === "number") out.chainBlockCount = raw.chainBlockCount;
-  if (Array.isArray(raw.allowedAgents) && raw.allowedAgents.every((a) => typeof a === "string")) {
-    out.allowedAgents = raw.allowedAgents;
-  }
-  if (isPlainObject3(raw.awaiting)) {
-    const a = raw.awaiting;
-    if ((a.kind === "subagent" || a.kind === "mcp" || a.kind === "tool") && typeof a.nodeId === "string") {
-      if (a.kind === "subagent" && typeof a.agentType === "string") {
-        out.awaiting = { kind: "subagent", agentType: a.agentType, nodeId: a.nodeId };
-      } else if ((a.kind === "mcp" || a.kind === "tool") && typeof a.toolName === "string") {
-        out.awaiting = { kind: a.kind, toolName: a.toolName, nodeId: a.nodeId };
-      }
-    }
-  }
-  if (isPlainObject3(raw.outputs)) out.outputs = raw.outputs;
-  return out;
+function listProjectChains(cwd) {
+  const dir = (0, import_path2.join)(cwd, CODEX_CHAINS_DIR);
+  if (!(0, import_fs.existsSync)(dir)) return [];
+  return (0, import_fs.readdirSync)(dir).filter((file2) => file2.endsWith(".yaml") && (0, import_fs.statSync)((0, import_path2.join)(dir, file2)).isFile()).map((file2) => file2.replace(/\.yaml$/, "")).sort();
 }
-function getState(sessionId) {
-  if (!sessionId) return null;
-  const file2 = statePath(sessionId);
-  if (!(0, import_fs2.existsSync)(file2)) return null;
-  let raw;
+function getActiveChain(cwd) {
+  const file2 = (0, import_path2.join)(cwd, CODEX_ACTIVE_CHAIN);
+  if (!(0, import_fs.existsSync)(file2)) return null;
   try {
-    raw = JSON.parse((0, import_fs2.readFileSync)(file2, "utf-8"));
+    const parsed = JSON.parse((0, import_fs.readFileSync)(file2, "utf-8"));
+    return typeof parsed.active === "string" ? parsed.active : null;
   } catch {
-    try {
-      (0, import_fs2.unlinkSync)(file2);
-    } catch {
-    }
     return null;
   }
-  const clean = sanitize(raw);
-  if (!clean) {
-    try {
-      (0, import_fs2.unlinkSync)(file2);
-    } catch {
-    }
-    return null;
-  }
-  return clean;
 }
-
-// src/core/strategies/transform.ts
-var DEFAULT_TIMEOUT_MS = 1e3;
-function evalExpr(expr, scope) {
-  return (0, import_vm.runInNewContext)(`(${expr})`, { ...scope }, { timeout: DEFAULT_TIMEOUT_MS });
+function setActiveChain(cwd, chain) {
+  ensureState(cwd);
+  (0, import_fs.writeFileSync)((0, import_path2.join)(cwd, CODEX_ACTIVE_CHAIN), JSON.stringify({ active: chain }, null, 2) + "\n");
 }
-var transformStrategy = {
-  type: "transform",
-  validate(node, nodeId) {
-    const errors = [];
-    const fn = node.spec?.["fn"];
-    if (typeof fn !== "string" || !fn) errors.push(`transform node "${nodeId}": missing spec.fn (string expression)`);
-    return { ok: errors.length === 0, errors };
-  },
-  enter(_nodeId, node, ctx) {
-    const fn = String(node.spec?.["fn"] ?? "");
-    const state = getState(ctx.sessionId);
-    const outputs = state?.outputs ?? {};
-    const inputs = {};
-    if (node.inputs) {
-      for (const [key, binding] of Object.entries(node.inputs)) {
-        if (binding.from) {
-          const path = binding.from.split(".");
-          let cur = outputs;
-          for (const p of path) {
-            if (cur && typeof cur === "object") cur = cur[p];
-            else {
-              cur = void 0;
-              break;
-            }
-          }
-          inputs[key] = cur;
-        } else if ("value" in binding) {
-          inputs[key] = binding.value;
-        }
-      }
-    }
-    let result = null;
-    try {
-      result = evalExpr(fn, { state: outputs, inputs });
-    } catch (e) {
-      return {
-        syncOutputs: { error: e.message },
-        syncGoto: node.routing?.on_fail ?? node.on_fail ?? null
-      };
-    }
-    return {
-      syncOutputs: result,
-      syncGoto: node.routing?.next ?? node.next ?? null
-    };
-  }
-};
-
-// src/core/strategies/registry.ts
-var registry2 = /* @__PURE__ */ new Map();
-function register(s) {
-  registry2.set(s.type, s);
+function validName(name) {
+  return typeof name === "string" && /^[a-zA-Z0-9_-]+$/.test(name);
 }
-register(agentStrategy);
-register(teamStrategy);
-register(mcpStrategy);
-register(toolStrategy);
-register(transformStrategy);
-function listStrategies() {
-  return [...registry2.keys()];
+function firstFlowNode(content) {
+  const parsed = parseChainYaml(content);
+  return Object.keys(parsed.flow)[0] ?? "";
 }
-
-// src/memory/bus.ts
-var import_fs3 = require("fs");
-var import_path4 = require("path");
-var import_os2 = require("os");
-var import_crypto = require("crypto");
-var GLOBAL_STORE_PATH = (0, import_path4.join)((0, import_os2.homedir)(), ".claude", "memory", "bus.json");
-var PROJECT_STORE_FILE = ".claude/memory/bus.json";
-function getProjectStorePath(cwd) {
-  return (0, import_path4.join)(cwd, PROJECT_STORE_FILE);
-}
-function ensureDir(filePath) {
-  const dir = (0, import_path4.dirname)(filePath);
-  if (!(0, import_fs3.existsSync)(dir)) {
-    (0, import_fs3.mkdirSync)(dir, { recursive: true });
-  }
-}
-function loadStore(path) {
-  if (!(0, import_fs3.existsSync)(path)) {
-    return { version: 1, messages: [] };
-  }
-  try {
-    return JSON.parse((0, import_fs3.readFileSync)(path, "utf-8"));
-  } catch {
-    return { version: 1, messages: [] };
-  }
-}
-function saveStore(path, store) {
-  ensureDir(path);
-  (0, import_fs3.writeFileSync)(path, JSON.stringify(store, null, 2));
-}
-function publish(content, options = {}) {
-  const path = options.global ? GLOBAL_STORE_PATH : getProjectStorePath(options.cwd || process.cwd());
-  const store = loadStore(path);
-  const message = {
-    id: (0, import_crypto.randomUUID)(),
-    content,
-    target: options.target || "global",
-    persistence: options.persistence || "session",
-    priority: options.priority || "normal",
-    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-    createdBy: options.createdBy || "user",
-    chainId: options.chainId,
-    sessionId: options.sessionId,
-    tags: options.tags,
-    expiresAt: options.expiresAt
-  };
-  store.messages.push(message);
-  saveStore(path, store);
-  return message;
-}
-function list(filter = {}) {
-  const path = filter.global ? GLOBAL_STORE_PATH : getProjectStorePath(filter.cwd || process.cwd());
-  const store = loadStore(path);
-  const now = (/* @__PURE__ */ new Date()).toISOString();
-  return store.messages.filter((msg) => {
-    if (!filter.includeExpired && msg.expiresAt && msg.expiresAt < now) return false;
-    if (filter.target) {
-      const targets = Array.isArray(filter.target) ? filter.target : [filter.target];
-      if (!targets.includes(msg.target)) return false;
-    }
-    if (filter.agentType && msg.target !== `agent:${filter.agentType}`) return false;
-    if (filter.chainId && msg.chainId !== filter.chainId) return false;
-    if (filter.sessionId && msg.sessionId !== filter.sessionId) return false;
-    if (filter.persistence && msg.persistence !== filter.persistence) return false;
-    if (filter.tags && filter.tags.length > 0) {
-      if (!msg.tags || !filter.tags.some((t) => msg.tags.includes(t))) return false;
-    }
-    return true;
-  });
-}
-function clear(options = {}) {
-  const path = options.global ? GLOBAL_STORE_PATH : getProjectStorePath(options.cwd || process.cwd());
-  const store = loadStore(path);
-  const before = store.messages.length;
-  if (options.all) {
-    store.messages = [];
-  } else {
-    store.messages = store.messages.filter((msg) => {
-      if (options.target && msg.target === options.target) return false;
-      if (options.agentType && msg.target === `agent:${options.agentType}`) return false;
-      if (options.chainId && msg.chainId === options.chainId) return false;
-      if (options.sessionId && msg.sessionId === options.sessionId) return false;
-      if (options.persistence && msg.persistence === options.persistence) return false;
-      return true;
-    });
-  }
-  saveStore(path, store);
-  return before - store.messages.length;
-}
-
-// src/mcp/server.ts
-function copyDirRecursive(src, dest) {
-  (0, import_fs4.mkdirSync)(dest, { recursive: true });
-  for (const entry of (0, import_fs4.readdirSync)(src)) {
-    const srcPath = (0, import_path5.join)(src, entry);
-    const destPath = (0, import_path5.join)(dest, entry);
-    const stat = (0, import_fs4.statSync)(srcPath);
-    if (stat.isDirectory()) {
-      copyDirRecursive(srcPath, destPath);
-    } else if (stat.isFile()) {
-      (0, import_fs4.copyFileSync)(srcPath, destPath);
-    }
-  }
-}
-var PLUGIN_ROOT = process.env.BRAINBREW_PLUGIN_ROOT || process.env.CODEX_PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT || (0, import_path5.dirname)((0, import_path5.dirname)(__filename));
-var TEMPLATES_DIR = (0, import_path5.join)(PLUGIN_ROOT, "config", "templates");
-var CONFIG_TEMPLATE = (0, import_path5.join)(PLUGIN_ROOT, "config", "config.yaml");
-var PLUGINS_DIR = (0, import_path5.join)((0, import_path5.dirname)(PLUGIN_ROOT), "plugins");
-var server = new Server(
-  {
-    name: "brainbrew",
-    version: "1.0.0"
-  },
-  {
-    capabilities: {
-      tools: {}
-    }
-  }
-);
-function listTemplateNames() {
-  if (!(0, import_fs4.existsSync)(TEMPLATES_DIR)) return [];
-  return (0, import_fs4.readdirSync)(TEMPLATES_DIR).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(/\.yaml$/, "")).sort();
-}
-var AVAILABLE_TEMPLATES = listTemplateNames();
 var TOOLS = [
-  // ─── Workflow/Template Tools ───
   {
     name: "template_bump",
-    description: "Set up a workflow template in the current project. Copies agents, skills, and chain config to .claude/",
+    description: "Copy a BrainBrew workflow recipe into .codex/brainbrew/chains and mark it active for Codex guidance.",
     inputSchema: {
       type: "object",
       properties: {
         template: {
           type: "string",
-          enum: AVAILABLE_TEMPLATES,
-          description: `Template name to set up. Available: ${AVAILABLE_TEMPLATES.join(", ")}`
+          enum: templateNames(),
+          description: "BrainBrew template name"
         }
       },
       required: ["template"]
@@ -28817,596 +28362,128 @@ var TOOLS = [
   },
   {
     name: "template_list",
-    description: "List all available workflow templates",
-    inputSchema: { type: "object", properties: {} }
-  },
-  {
-    name: "chain_node_types",
-    description: "List node types supported by the chain runtime (agent, team, mcp, tool, transform).",
-    inputSchema: { type: "object", properties: {} }
-  },
-  {
-    name: "chain_validate",
-    description: "Validate the chain config. Checks that all agents in flow exist, team nodes have valid teammates, routes point to valid targets, and detects dead-end nodes.",
+    description: "List BrainBrew workflow templates available to copy into Codex project state.",
     inputSchema: { type: "object", properties: {} }
   },
   {
     name: "chain_list",
-    description: "List all available chains in the project and show which is active",
+    description: "List BrainBrew workflow recipes copied into .codex/brainbrew/chains.",
     inputSchema: { type: "object", properties: {} }
   },
   {
     name: "chain_switch",
-    description: "Switch the active chain. Takes effect immediately for subsequent agent runs.",
+    description: "Set the active BrainBrew workflow recipe for Codex guidance.",
     inputSchema: {
       type: "object",
       properties: {
-        chain: { type: "string", description: "Chain name to activate (without .yaml extension)" }
+        chain: { type: "string", description: "Chain name to activate" }
       },
       required: ["chain"]
     }
   },
   {
     name: "chain_run",
-    description: "Activate a chain and enforce spawning its first agent immediately. Switches chain, clears previous state, and sets the first agent as mandatory. PreToolUse/Stop hooks will block until it is spawned.",
+    description: "Set the active BrainBrew workflow recipe and return Codex-oriented execution guidance.",
     inputSchema: {
       type: "object",
       properties: {
-        chain: { type: "string", description: "Chain name to run" }
+        chain: { type: "string", description: "Chain name to use" }
       },
       required: ["chain"]
     }
   },
   {
-    name: "stop_chain",
-    description: 'Stop the active chain. Clears all pending chain-state files so PreToolUse/Stop hooks no longer block, and unblocks any wrong-agent guards. Equivalent to typing "skip chain" \u2014 but global, not per-session.',
-    inputSchema: {
-      type: "object",
-      properties: {}
-    }
-  },
-  // ─── Init / Setup ───
-  {
-    name: "init",
-    description: "Register brainbrew chain hooks in ~/.claude/settings.json so opencode can dispatch them. Required once for opencode users (Claude Code reads hooks directly from the plugin manifest, so this is optional under Claude Code). Idempotent \u2014 replaces any existing brainbrew entries. Uses absolute paths so it works without CLAUDE_PLUGIN_ROOT in the hook subprocess env.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        events: {
-          type: "array",
-          items: { type: "string" },
-          description: "Optional subset of events to register. Defaults to PreToolUse, PostToolUse, Stop, UserPromptSubmit, SubagentStart, SubagentStop, SessionStart, SessionEnd."
-        }
-      }
-    }
-  },
-  // ─── Plugin Tools ───
-  {
-    name: "plugin_list",
-    description: "List all available plugins bundled with brainbrew-devkit. Returns name, description, keywords, and path for each plugin. Use to discover plugins before installing.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        query: {
-          type: "string",
-          description: "Optional search query to filter plugins by name, description, or keywords (case-insensitive)"
-        }
-      }
-    }
-  },
-  // ─── Memory Bus Tools ───
-  {
-    name: "memory_add",
-    description: "Send a message to agents via Memory Bus. Use for inter-agent communication.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        content: { type: "string", description: "Message content" },
-        target: {
-          type: "string",
-          description: 'Who receives: "global" (all), "next" (next agent), "agent:NAME", "chain:NAME"',
-          default: "global"
-        },
-        persistence: {
-          type: "string",
-          enum: ["session", "once", "permanent"],
-          description: "session (default, temp), once (consumed), permanent (forever)",
-          default: "session"
-        },
-        priority: {
-          type: "string",
-          enum: ["low", "normal", "high", "urgent"],
-          default: "normal"
-        }
-      },
-      required: ["content"]
-    }
-  },
-  {
-    name: "memory_list",
-    description: "List messages in the Memory Bus",
-    inputSchema: {
-      type: "object",
-      properties: {
-        agent: { type: "string", description: "Filter by agent" }
-      }
-    }
-  },
-  {
-    name: "memory_clear",
-    description: "Clear messages from Memory Bus",
-    inputSchema: {
-      type: "object",
-      properties: {
-        agent: { type: "string", description: "Clear for specific agent" },
-        all: { type: "boolean", description: "Clear all messages" }
-      }
-    }
+    name: "chain_validate",
+    description: "Validate the active BrainBrew workflow recipe structure for Codex guidance.",
+    inputSchema: { type: "object", properties: {} }
   }
 ];
+var server = new Server(
+  { name: "brainbrew-codex", version: "1.0.0" },
+  { capabilities: { tools: {} } }
+);
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
   const cwd = process.cwd();
   try {
     switch (name) {
-      // ─── bump_template ───
+      case "template_list": {
+        const templates = templateNames();
+        return success2(templates.length ? `Available BrainBrew templates:
+
+${templates.map((t) => `- ${t}`).join("\n")}` : "No BrainBrew templates found.");
+      }
       case "template_bump": {
         const template = args?.template;
-        if (!/^[a-z0-9_-]+$/.test(template)) {
-          return error2("Invalid template name");
-        }
-        const templateDir = (0, import_path5.join)(TEMPLATES_DIR, template);
-        const templateYaml = (0, import_path5.join)(TEMPLATES_DIR, `${template}.yaml`);
-        if (!(0, import_fs4.existsSync)(templateYaml)) {
-          return error2(`Template "${template}" not found`);
-        }
-        const dirs = [".claude/agents", ".claude/skills", ".claude/hooks", ".claude/memory", ".claude/chains"];
-        dirs.forEach((d) => (0, import_fs4.mkdirSync)((0, import_path5.join)(cwd, d), { recursive: true }));
-        const agentsDir = (0, import_path5.join)(templateDir, "agents");
-        let agentCount = 0;
-        if ((0, import_fs4.existsSync)(agentsDir)) {
-          (0, import_fs4.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => {
-            (0, import_fs4.copyFileSync)((0, import_path5.join)(agentsDir, f), (0, import_path5.join)(cwd, ".claude/agents", f));
-            agentCount++;
-          });
-        }
-        const skillsDir = (0, import_path5.join)(templateDir, "skills");
-        let skillCount = 0;
-        if ((0, import_fs4.existsSync)(skillsDir)) {
-          (0, import_fs4.readdirSync)(skillsDir).forEach((skill) => {
-            const src = (0, import_path5.join)(skillsDir, skill);
-            const dest = (0, import_path5.join)(cwd, ".claude/skills", skill);
-            if ((0, import_fs4.statSync)(src).isDirectory()) {
-              copyDirRecursive(src, dest);
-              skillCount++;
-            }
-          });
-        }
-        const existingChain = resolveActiveChain(cwd);
-        if (existingChain?.isLegacy) {
-          migrateToMultiChain(cwd);
-        }
-        (0, import_fs4.copyFileSync)(templateYaml, (0, import_path5.join)(cwd, ".claude/chains", `${template}.yaml`));
-        writePointer(cwd, template);
-        const projectConfigPath = (0, import_path5.join)(cwd, ".claude", "config.yaml");
-        let configScaffolded = false;
-        if (!(0, import_fs4.existsSync)(projectConfigPath) && (0, import_fs4.existsSync)(CONFIG_TEMPLATE)) {
-          (0, import_fs4.copyFileSync)(CONFIG_TEMPLATE, projectConfigPath);
-          configScaffolded = true;
-        }
-        const config2 = (0, import_fs4.readFileSync)(templateYaml, "utf-8");
-        const flowMatch = config2.match(/flow:[\s\S]*/);
-        const flow = flowMatch ? flowMatch[0].substring(0, 500) : "";
-        const configNote = configScaffolded ? `
-Project config: .claude/config.yaml (new \u2014 edit values for this project)` : `
-Project config: .claude/config.yaml (kept existing)`;
-        return success2(`Template "${template}" set up!
-
-Agents: ${agentCount}
-Skills: ${skillCount}
-Active chain: ${template}${configNote}
-
-${flow}`);
-      }
-      // ─── list_templates ───
-      case "template_list": {
-        const templates = (0, import_fs4.readdirSync)(TEMPLATES_DIR).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(".yaml", ""));
-        const info = templates.map((t) => {
-          const yaml = (0, import_fs4.readFileSync)((0, import_path5.join)(TEMPLATES_DIR, `${t}.yaml`), "utf-8");
-          const desc = yaml.split("\n").find((l) => l.startsWith("#"))?.replace("#", "").trim() || "";
-          return `- **${t}**: ${desc}`;
-        }).join("\n");
-        return success2(`Available templates:
-
-${info}`);
-      }
-      case "chain_node_types": {
-        return success2(`Supported node types:
-  - ${listStrategies().join("\n  - ")}`);
-      }
-      // ─── chain_validate ───
-      case "chain_validate": {
-        const resolved = resolveActiveChain(cwd);
-        if (!resolved) {
-          return error2("No chain config found. Run template_bump to set up a workflow.");
-        }
-        const content = (0, import_fs4.readFileSync)(resolved.configPath, "utf-8");
-        const issues = [];
-        const installedAgents = /* @__PURE__ */ new Set();
-        const agentsDir = (0, import_path5.join)(cwd, ".claude", "agents");
-        if ((0, import_fs4.existsSync)(agentsDir)) {
-          (0, import_fs4.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => installedAgents.add(f.replace(".md", "")));
-        }
-        const parsedChain = parseChainYaml(content);
-        const flowNodes = /* @__PURE__ */ new Map();
-        for (const [name2, entry] of Object.entries(parsedChain.flow)) {
-          if (!isSafeAgentName(name2)) continue;
-          const isTeam = entry.type === "team";
-          const teammates = (entry.teammates ?? []).filter((t) => t.name && (!t.agent || isSafeAgentName(t.agent))).map((t) => ({ name: t.name, agent: t.agent }));
-          const routes = [];
-          for (const target of Object.keys(entry.routes ?? {})) {
-            if (isSafeAgentName(target) || target === "END") routes.push(target);
-          }
-          if (entry.next && (isSafeAgentName(entry.next) || entry.next === "END")) routes.push(entry.next);
-          if (entry.on_issues && isSafeAgentName(entry.on_issues)) routes.push(entry.on_issues);
-          if (entry.on_fail && isSafeAgentName(entry.on_fail)) routes.push(entry.on_fail);
-          flowNodes.set(name2, { isTeam, teammates, routes });
-        }
-        const allNodeNames = new Set(flowNodes.keys());
-        for (const [nodeName, node] of flowNodes) {
-          if (node.isTeam) {
-            if (node.teammates.length === 0) {
-              issues.push(`\u274C Team "${nodeName}" has no teammates`);
-            }
-            for (const tm of node.teammates) {
-              if (!tm.name) issues.push(`\u274C Team "${nodeName}" has a teammate without a name`);
-              if (!tm.agent) {
-                issues.push(`\u274C Teammate "${tm.name}" in team "${nodeName}" missing agent field`);
-              } else if (!installedAgents.has(tm.agent)) {
-                issues.push(`\u274C Teammate "${tm.name}" \u2192 agent "${tm.agent}" not found in .claude/agents/`);
-              }
-            }
-          } else {
-            if (!installedAgents.has(nodeName) && nodeName !== "END") {
-              issues.push(`\u26A0 Flow node "${nodeName}" has no matching agent file in .claude/agents/`);
-            }
-          }
-          if (node.routes.length === 0 && nodeName !== "END") {
-            issues.push(`\u26A0 Node "${nodeName}" has no routes (dead-end)`);
-          }
-          for (const target of node.routes) {
-            if (target === "END") continue;
-            if (!allNodeNames.has(target)) {
-              issues.push(`\u274C Route "${nodeName}" \u2192 "${target}" but "${target}" is not defined in flow`);
-            }
-          }
-        }
-        let agentFormatIssues = 0;
-        const allReferencedAgents = /* @__PURE__ */ new Set();
-        for (const [nodeName, node] of flowNodes) {
-          if (node.isTeam) {
-            for (const tm of node.teammates) {
-              if (tm.agent && isSafeAgentName(tm.agent)) allReferencedAgents.add(tm.agent);
-            }
-          } else if (nodeName !== "END" && isSafeAgentName(nodeName)) {
-            allReferencedAgents.add(nodeName);
-          }
-        }
-        for (const agentName of allReferencedAgents) {
-          const agentPath = (0, import_path5.join)(agentsDir, `${agentName}.md`);
-          if (!(0, import_fs4.existsSync)(agentPath)) continue;
-          const fm = parseFrontmatter(agentPath);
-          if (!fm.valid) {
-            issues.push(`\u274C Agent "${agentName}" has no YAML frontmatter`);
-            agentFormatIssues++;
-            continue;
-          }
-          if (!fm.fields["name"]) {
-            issues.push(`\u274C Agent "${agentName}" frontmatter missing "name" field`);
-            agentFormatIssues++;
-          }
-          if (!fm.fields["description"]) {
-            issues.push(`\u26A0 Agent "${agentName}" frontmatter missing "description" field`);
-            agentFormatIssues++;
-          }
-        }
-        const skillNames = /* @__PURE__ */ new Set();
-        let skillFormatIssues = 0;
-        const skillsDir = (0, import_path5.join)(cwd, ".claude", "skills");
-        if ((0, import_fs4.existsSync)(skillsDir)) {
-          for (const entry of (0, import_fs4.readdirSync)(skillsDir)) {
-            const skillPath = (0, import_path5.join)(skillsDir, entry);
-            if (!(0, import_fs4.statSync)(skillPath).isDirectory()) continue;
-            if (entry === "common") continue;
-            skillNames.add(entry);
-            const candidates = (0, import_fs4.readdirSync)(skillPath).filter((f) => f.toLowerCase() === "skill.md");
-            if (candidates.length === 0) {
-              issues.push(`\u26A0 Skill "${entry}" has no SKILL.md file`);
-              skillFormatIssues++;
-              continue;
-            }
-            const fm = parseFrontmatter((0, import_path5.join)(skillPath, candidates[0]));
-            if (!fm.valid) {
-              issues.push(`\u26A0 Skill "${entry}" SKILL.md has no YAML frontmatter`);
-              skillFormatIssues++;
-              continue;
-            }
-            if (!fm.fields["name"]) {
-              issues.push(`\u26A0 Skill "${entry}" SKILL.md frontmatter missing "name" field`);
-              skillFormatIssues++;
-            }
-            if (!fm.fields["description"]) {
-              issues.push(`\u26A0 Skill "${entry}" SKILL.md frontmatter missing "description" field`);
-              skillFormatIssues++;
-            }
-          }
-        }
-        for (const agentName of allReferencedAgents) {
-          const agentPath = (0, import_path5.join)(agentsDir, `${agentName}.md`);
-          if (!(0, import_fs4.existsSync)(agentPath)) continue;
-          const agentContent = (0, import_fs4.readFileSync)(agentPath, "utf-8");
-          const skillRefs = agentContent.matchAll(/`([a-z][\w-]*)`\s*skills?/gi);
-          for (const ref of skillRefs) {
-            const refName = ref[1];
-            if (!skillNames.has(refName)) {
-              issues.push(`\u26A0 Agent "${agentName}" references skill "${refName}" which was not found in .claude/skills/`);
-            }
-          }
-        }
-        const teamCount = [...flowNodes.values()].filter((n) => n.isTeam).length;
-        const summaryLines = [
-          `Nodes: ${flowNodes.size}`,
-          `Agents installed: ${installedAgents.size}`,
-          `Agent format issues: ${agentFormatIssues}`,
-          `Skills installed: ${skillNames.size}`,
-          `Skill format issues: ${skillFormatIssues}`,
-          `Team nodes: ${teamCount}`
-        ];
-        if (issues.length === 0) {
-          return success2(`Chain "${resolved.chainName}" is valid
-
-${summaryLines.join("\n")}`);
-        }
-        return success2(`Chain "${resolved.chainName}" validation found ${issues.length} issue(s):
-
-${issues.join("\n")}
-
-${summaryLines.join("\n")}`);
+        if (!validName(template)) return error2("Invalid template name.");
+        const source = (0, import_path2.join)(TEMPLATE_ROOT, `${template}.yaml`);
+        if (!(0, import_fs.existsSync)(source)) return error2(`Template "${template}" not found.`);
+        ensureState(cwd);
+        (0, import_fs.writeFileSync)(chainPath(cwd, template), (0, import_fs.readFileSync)(source, "utf-8"));
+        setActiveChain(cwd, template);
+        return success2(`Template "${template}" copied to ${CODEX_CHAINS_DIR} and marked active for Codex guidance.`);
       }
       case "chain_list": {
-        const chains = listChains(cwd);
-        if (chains.length === 0) {
-          return success2("No chains found. Run template_bump to set up a workflow.");
-        }
-        const activeName = getActiveChainName(cwd);
-        const lines = chains.map((c) => c === activeName ? `- **${c}** (active)` : `- ${c}`);
-        return success2(`Chains:
+        const chains = listProjectChains(cwd);
+        if (!chains.length) return success2("No BrainBrew chains found in .codex/brainbrew/chains. Run template_bump first.");
+        const active = getActiveChain(cwd);
+        return success2(`BrainBrew chains:
 
-${lines.join("\n")}`);
+${chains.map((chain) => chain === active ? `- **${chain}** (active)` : `- ${chain}`).join("\n")}`);
       }
       case "chain_switch": {
         const chain = args?.chain;
-        const chains = listChains(cwd);
-        if (chains.length === 0) {
-          return error2("No chains found. Run template_bump first.");
-        }
-        if (!chains.includes(chain)) {
-          return error2(`Chain "${chain}" not found. Available: ${chains.join(", ")}`);
-        }
-        const current = getActiveChainName(cwd);
-        if (current === chain) {
-          return success2(`Chain "${chain}" is already active.`);
-        }
-        const pointerPath = (0, import_path5.join)(cwd, ".claude", "chain-config.yaml");
-        const pointerContent = (0, import_fs4.readFileSync)(pointerPath, "utf-8");
-        const dirMatch = pointerContent.match(/^chains_dir:\s*(.+)/m);
-        const existingChainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
-        writePointer(cwd, chain, existingChainsDir);
-        return success2(`Switched active chain to "${chain}".`);
+        if (!validName(chain)) return error2("Invalid chain name.");
+        if (!(0, import_fs.existsSync)(chainPath(cwd, chain))) return error2(`Chain "${chain}" not found in ${CODEX_CHAINS_DIR}.`);
+        setActiveChain(cwd, chain);
+        return success2(`Active BrainBrew chain set to "${chain}".`);
       }
       case "chain_run": {
         const chain = args?.chain;
-        const chains = listChains(cwd);
-        if (!chains.includes(chain)) {
-          return error2(`Chain "${chain}" not found. Available: ${chains.join(", ")}`);
-        }
-        const pointerPath = (0, import_path5.join)(cwd, ".claude", "chain-config.yaml");
-        const pointerContent = (0, import_fs4.readFileSync)(pointerPath, "utf-8");
-        const dirMatch = pointerContent.match(/^chains_dir:\s*(.+)/m);
-        const existingChainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
-        writePointer(cwd, chain, existingChainsDir);
-        const chainPath = (0, import_path5.join)(cwd, existingChainsDir, `${chain}.yaml`);
-        let firstAgent = "";
-        let allAgents = "";
-        if ((0, import_fs4.existsSync)(chainPath)) {
-          const content = (0, import_fs4.readFileSync)(chainPath, "utf-8");
-          const flowSection = content.split(/^flow:\s*$/m)[1] ?? "";
-          const flowAgents = [...flowSection.matchAll(/^  (\S+):/gm)].map((m) => m[1]);
-          firstAgent = flowAgents[0] ?? "";
-          allAgents = flowAgents.join(" \u2192 ");
-        }
-        if (!firstAgent) {
-          return error2(`Chain "${chain}" has no flow agents defined.`);
-        }
-        return success2(`Chain "${chain}" activated: ${allAgents}
-
-You MUST now spawn: Agent(subagent_type="${firstAgent}")`);
-      }
-      case "stop_chain": {
-        const stateDir = (0, import_path5.join)((0, import_os3.homedir)(), ".claude", "tmp", "chain-state");
-        if (!(0, import_fs4.existsSync)(stateDir)) {
-          return success2("No active chain state \u2014 nothing to stop.");
-        }
-        const files = (0, import_fs4.readdirSync)(stateDir).filter((f) => f.endsWith(".json"));
-        let cleared = 0;
-        for (const f of files) {
-          try {
-            (0, import_fs4.unlinkSync)((0, import_path5.join)(stateDir, f));
-            cleared++;
-          } catch {
-          }
-        }
-        return success2(`Chain stopped. Cleared ${cleared} pending state file(s). PreToolUse/Stop guards are now off.`);
-      }
-      // ─── memory_add ───
-      case "memory_add": {
-        const content = args?.content;
-        const target = args?.target || "global";
-        const persistence = args?.persistence || "session";
-        const priority = args?.priority || "normal";
-        const msg = publish(content, {
-          target,
-          persistence,
-          priority,
-          createdBy: "mcp",
-          cwd
-        });
-        return success2(`\u2713 Message added
-  Target: ${msg.target}
-  Persistence: ${msg.persistence}`);
-      }
-      // ─── memory_list ───
-      case "memory_list": {
-        const messages = list({ agentType: args?.agent, cwd });
-        if (messages.length === 0) {
-          return success2("No messages in Memory Bus");
-        }
-        const output = messages.map((m, i) => `${i + 1}. [${m.target}] (${m.persistence}) - ${m.content}`).join("\n");
-        return success2(`Memory Bus (${messages.length}):
-
-${output}`);
-      }
-      // ─── init ───
-      case "init": {
-        const HOME2 = (0, import_os3.homedir)();
-        const SETTINGS_FILE2 = (0, import_path5.join)(HOME2, ".claude", "settings.json");
-        const runnerPath = (0, import_path5.join)(PLUGIN_ROOT, "scripts", "runner.cjs");
-        if (!(0, import_fs4.existsSync)(runnerPath)) {
-          return error2(`runner.cjs not found at ${runnerPath}. PLUGIN_ROOT=${PLUGIN_ROOT}. Reinstall the plugin.`);
-        }
-        const defaultEvents = [
-          "PreToolUse",
-          "PostToolUse",
-          "Stop",
-          "UserPromptSubmit",
-          "SubagentStart",
-          "SubagentStop",
-          "SessionStart",
-          "SessionEnd"
-        ];
-        const events = Array.isArray(args?.events) && args.events.length > 0 ? args.events : defaultEvents;
-        let settings = {};
-        if ((0, import_fs4.existsSync)(SETTINGS_FILE2)) {
-          try {
-            settings = JSON.parse((0, import_fs4.readFileSync)(SETTINGS_FILE2, "utf-8"));
-          } catch (e) {
-            return error2(`Cannot parse ~/.claude/settings.json: ${e.message}`);
-          }
-        } else {
-          (0, import_fs4.mkdirSync)((0, import_path5.dirname)(SETTINGS_FILE2), { recursive: true });
-        }
-        const isOurHook = (h) => h?.hooks?.[0]?.command?.includes("brainbrew") || h?.hooks?.[0]?.command?.includes("runner.cjs") || h?.hooks?.[0]?.command?.includes("hooks/chains/");
-        const hooksRoot = settings.hooks ??= {};
-        for (const event of events) {
-          const existing = (hooksRoot[event] ?? []).filter((h) => !isOurHook(h));
-          const timeout = event === "PostToolUse" || event === "SubagentStop" ? 120 : 30;
-          existing.push({
-            matcher: ".*",
-            hooks: [{ type: "command", command: `node "${runnerPath}" ${event}`, timeout }]
-          });
-          hooksRoot[event] = existing;
-        }
-        (0, import_fs4.writeFileSync)(SETTINGS_FILE2, JSON.stringify(settings, null, 2));
+        if (!validName(chain)) return error2("Invalid chain name.");
+        const file2 = chainPath(cwd, chain);
+        if (!(0, import_fs.existsSync)(file2)) return error2(`Chain "${chain}" not found in ${CODEX_CHAINS_DIR}. Run template_bump first.`);
+        const content = (0, import_fs.readFileSync)(file2, "utf-8");
+        setActiveChain(cwd, chain);
+        const first = firstFlowNode(content);
         return success2(
-          `\u2713 Registered ${events.length} brainbrew hook events in ${SETTINGS_FILE2}
-  Runner: ${runnerPath}
-  Events: ${events.join(", ")}
+          `BrainBrew chain "${chain}" is active for Codex guidance.
 
-Restart opencode (or Claude Code) so the new hooks are picked up.`
+` + (first ? `Start with the "${first}" phase. ` : "") + "Use the workflow as a recipe; Codex does not execute Claude-style automatic chain routing."
         );
       }
-      // ─── memory_clear ───
-      case "memory_clear": {
-        const cleared = clear({
-          agentType: args?.agent,
-          all: args?.all,
-          cwd
-        });
-        return success2(`\u2713 Cleared ${cleared} messages`);
-      }
-      case "plugin_list": {
-        const query = (args?.query || "").toLowerCase().trim();
-        if (!(0, import_fs4.existsSync)(PLUGINS_DIR)) {
-          return success2("No plugins directory found.");
-        }
-        const entries = (0, import_fs4.readdirSync)(PLUGINS_DIR).filter(
-          (f) => (0, import_fs4.statSync)((0, import_path5.join)(PLUGINS_DIR, f)).isDirectory()
-        );
-        const plugins = entries.map((dir) => {
-          const manifestPath = (0, import_path5.join)(PLUGINS_DIR, dir, "plugin.json");
-          if (!(0, import_fs4.existsSync)(manifestPath)) return null;
-          try {
-            const manifest = JSON.parse((0, import_fs4.readFileSync)(manifestPath, "utf-8"));
-            return { ...manifest, path: (0, import_path5.join)(PLUGINS_DIR, dir) };
-          } catch {
-            return null;
+      case "chain_validate": {
+        const active = getActiveChain(cwd);
+        if (!active) return error2("No active BrainBrew chain. Run template_bump or chain_switch first.");
+        const file2 = chainPath(cwd, active);
+        if (!(0, import_fs.existsSync)(file2)) return error2(`Active chain "${active}" is missing from ${CODEX_CHAINS_DIR}.`);
+        const parsed = parseChainYaml((0, import_fs.readFileSync)(file2, "utf-8"));
+        const nodes = Object.keys(parsed.flow);
+        const issues = [];
+        if (!nodes.length) issues.push("No flow nodes found.");
+        for (const [node, entry] of Object.entries(parsed.flow)) {
+          for (const target of [entry.next, entry.on_fail, entry.on_issues].filter(Boolean)) {
+            if (target !== "END" && typeof target === "string" && !parsed.flow[target]) {
+              issues.push(`Node "${node}" references missing target "${target}".`);
+            }
           }
-        }).filter(Boolean);
-        const filtered = query ? plugins.filter(
-          (p) => (p.name || "").toLowerCase().includes(query) || (p.description || "").toLowerCase().includes(query) || (p.keywords || []).some((k) => k.toLowerCase().includes(query))
-        ) : plugins;
-        if (filtered.length === 0) {
-          return success2(query ? `No plugins found matching "${query}".` : "No plugins available.");
         }
-        const lines = filtered.map(
-          (p) => `**${p.name}** (${p.runtime || "unknown"})
-  ${p.description}
-  keywords: ${(p.keywords || []).join(", ")}
-  path: ${p.path}`
-        ).join("\n\n");
-        return success2(`Found ${filtered.length} plugin(s)${query ? ` matching "${query}"` : ""}:
+        return success2(issues.length ? `Chain "${active}" has ${issues.length} issue(s):
 
-${lines}`);
+${issues.join("\n")}` : `Chain "${active}" is valid for Codex guidance. Nodes: ${nodes.length}`);
       }
       default:
         return error2(`Unknown tool: ${name}`);
     }
   } catch (err) {
-    return { content: [{ type: "text", text: "Error: Chain operation failed" }], isError: true };
+    return error2(err.message);
   }
 });
-function isSafeAgentName(name) {
-  return /^[a-zA-Z0-9_-]+$/.test(name);
-}
-function parseFrontmatter(filePath) {
-  const content = (0, import_fs4.readFileSync)(filePath, "utf-8");
-  const match = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!match) return { valid: false, fields: {} };
-  const fields = {};
-  let currentKey = "";
-  let currentValue = "";
-  for (const line of match[1].split("\n")) {
-    const kvMatch = line.match(/^(\w[\w-]*):\s*(.*)/);
-    if (kvMatch) {
-      if (currentKey) fields[currentKey] = currentValue.trim();
-      currentKey = kvMatch[1];
-      currentValue = kvMatch[2].replace(/^>-?\s*$/, "");
-    } else if (currentKey && line.match(/^\s+/)) {
-      currentValue += " " + line.trim();
-    }
-  }
-  if (currentKey) fields[currentKey] = currentValue.trim();
-  return { valid: true, fields };
-}
-function success2(text) {
-  return { content: [{ type: "text", text }] };
-}
-function error2(text) {
-  return { content: [{ type: "text", text: `Error: ${text}` }], isError: true };
-}
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  await server.connect(new StdioServerTransport());
 }
-main().catch(console.error);
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

@@ -3,7 +3,8 @@
     "brainbrew": {
       "type": "stdio",
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/mcp-server.cjs"]
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/mcp-server.cjs"],
+      "note": "BrainBrew DevKit MCP server. Claude Code and opencode use CLAUDE_PLUGIN_ROOT. In Codex, register this with `codex mcp add brainbrew -- node <installed-plugin-root>/mcp/mcp-server.cjs` if your Codex build does not expand plugin-relative variables from .mcp.json."
     }
   }
 }

@@ -1,6 +1,6 @@
 # brainbrew-devkit
 
-**Self-correcting agent chains for Claude Code and opencode.**
+**Self-correcting agent chains for Claude Code, opencode, and Codex.**
 
 A chain of agents takes turns. One plans, one codes, one reviews, one tests, one commits. If an agent fails, another agent fixes it and the chain retries — automatically.
 
@@ -29,7 +29,7 @@ That's the whole engine. Each lap of the loop = one agent step.
 
 ## Quick start
 
-**Requires** [Claude Code](https://docs.claude.com/en/docs/claude-code) or [opencode](https://opencode.ai) + Node.js 18+.
+**Requires** [Claude Code](https://docs.claude.com/en/docs/claude-code), [opencode](https://opencode.ai), or Codex + Node.js 18+.
 
 **Install** (then restart Claude Code):
 
@@ -62,6 +62,33 @@ Then, in addition:
 3. Restart opencode.
 
 Claude Code reads hooks directly from the plugin manifest, so step 2 is **only** required for opencode. See [docs/guide/installation.md](docs/guide/installation.md#opencode-support) for details.
+
+### Codex users
+
+Codex support is first-class, but the runtime mechanism is different:
+
+| Runtime | BrainBrew mode |
+|---|---|
+| Claude Code | native orchestration |
+| opencode | OHO bridge support |
+| Codex | plugin-native commands/agents/skills plus recipe-guided workflows with global skills and supported hooks |
+
+Install the BrainBrew plugin in Codex:
+
+```
+/plugins marketplace add brainbrewlabs/brainbrew-devkit
+/plugins install brainbrew-devkit
+```
+
+Then enable BrainBrew's Codex runtime support:
+
+```bash
+brainbrew codex init
+brainbrew codex sync-brainbrew-skills
+brainbrew codex status
+```
+
+The dedicated Codex plugin package also ships native prompt commands (`/brainbrew:init`, `/brainbrew:chain-run`, `/brainbrew:template-bump`, `/brainbrew:sync-brainbrew-skills`, `/brainbrew:status`), role agents, and curated BrainBrew skills. Codex workflow YAML is guidance, not an executable chain state machine. See [docs/guide/codex-support.md](docs/guide/codex-support.md) for setup, MCP registration, and troubleshooting.
 
 ## Build your own chain (recommended)
 
@@ -135,3 +162,4 @@ Each agent is a markdown file in `.claude/agents/`. Chains live in your repo —
 
 - [Full docs](docs/) — every knob and dial
 - [opencode setup](docs/guide/installation.md#opencode-support) — detailed setup guide
+- [Codex setup](docs/guide/codex-support.md) — native plugin assets, global hooks, skill sync, and MCP

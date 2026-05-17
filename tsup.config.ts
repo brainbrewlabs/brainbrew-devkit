@@ -6,7 +6,7 @@ export default defineConfig([
     entry: ['src/cli.ts'],
     format: ['esm'],
     outDir: 'dist',
-    banner: { js: '#!/usr/bin/env node' },
+    banner: { js: '#!/usr/bin/env node\nimport { createRequire } from "module";\nconst require = createRequire(import.meta.url);' },
     clean: true,
     sourcemap: false,
     minify: false,
@@ -23,6 +23,16 @@ export default defineConfig([
     splitting: false,
     noExternal: [/.*/],
   },
+  // Codex-safe MCP Server
+  {
+    entry: { 'mcp-server': 'src/mcp/codex-server.ts' },
+    format: ['cjs'],
+    outDir: 'plugin-codex/mcp',
+    sourcemap: false,
+    minify: false,
+    splitting: false,
+    noExternal: [/.*/],
+  },
   // Hook entries → plugin/scripts/ for Claude Code plugin
   {
     entry: {
@@ -33,9 +43,20 @@ export default defineConfig([
       'subagent-stop': 'src/hooks/subagent-stop.ts',
       'session-start': 'src/hooks/session-start.ts',
       'session-end': 'src/hooks/session-end.ts',
+      'codex-runner': 'src/hooks/codex-runner.ts',
     },
     format: ['cjs'],
     outDir: 'plugin/scripts',
+    sourcemap: false,
+    minify: false,
+    splitting: false,
+    noExternal: [/.*/],
+  },
+  // Codex hook entry → dedicated Codex plugin package
+  {
+    entry: { 'codex-runner': 'src/hooks/codex-runner.ts' },
+    format: ['cjs'],
+    outDir: 'plugin-codex/scripts',
     sourcemap: false,
     minify: false,
     splitting: false,

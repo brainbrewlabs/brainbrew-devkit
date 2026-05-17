@@ -9,6 +9,7 @@ import { linkCommand } from './commands/link.js';
 import { initCommand } from './commands/init.js';
 import { exportCommand } from './commands/export.js';
 import { hookCommand } from './commands/hook.js';
+import { codexCommand } from './commands/codex.js';
 import { memoryCommands } from './memory/cli.js';
 
 const VERSION = '0.2.0';
@@ -53,6 +54,7 @@ Commands:
   link --from X --to Y          Set routing between agents
   export --name N               Export current config to YAML
   hook <subcommand>             Manage hooks (global and per-project)
+  codex <subcommand>            Manage Codex runtime support
 
 Hook subcommands:
   hook list                     List global hooks
@@ -163,6 +165,7 @@ async function main(): Promise<void> {
     case 'link': return linkCommand(flags);
     case 'export': return exportCommand(flags);
     case 'hook': return hookCommand(args, flags);
+    case 'codex': return codexCommand(args, flags);
     case 'memory': return memoryCommand(args, flags);
     default:
       console.error(`Unknown command: ${command}`);
