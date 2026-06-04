@@ -30,6 +30,7 @@ export default defineConfig({
           text: 'Core Concepts',
           items: [
             { text: 'Chain Workflow', link: '/guide/chain-workflow' },
+            { text: 'Decide Providers', link: '/guide/decide-providers' },
             { text: 'Memory Bus', link: '/guide/memory-bus' },
             { text: 'Agent Teams', link: '/guide/agent-teams' }
           ]

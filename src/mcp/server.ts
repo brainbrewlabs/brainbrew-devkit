@@ -15,6 +15,9 @@ import { homedir } from 'os';
 import { resolveActiveChain, listChains, getActiveChainName, writePointer, migrateToMultiChain } from '../utils/chain-resolver.js';
 import { parseChainYaml } from '../core/config.js';
 import { listStrategies } from '../core/strategies/registry.js';
+import { loadProviderRegistry, setActiveDecideProvider, resolveProviderUrl } from '../providers/registry.js';
+import { callProvider } from '../providers/http.js';
+import { GLOBAL_PROVIDERS_FILE } from '../utils/paths.js';
 
 // Recursive directory copy
 function copyDirRecursive(src: string, dest: string): void {
@@ -211,6 +214,34 @@ const TOOLS = [
         agent: { type: 'string', description: 'Clear for specific agent' },
         all: { type: 'boolean', description: 'Clear all messages' },
       },
+    },
+  },
+
+  // ─── Provider Tools ───
+  {
+    name: 'providers_list',
+    description: `List chain decide providers from ${GLOBAL_PROVIDERS_FILE} with endpoint, model, and auth.`,
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'providers_test',
+    description: 'Smoke-test a decide provider with a 1-token ping. Returns success/fail + latency. Omit name to test the active_decide_provider.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Provider name (key in providers.json). Defaults to active_decide_provider when omitted.' },
+      },
+    },
+  },
+  {
+    name: 'providers_use',
+    description: 'Set active_decide_provider in providers.json — the provider every decide: node routes through. Validates the name is configured. This is how you activate a provider (NOT chain_switch, which only changes the active chain flow).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Provider name to activate (key in providers.json)' },
+      },
+      required: ['name'],
     },
   },
 
@@ -700,6 +731,96 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         ).join('\n\n');
 
         return success(`Found ${filtered.length} plugin(s)${query ? ` matching "${query}"` : ''}:\n\n${lines}`);
+      }
+
+      // ─── providers_list ───
+      case 'providers_list': {
+        const registry = loadProviderRegistry();
+        const names = Object.keys(registry.providers);
+        if (names.length === 0) {
+          let msg = `No providers configured.\n\nAdd one to ${GLOBAL_PROVIDERS_FILE}\n`;
+          if (registry.warnings.length) {
+            msg += '\nWarnings while loading:\n' + registry.warnings.map(w => `  - ${w}`).join('\n');
+          }
+          return success(msg);
+        }
+        const active = registry.activeDecideProvider;
+        const lines: string[] = ['Providers:', ''];
+        for (const pname of names) {
+          const p = registry.providers[pname];
+          const origin = registry.origins[pname] ?? '?';
+          const authStr = p.token ? `bearer(token=${p.token.slice(0, 8)}...)` : 'none';
+          lines.push(`  ${pname}${pname === active ? '  ← active_decide_provider' : ''}`);
+          lines.push(`    provider : ${p.provider ?? 'openai'}`);
+          lines.push(`    url      : ${resolveProviderUrl(p)}`);
+          lines.push(`    model    : ${p.model}`);
+          lines.push(`    auth     : ${authStr}`);
+          lines.push(`    source   : ${origin}`);
+          lines.push('');
+        }
+        const activeValid = !!active && !!registry.providers[active];
+        lines.push(`active_decide_provider  : ${active || '(unset → claude -p)'}`);
+        lines.push(`require_decide_provider : ${registry.requireDecideProvider ? 'true' : 'false'}`);
+        if (active && !activeValid) {
+          lines.push(`  ⚠ active_decide_provider "${active}" is not one of the providers above`);
+        }
+        if (!activeValid) {
+          if (registry.requireDecideProvider) {
+            lines.push('  ⚠ require_decide_provider is ON but no valid active provider → decide nodes will ERROR until you set one.');
+          }
+          lines.push(`  To activate one:  providers_use name=${names[0]}`);
+        }
+        lines.push('');
+        if (registry.warnings.length) {
+          lines.push('Warnings:');
+          lines.push(...registry.warnings.map(w => `  - ${w}`));
+        }
+        return success(lines.join('\n'));
+      }
+
+      // ─── providers_test ───
+      case 'providers_test': {
+        const registry = loadProviderRegistry();
+        let pname = String(args?.name ?? '').trim();
+        const usedActive = !pname;
+        if (usedActive) {
+          pname = registry.activeDecideProvider ?? '';
+          if (!pname) {
+            return error(
+              `providers_test: no name given and active_decide_provider is not set in ${GLOBAL_PROVIDERS_FILE}. Pass name, or set active_decide_provider.`,
+            );
+          }
+        }
+        const provider = registry.providers[pname];
+        if (!provider) {
+          const hint = usedActive
+            ? `active_decide_provider "${pname}" is not configured.`
+            : `Provider "${pname}" not configured.`;
+          return error(`${hint} Run providers_list to see available.`);
+        }
+        const label = usedActive ? `${pname} (active_decide_provider)` : pname;
+        const prompt =
+          'You are testing a chain router connection. Respond ONLY with this exact JSON: {"route":"END","reason":"ping ok"}';
+        const result = await callProvider(provider, prompt);
+        if (result.ok) {
+          return success(
+            `✓ Provider "${label}" PASS\n  url     : ${resolveProviderUrl(provider)}\n  model   : ${provider.model}\n  latency : ${result.duration_ms}ms\n  route   : ${result.response?.route}\n  reason  : ${result.response?.reason}`,
+          );
+        }
+        return error(
+          `Provider "${label}" FAIL\n  url     : ${resolveProviderUrl(provider)}\n  model   : ${provider.model}\n  latency : ${result.duration_ms}ms\n  error   : ${result.error}`,
+        );
+      }
+
+      // ─── providers_use ───
+      case 'providers_use': {
+        const pname = String(args?.name ?? '').trim();
+        if (!pname) return error('providers_use: name required');
+        const res = setActiveDecideProvider(pname);
+        if (!res.ok) return error(`providers_use failed: ${res.error}`);
+        return success(
+          `✓ active_decide_provider set to "${pname}".\nEvery decide: node now routes through it. Verify with providers_test.`,
+        );
       }
 
       default:

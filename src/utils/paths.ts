@@ -21,6 +21,9 @@ export const VERIFICATION_RULES_FILE = join(HOOKS_DIR, 'verification-rules.json'
 export const HOOKS_CONFIG_FILE = join(HOOKS_DIR, 'hooks-config.yaml');
 export const CHAIN_EVENTS_LOG = join(TMP_DIR, 'chain-events.jsonl');
 
+// User-global provider registry
+export const GLOBAL_PROVIDERS_FILE = join(CLAUDE_DIR, 'brainbrew', 'providers.json');
+
 // Per-project paths
 export function encodeCwd(cwd: string): string {
   return cwd.replace(/\//g, '-');

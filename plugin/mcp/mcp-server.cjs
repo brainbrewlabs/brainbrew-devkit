@@ -97,7 +97,7 @@ var require_code = __commonJS({
     }
     exports2._ = _;
     var plus = new _Code("+");
-    function str(strs, ...args) {
+    function str2(strs, ...args) {
       const expr = [safeStringify(strs[0])];
       let i = 0;
       while (i < args.length) {
@@ -108,7 +108,7 @@ var require_code = __commonJS({
       optimize(expr);
       return new _Code(expr);
     }
-    exports2.str = str;
+    exports2.str = str2;
     function addCodeArg(code, arg) {
       if (arg instanceof _Code)
         code.push(...arg._items);
@@ -151,7 +151,7 @@ var require_code = __commonJS({
       return;
     }
     function strConcat(c1, c2) {
-      return c2.emptyStr() ? c1 : c1.emptyStr() ? c2 : str`${c1}${c2}`;
+      return c2.emptyStr() ? c1 : c1.emptyStr() ? c2 : str2`${c1}${c2}`;
     }
     exports2.strConcat = strConcat;
     function interpolate(x) {
@@ -1113,22 +1113,22 @@ var require_util = __commonJS({
       return (0, codegen_1._)`${topSchemaRef}${schemaPath}${(0, codegen_1.getProperty)(keyword)}`;
     }
     exports2.schemaRefOrVal = schemaRefOrVal;
-    function unescapeFragment(str) {
-      return unescapeJsonPointer(decodeURIComponent(str));
+    function unescapeFragment(str2) {
+      return unescapeJsonPointer(decodeURIComponent(str2));
     }
     exports2.unescapeFragment = unescapeFragment;
-    function escapeFragment(str) {
-      return encodeURIComponent(escapeJsonPointer(str));
+    function escapeFragment(str2) {
+      return encodeURIComponent(escapeJsonPointer(str2));
     }
     exports2.escapeFragment = escapeFragment;
-    function escapeJsonPointer(str) {
-      if (typeof str == "number")
-        return `${str}`;
-      return str.replace(/~/g, "~0").replace(/\//g, "~1");
+    function escapeJsonPointer(str2) {
+      if (typeof str2 == "number")
+        return `${str2}`;
+      return str2.replace(/~/g, "~0").replace(/\//g, "~1");
     }
     exports2.escapeJsonPointer = escapeJsonPointer;
-    function unescapeJsonPointer(str) {
-      return str.replace(/~1/g, "/").replace(/~0/g, "~");
+    function unescapeJsonPointer(str2) {
+      return str2.replace(/~1/g, "/").replace(/~0/g, "~");
     }
     exports2.unescapeJsonPointer = unescapeJsonPointer;
     function eachItem(xs, f) {
@@ -2153,8 +2153,8 @@ var require_json_schema_traverse = __commonJS({
         post(schema, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex);
       }
     }
-    function escapeJsonPtr(str) {
-      return str.replace(/~/g, "~0").replace(/\//g, "~1");
+    function escapeJsonPtr(str2) {
+      return str2.replace(/~/g, "~0").replace(/\//g, "~1");
     }
   }
 });
@@ -3215,10 +3215,10 @@ var require_utils = __commonJS({
         return { host, isIPV6: false };
       }
     }
-    function findToken(str, token) {
+    function findToken(str2, token) {
       let ind = 0;
-      for (let i = 0; i < str.length; i++) {
-        if (str[i] === token) ind++;
+      for (let i = 0; i < str2.length; i++) {
+        if (str2[i] === token) ind++;
       }
       return ind;
     }
@@ -3871,7 +3871,7 @@ var require_core = __commonJS({
     var util_1 = require_util();
     var $dataRefSchema = require_data();
     var uri_1 = require_uri();
-    var defaultRegExp = (str, flags) => new RegExp(str, flags);
+    var defaultRegExp = (str2, flags) => new RegExp(str2, flags);
     defaultRegExp.code = "new RegExp";
     var META_IGNORE_OPTIONS = ["removeAdditional", "useDefaults", "coerceTypes"];
     var EXT_SCOPE_NAMES = /* @__PURE__ */ new Set([
@@ -4666,16 +4666,16 @@ var require_ucs2length = __commonJS({
   "node_modules/ajv/dist/runtime/ucs2length.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
-    function ucs2length(str) {
-      const len = str.length;
+    function ucs2length(str2) {
+      const len = str2.length;
       let length = 0;
       let pos = 0;
       let value;
       while (pos < len) {
         length++;
-        value = str.charCodeAt(pos++);
+        value = str2.charCodeAt(pos++);
         if (value >= 55296 && value <= 56319 && pos < len) {
-          value = str.charCodeAt(pos);
+          value = str2.charCodeAt(pos);
           if ((value & 64512) === 56320)
             pos++;
         }
@@ -6558,8 +6558,8 @@ var require_formats = __commonJS({
     }
     var DATE = /^(\d\d\d\d)-(\d\d)-(\d\d)$/;
     var DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    function date4(str) {
-      const matches = DATE.exec(str);
+    function date4(str2) {
+      const matches = DATE.exec(str2);
       if (!matches)
         return false;
       const year = +matches[1];
@@ -6578,8 +6578,8 @@ var require_formats = __commonJS({
     }
     var TIME = /^(\d\d):(\d\d):(\d\d(?:\.\d+)?)(z|([+-])(\d\d)(?::?(\d\d))?)?$/i;
     function getTime(strictTimeZone) {
-      return function time3(str) {
-        const matches = TIME.exec(str);
+      return function time3(str2) {
+        const matches = TIME.exec(str2);
         if (!matches)
           return false;
         const hr = +matches[1];
@@ -6625,8 +6625,8 @@ var require_formats = __commonJS({
     var DATE_TIME_SEPARATOR = /t|\s/i;
     function getDateTime(strictTimeZone) {
       const time3 = getTime(strictTimeZone);
-      return function date_time(str) {
-        const dateTime = str.split(DATE_TIME_SEPARATOR);
+      return function date_time(str2) {
+        const dateTime = str2.split(DATE_TIME_SEPARATOR);
         return dateTime.length === 2 && date4(dateTime[0]) && time3(dateTime[1]);
       };
     }
@@ -6651,13 +6651,13 @@ var require_formats = __commonJS({
     }
     var NOT_URI_FRAGMENT = /\/|:/;
     var URI = /^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)(?:\?(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?$/i;
-    function uri(str) {
-      return NOT_URI_FRAGMENT.test(str) && URI.test(str);
+    function uri(str2) {
+      return NOT_URI_FRAGMENT.test(str2) && URI.test(str2);
     }
     var BYTE = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/gm;
-    function byte(str) {
+    function byte(str2) {
       BYTE.lastIndex = 0;
-      return BYTE.test(str);
+      return BYTE.test(str2);
     }
     var MIN_INT32 = -(2 ** 31);
     var MAX_INT32 = 2 ** 31 - 1;
@@ -6671,11 +6671,11 @@ var require_formats = __commonJS({
       return true;
     }
     var Z_ANCHOR = /[^\\]\\Z/;
-    function regex(str) {
-      if (Z_ANCHOR.test(str))
+    function regex(str2) {
+      if (Z_ANCHOR.test(str2))
         return false;
       try {
-        new RegExp(str);
+        new RegExp(str2);
         return true;
       } catch (e) {
         return false;
@@ -7743,13 +7743,13 @@ var require_Collection = __commonJS({
 var require_stringifyComment = __commonJS({
   "node_modules/yaml/dist/stringify/stringifyComment.js"(exports2) {
     "use strict";
-    var stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
+    var stringifyComment = (str2) => str2.replace(/^(?!$)(?: $)?/gm, "#");
     function indentComment(comment, indent) {
       if (/^\n+$/.test(comment))
         return comment.substring(1);
       return indent ? comment.replace(/^(?! *$)/gm, indent) : comment;
     }
-    var lineComment = (str, indent, comment) => str.endsWith("\n") ? indentComment(comment, indent) : comment.includes("\n") ? "\n" + indentComment(comment, indent) : (str.endsWith(" ") ? "" : " ") + comment;
+    var lineComment = (str2, indent, comment) => str2.endsWith("\n") ? indentComment(comment, indent) : comment.includes("\n") ? "\n" + indentComment(comment, indent) : (str2.endsWith(" ") ? "" : " ") + comment;
     exports2.indentComment = indentComment;
     exports2.lineComment = lineComment;
     exports2.stringifyComment = stringifyComment;
@@ -7903,16 +7903,16 @@ var require_stringifyString = __commonJS({
       lineWidth: ctx.options.lineWidth,
       minContentWidth: ctx.options.minContentWidth
     });
-    var containsDocumentMarker = (str) => /^(%|---|\.\.\.)/m.test(str);
-    function lineLengthOverLimit(str, lineWidth, indentLength) {
+    var containsDocumentMarker = (str2) => /^(%|---|\.\.\.)/m.test(str2);
+    function lineLengthOverLimit(str2, lineWidth, indentLength) {
       if (!lineWidth || lineWidth < 0)
         return false;
       const limit = lineWidth - indentLength;
-      const strLen = str.length;
+      const strLen = str2.length;
       if (strLen <= limit)
         return false;
       for (let i = 0, start = 0; i < strLen; ++i) {
-        if (str[i] === "\n") {
+        if (str2[i] === "\n") {
           if (i - start > limit)
             return true;
           start = i + 1;
@@ -7929,11 +7929,11 @@ var require_stringifyString = __commonJS({
       const { implicitKey } = ctx;
       const minMultiLineLength = ctx.options.doubleQuotedMinMultiLineLength;
       const indent = ctx.indent || (containsDocumentMarker(value) ? "  " : "");
-      let str = "";
+      let str2 = "";
       let start = 0;
       for (let i = 0, ch = json2[i]; ch; ch = json2[++i]) {
         if (ch === " " && json2[i + 1] === "\\" && json2[i + 2] === "n") {
-          str += json2.slice(start, i) + "\\ ";
+          str2 += json2.slice(start, i) + "\\ ";
           i += 1;
           start = i;
           ch = "\\";
@@ -7942,38 +7942,38 @@ var require_stringifyString = __commonJS({
           switch (json2[i + 1]) {
             case "u":
               {
-                str += json2.slice(start, i);
+                str2 += json2.slice(start, i);
                 const code = json2.substr(i + 2, 4);
                 switch (code) {
                   case "0000":
-                    str += "\\0";
+                    str2 += "\\0";
                     break;
                   case "0007":
-                    str += "\\a";
+                    str2 += "\\a";
                     break;
                   case "000b":
-                    str += "\\v";
+                    str2 += "\\v";
                     break;
                   case "001b":
-                    str += "\\e";
+                    str2 += "\\e";
                     break;
                   case "0085":
-                    str += "\\N";
+                    str2 += "\\N";
                     break;
                   case "00a0":
-                    str += "\\_";
+                    str2 += "\\_";
                     break;
                   case "2028":
-                    str += "\\L";
+                    str2 += "\\L";
                     break;
                   case "2029":
-                    str += "\\P";
+                    str2 += "\\P";
                     break;
                   default:
                     if (code.substr(0, 2) === "00")
-                      str += "\\x" + code.substr(2);
+                      str2 += "\\x" + code.substr(2);
                     else
-                      str += json2.substr(i, 6);
+                      str2 += json2.substr(i, 6);
                 }
                 i += 5;
                 start = i + 1;
@@ -7983,14 +7983,14 @@ var require_stringifyString = __commonJS({
               if (implicitKey || json2[i + 2] === '"' || json2.length < minMultiLineLength) {
                 i += 1;
               } else {
-                str += json2.slice(start, i) + "\n\n";
+                str2 += json2.slice(start, i) + "\n\n";
                 while (json2[i + 2] === "\\" && json2[i + 3] === "n" && json2[i + 4] !== '"') {
-                  str += "\n";
+                  str2 += "\n";
                   i += 2;
                 }
-                str += indent;
+                str2 += indent;
                 if (json2[i + 2] === " ")
-                  str += "\\";
+                  str2 += "\\";
                 i += 1;
                 start = i + 1;
               }
@@ -7999,8 +7999,8 @@ var require_stringifyString = __commonJS({
               i += 1;
           }
       }
-      str = start ? str + json2.slice(start) : json2;
-      return implicitKey ? str : foldFlowLines.foldFlowLines(str, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
+      str2 = start ? str2 + json2.slice(start) : json2;
+      return implicitKey ? str2 : foldFlowLines.foldFlowLines(str2, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
     }
     function singleQuotedString(value, ctx) {
       if (ctx.options.singleQuote === false || ctx.implicitKey && value.includes("\n") || /[ \t]\n|\n[ \t]/.test(value))
@@ -8128,15 +8128,15 @@ ${indent}${start}${value}${end}`;
           return quotedString(value, ctx);
         }
       }
-      const str = value.replace(/\n+/g, `$&
+      const str2 = value.replace(/\n+/g, `$&
 ${indent}`);
       if (actualString) {
-        const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str);
+        const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str2);
         const { compat, tags } = ctx.doc.schema;
         if (tags.some(test) || compat?.some(test))
           return quotedString(value, ctx);
       }
-      return implicitKey ? str : foldFlowLines.foldFlowLines(str, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
+      return implicitKey ? str2 : foldFlowLines.foldFlowLines(str2, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
     }
     function stringifyString(item, ctx, onComment, onChompKeep) {
       const { implicitKey, inFlow } = ctx;
@@ -8288,11 +8288,11 @@ var require_stringify = __commonJS({
       const props = stringifyProps(node, tagObj, ctx);
       if (props.length > 0)
         ctx.indentAtStart = (ctx.indentAtStart ?? 0) + props.length + 1;
-      const str = typeof tagObj.stringify === "function" ? tagObj.stringify(node, ctx, onComment, onChompKeep) : identity.isScalar(node) ? stringifyString.stringifyString(node, ctx, onComment, onChompKeep) : node.toString(ctx, onComment, onChompKeep);
+      const str2 = typeof tagObj.stringify === "function" ? tagObj.stringify(node, ctx, onComment, onChompKeep) : identity.isScalar(node) ? stringifyString.stringifyString(node, ctx, onComment, onChompKeep) : node.toString(ctx, onComment, onChompKeep);
       if (!props)
-        return str;
-      return identity.isScalar(node) || str[0] === "{" || str[0] === "[" ? `${props} ${str}` : `${props}
-${ctx.indent}${str}`;
+        return str2;
+      return identity.isScalar(node) || str2[0] === "{" || str2[0] === "[" ? `${props} ${str2}` : `${props}
+${ctx.indent}${str2}`;
     }
     exports2.createStringifyContext = createStringifyContext;
     exports2.stringify = stringify;
@@ -8327,8 +8327,8 @@ var require_stringifyPair = __commonJS({
       });
       let keyCommentDone = false;
       let chompKeep = false;
-      let str = stringify.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
-      if (!explicitKey && !ctx.inFlow && str.length > 1024) {
+      let str2 = stringify.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
+      if (!explicitKey && !ctx.inFlow && str2.length > 1024) {
         if (simpleKeys)
           throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
         explicitKey = true;
@@ -8337,27 +8337,27 @@ var require_stringifyPair = __commonJS({
         if (allNullValues || value == null) {
           if (keyCommentDone && onComment)
             onComment();
-          return str === "" ? "?" : explicitKey ? `? ${str}` : str;
+          return str2 === "" ? "?" : explicitKey ? `? ${str2}` : str2;
         }
       } else if (allNullValues && !simpleKeys || value == null && explicitKey) {
-        str = `? ${str}`;
+        str2 = `? ${str2}`;
         if (keyComment && !keyCommentDone) {
-          str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
+          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
         } else if (chompKeep && onChompKeep)
           onChompKeep();
-        return str;
+        return str2;
       }
       if (keyCommentDone)
         keyComment = null;
       if (explicitKey) {
         if (keyComment)
-          str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
-        str = `? ${str}
+          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
+        str2 = `? ${str2}
 ${indent}:`;
       } else {
-        str = `${str}:`;
+        str2 = `${str2}:`;
         if (keyComment)
-          str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
+          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
       }
       let vsb, vcb, valueComment;
       if (identity.isNode(value)) {
@@ -8373,7 +8373,7 @@ ${indent}:`;
       }
       ctx.implicitKey = false;
       if (!explicitKey && !keyComment && identity.isScalar(value))
-        ctx.indentAtStart = str.length + 1;
+        ctx.indentAtStart = str2.length + 1;
       chompKeep = false;
       if (!indentSeq && indentStep.length >= 2 && !ctx.inFlow && !explicitKey && identity.isSeq(value) && !value.flow && !value.tag && !value.anchor) {
         ctx.indent = ctx.indent.substring(2);
@@ -8417,16 +8417,16 @@ ${ctx.indent}`;
       } else if (valueStr === "" || valueStr[0] === "\n") {
         ws = "";
       }
-      str += ws + valueStr;
+      str2 += ws + valueStr;
       if (ctx.inFlow) {
         if (valueCommentDone && onComment)
           onComment();
       } else if (valueComment && !valueCommentDone) {
-        str += stringifyComment.lineComment(str, ctx.indent, commentString(valueComment));
+        str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(valueComment));
       } else if (chompKeep && onChompKeep) {
         onChompKeep();
       }
-      return str;
+      return str2;
     }
     exports2.stringifyPair = stringifyPair;
   }
@@ -8653,31 +8653,31 @@ var require_stringifyCollection = __commonJS({
           }
         }
         chompKeep = false;
-        let str2 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
+        let str3 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
         if (comment2)
-          str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment2));
+          str3 += stringifyComment.lineComment(str3, itemIndent, commentString(comment2));
         if (chompKeep && comment2)
           chompKeep = false;
-        lines.push(blockItemPrefix + str2);
+        lines.push(blockItemPrefix + str3);
       }
-      let str;
+      let str2;
       if (lines.length === 0) {
-        str = flowChars.start + flowChars.end;
+        str2 = flowChars.start + flowChars.end;
       } else {
-        str = lines[0];
+        str2 = lines[0];
         for (let i = 1; i < lines.length; ++i) {
           const line = lines[i];
-          str += line ? `
+          str2 += line ? `
 ${indent}${line}` : "\n";
         }
       }
       if (comment) {
-        str += "\n" + stringifyComment.indentComment(commentString(comment), indent);
+        str2 += "\n" + stringifyComment.indentComment(commentString(comment), indent);
         if (onComment)
           onComment();
       } else if (chompKeep && onChompKeep)
         onChompKeep();
-      return str;
+      return str2;
     }
     function stringifyFlowCollection({ items }, ctx, { flowChars, itemIndent }) {
       const { indent, indentStep, flowCollectionPadding: fcPadding, options: { commentString } } = ctx;
@@ -8720,21 +8720,21 @@ ${indent}${line}` : "\n";
         }
         if (comment)
           reqNewline = true;
-        let str = stringify.stringify(item, itemCtx, () => comment = null);
-        reqNewline || (reqNewline = lines.length > linesAtValue || str.includes("\n"));
+        let str2 = stringify.stringify(item, itemCtx, () => comment = null);
+        reqNewline || (reqNewline = lines.length > linesAtValue || str2.includes("\n"));
         if (i < items.length - 1) {
-          str += ",";
+          str2 += ",";
         } else if (ctx.options.trailingComma) {
           if (ctx.options.lineWidth > 0) {
-            reqNewline || (reqNewline = lines.reduce((sum, line) => sum + line.length + 2, 2) + (str.length + 2) > ctx.options.lineWidth);
+            reqNewline || (reqNewline = lines.reduce((sum, line) => sum + line.length + 2, 2) + (str2.length + 2) > ctx.options.lineWidth);
           }
           if (reqNewline) {
-            str += ",";
+            str2 += ",";
           }
         }
         if (comment)
-          str += stringifyComment.lineComment(str, itemIndent, commentString(comment));
-        lines.push(str);
+          str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment));
+        lines.push(str2);
         linesAtValue = lines.length;
       }
       const { start, end } = flowChars;
@@ -8746,11 +8746,11 @@ ${indent}${line}` : "\n";
           reqNewline = ctx.options.lineWidth > 0 && len > ctx.options.lineWidth;
         }
         if (reqNewline) {
-          let str = start;
+          let str2 = start;
           for (const line of lines)
-            str += line ? `
+            str2 += line ? `
 ${indentStep}${indent}${line}` : "\n";
-          return `${str}
+          return `${str2}
 ${indent}${end}`;
         } else {
           return `${start}${fcPadding}${lines.join(" ")}${fcPadding}${end}`;
@@ -9082,7 +9082,7 @@ var require_string = __commonJS({
       identify: (value) => typeof value === "string",
       default: true,
       tag: "tag:yaml.org,2002:str",
-      resolve: (str) => str,
+      resolve: (str2) => str2,
       stringify(item, ctx, onComment, onChompKeep) {
         ctx = Object.assign({ actualString: true }, ctx);
         return stringifyString.stringifyString(item, ctx, onComment, onChompKeep);
@@ -9120,7 +9120,7 @@ var require_bool = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:bool",
       test: /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/,
-      resolve: (str) => new Scalar.Scalar(str[0] === "t" || str[0] === "T"),
+      resolve: (str2) => new Scalar.Scalar(str2[0] === "t" || str2[0] === "T"),
       stringify({ source, value }, ctx) {
         if (source && boolTag.test.test(source)) {
           const sv = source[0] === "t" || source[0] === "T";
@@ -9172,7 +9172,7 @@ var require_float = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-      resolve: (str) => str.slice(-3).toLowerCase() === "nan" ? NaN : str[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+      resolve: (str2) => str2.slice(-3).toLowerCase() === "nan" ? NaN : str2[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
@@ -9181,7 +9181,7 @@ var require_float = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
-      resolve: (str) => parseFloat(str),
+      resolve: (str2) => parseFloat(str2),
       stringify(node) {
         const num = Number(node.value);
         return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
@@ -9192,11 +9192,11 @@ var require_float = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/,
-      resolve(str) {
-        const node = new Scalar.Scalar(parseFloat(str));
-        const dot = str.indexOf(".");
-        if (dot !== -1 && str[str.length - 1] === "0")
-          node.minFractionDigits = str.length - dot - 1;
+      resolve(str2) {
+        const node = new Scalar.Scalar(parseFloat(str2));
+        const dot = str2.indexOf(".");
+        if (dot !== -1 && str2[str2.length - 1] === "0")
+          node.minFractionDigits = str2.length - dot - 1;
         return node;
       },
       stringify: stringifyNumber.stringifyNumber
@@ -9213,7 +9213,7 @@ var require_int = __commonJS({
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
-    var intResolve = (str, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str.substring(offset), radix);
+    var intResolve = (str2, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str2) : parseInt(str2.substring(offset), radix);
     function intStringify(node, radix, prefix) {
       const { value } = node;
       if (intIdentify(value) && value >= 0)
@@ -9226,7 +9226,7 @@ var require_int = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "OCT",
       test: /^0o[0-7]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 2, 8, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 2, 8, opt),
       stringify: (node) => intStringify(node, 8, "0o")
     };
     var int2 = {
@@ -9234,7 +9234,7 @@ var require_int = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:int",
       test: /^[-+]?[0-9]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 0, 10, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 0, 10, opt),
       stringify: stringifyNumber.stringifyNumber
     };
     var intHex = {
@@ -9243,7 +9243,7 @@ var require_int = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "HEX",
       test: /^0x[0-9a-fA-F]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 2, 16, opt),
       stringify: (node) => intStringify(node, 16, "0x")
     };
     exports2.int = int2;
@@ -9296,7 +9296,7 @@ var require_schema2 = __commonJS({
         identify: (value) => typeof value === "string",
         default: true,
         tag: "tag:yaml.org,2002:str",
-        resolve: (str) => str,
+        resolve: (str2) => str2,
         stringify: stringifyJSON
       },
       {
@@ -9313,7 +9313,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:bool",
         test: /^true$|^false$/,
-        resolve: (str) => str === "true",
+        resolve: (str2) => str2 === "true",
         stringify: stringifyJSON
       },
       {
@@ -9321,7 +9321,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:int",
         test: /^-?(?:0|[1-9][0-9]*)$/,
-        resolve: (str, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str, 10),
+        resolve: (str2, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str2) : parseInt(str2, 10),
         stringify: ({ value }) => intIdentify(value) ? value.toString() : JSON.stringify(value)
       },
       {
@@ -9329,7 +9329,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:float",
         test: /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?$/,
-        resolve: (str) => parseFloat(str),
+        resolve: (str2) => parseFloat(str2),
         stringify: stringifyJSON
       }
     ];
@@ -9337,9 +9337,9 @@ var require_schema2 = __commonJS({
       default: true,
       tag: "",
       test: /^/,
-      resolve(str, onError) {
-        onError(`Unresolved plain scalar ${JSON.stringify(str)}`);
-        return str;
+      resolve(str2, onError) {
+        onError(`Unresolved plain scalar ${JSON.stringify(str2)}`);
+        return str2;
       }
     };
     var schema = [map2.map, seq.seq].concat(jsonScalars, jsonError);
@@ -9371,10 +9371,10 @@ var require_binary = __commonJS({
         if (typeof node_buffer.Buffer === "function") {
           return node_buffer.Buffer.from(src, "base64");
         } else if (typeof atob === "function") {
-          const str = atob(src.replace(/[\n\r]/g, ""));
-          const buffer = new Uint8Array(str.length);
-          for (let i = 0; i < str.length; ++i)
-            buffer[i] = str.charCodeAt(i);
+          const str2 = atob(src.replace(/[\n\r]/g, ""));
+          const buffer = new Uint8Array(str2.length);
+          for (let i = 0; i < str2.length; ++i)
+            buffer[i] = str2.charCodeAt(i);
           return buffer;
         } else {
           onError("This environment does not support reading binary tags; either Buffer or atob is required");
@@ -9385,28 +9385,28 @@ var require_binary = __commonJS({
         if (!value)
           return "";
         const buf = value;
-        let str;
+        let str2;
         if (typeof node_buffer.Buffer === "function") {
-          str = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
+          str2 = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
         } else if (typeof btoa === "function") {
           let s = "";
           for (let i = 0; i < buf.length; ++i)
             s += String.fromCharCode(buf[i]);
-          str = btoa(s);
+          str2 = btoa(s);
         } else {
           throw new Error("This environment does not support writing binary tags; either Buffer or btoa is required");
         }
         type ?? (type = Scalar.Scalar.BLOCK_LITERAL);
         if (type !== Scalar.Scalar.QUOTE_DOUBLE) {
           const lineWidth = Math.max(ctx.options.lineWidth - ctx.indent.length, ctx.options.minContentWidth);
-          const n = Math.ceil(str.length / lineWidth);
+          const n = Math.ceil(str2.length / lineWidth);
           const lines = new Array(n);
           for (let i = 0, o = 0; i < n; ++i, o += lineWidth) {
-            lines[i] = str.substr(o, lineWidth);
+            lines[i] = str2.substr(o, lineWidth);
           }
-          str = lines.join(type === Scalar.Scalar.BLOCK_LITERAL ? "\n" : " ");
+          str2 = lines.join(type === Scalar.Scalar.BLOCK_LITERAL ? "\n" : " ");
         }
-        return stringifyString.stringifyString({ comment, type, value: str }, ctx, onComment, onChompKeep);
+        return stringifyString.stringifyString({ comment, type, value: str2 }, ctx, onComment, onChompKeep);
       }
     };
     exports2.binary = binary;
@@ -9612,7 +9612,7 @@ var require_float2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-      resolve: (str) => str.slice(-3).toLowerCase() === "nan" ? NaN : str[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+      resolve: (str2) => str2.slice(-3).toLowerCase() === "nan" ? NaN : str2[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
@@ -9621,7 +9621,7 @@ var require_float2 = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
       test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
-      resolve: (str) => parseFloat(str.replace(/_/g, "")),
+      resolve: (str2) => parseFloat(str2.replace(/_/g, "")),
       stringify(node) {
         const num = Number(node.value);
         return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
@@ -9632,11 +9632,11 @@ var require_float2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/,
-      resolve(str) {
-        const node = new Scalar.Scalar(parseFloat(str.replace(/_/g, "")));
-        const dot = str.indexOf(".");
+      resolve(str2) {
+        const node = new Scalar.Scalar(parseFloat(str2.replace(/_/g, "")));
+        const dot = str2.indexOf(".");
         if (dot !== -1) {
-          const f = str.substring(dot + 1).replace(/_/g, "");
+          const f = str2.substring(dot + 1).replace(/_/g, "");
           if (f[f.length - 1] === "0")
             node.minFractionDigits = f.length;
         }
@@ -9656,34 +9656,34 @@ var require_int2 = __commonJS({
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
-    function intResolve(str, offset, radix, { intAsBigInt }) {
-      const sign = str[0];
+    function intResolve(str2, offset, radix, { intAsBigInt }) {
+      const sign = str2[0];
       if (sign === "-" || sign === "+")
         offset += 1;
-      str = str.substring(offset).replace(/_/g, "");
+      str2 = str2.substring(offset).replace(/_/g, "");
       if (intAsBigInt) {
         switch (radix) {
           case 2:
-            str = `0b${str}`;
+            str2 = `0b${str2}`;
             break;
           case 8:
-            str = `0o${str}`;
+            str2 = `0o${str2}`;
             break;
           case 16:
-            str = `0x${str}`;
+            str2 = `0x${str2}`;
             break;
         }
-        const n2 = BigInt(str);
+        const n2 = BigInt(str2);
         return sign === "-" ? BigInt(-1) * n2 : n2;
       }
-      const n = parseInt(str, radix);
+      const n = parseInt(str2, radix);
       return sign === "-" ? -1 * n : n;
     }
     function intStringify(node, radix, prefix) {
       const { value } = node;
       if (intIdentify(value)) {
-        const str = value.toString(radix);
-        return value < 0 ? "-" + prefix + str.substr(1) : prefix + str;
+        const str2 = value.toString(radix);
+        return value < 0 ? "-" + prefix + str2.substr(1) : prefix + str2;
       }
       return stringifyNumber.stringifyNumber(node);
     }
@@ -9693,7 +9693,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "BIN",
       test: /^[-+]?0b[0-1_]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 2, 2, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 2, 2, opt),
       stringify: (node) => intStringify(node, 2, "0b")
     };
     var intOct = {
@@ -9702,7 +9702,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "OCT",
       test: /^[-+]?0[0-7_]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 1, 8, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 1, 8, opt),
       stringify: (node) => intStringify(node, 8, "0")
     };
     var int2 = {
@@ -9710,7 +9710,7 @@ var require_int2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:int",
       test: /^[-+]?[0-9][0-9_]*$/,
-      resolve: (str, _onError, opt) => intResolve(str, 0, 10, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 0, 10, opt),
       stringify: stringifyNumber.stringifyNumber
     };
     var intHex = {
@@ -9719,7 +9719,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "HEX",
       test: /^[-+]?0x[0-9a-fA-F_]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 2, 16, opt),
       stringify: (node) => intStringify(node, 16, "0x")
     };
     exports2.int = int2;
@@ -9823,9 +9823,9 @@ var require_timestamp = __commonJS({
   "node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports2) {
     "use strict";
     var stringifyNumber = require_stringifyNumber();
-    function parseSexagesimal(str, asBigInt) {
-      const sign = str[0];
-      const parts = sign === "-" || sign === "+" ? str.substring(1) : str;
+    function parseSexagesimal(str2, asBigInt) {
+      const sign = str2[0];
+      const parts = sign === "-" || sign === "+" ? str2.substring(1) : str2;
       const num = (n) => asBigInt ? BigInt(n) : Number(n);
       const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num(60) + num(p), num(0));
       return sign === "-" ? num(-1) * res : res;
@@ -9862,7 +9862,7 @@ var require_timestamp = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "TIME",
       test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+$/,
-      resolve: (str, _onError, { intAsBigInt }) => parseSexagesimal(str, intAsBigInt),
+      resolve: (str2, _onError, { intAsBigInt }) => parseSexagesimal(str2, intAsBigInt),
       stringify: stringifySexagesimal
     };
     var floatTime = {
@@ -9871,7 +9871,7 @@ var require_timestamp = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "TIME",
       test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*$/,
-      resolve: (str) => parseSexagesimal(str, false),
+      resolve: (str2) => parseSexagesimal(str2, false),
       stringify: stringifySexagesimal
     };
     var timestamp = {
@@ -9882,8 +9882,8 @@ var require_timestamp = __commonJS({
       // may be omitted altogether, resulting in a date format. In such a case, the time part is
       // assumed to be 00:00:00Z (start of day, UTC).
       test: RegExp("^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})(?:(?:t|T|[ \\t]+)([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}(\\.[0-9]+)?)(?:[ \\t]*(Z|[-+][012]?[0-9](?::[0-9]{2})?))?)?$"),
-      resolve(str) {
-        const match = str.match(timestamp.test);
+      resolve(str2) {
+        const match = str2.match(timestamp.test);
         if (!match)
           throw new Error("!!timestamp expects a date, starting with yyyy-mm-dd");
         const [, year, month, day, hour, minute, second] = match.map(Number);
@@ -18247,14 +18247,14 @@ function promiseAllObject(promisesObj) {
 }
 function randomString(length = 10) {
   const chars = "abcdefghijklmnopqrstuvwxyz";
-  let str = "";
+  let str2 = "";
   for (let i = 0; i < length; i++) {
-    str += chars[Math.floor(Math.random() * chars.length)];
+    str2 += chars[Math.floor(Math.random() * chars.length)];
   }
-  return str;
+  return str2;
 }
-function esc(str) {
-  return JSON.stringify(str);
+function esc(str2) {
+  return JSON.stringify(str2);
 }
 function slugify(input) {
   return input.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
@@ -18354,8 +18354,8 @@ var getParsedType2 = (data) => {
 };
 var propertyKeyTypes = /* @__PURE__ */ new Set(["string", "number", "symbol"]);
 var primitiveTypes = /* @__PURE__ */ new Set(["string", "number", "bigint", "boolean", "symbol", "undefined"]);
-function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function escapeRegex(str2) {
+  return str2.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 function clone(inst, def, params) {
   const cl = new inst._zod.constr(def ?? inst._zod.def);
@@ -28116,7 +28116,7 @@ var StdioServerTransport = class {
 };
 
 // src/mcp/server.ts
-var import_fs4 = require("fs");
+var import_fs5 = require("fs");
 var import_path5 = require("path");
 var import_os3 = require("os");
 
@@ -28206,6 +28206,7 @@ var CHAIN_CONFIG_FILE = (0, import_path2.join)(HOOKS_DIR, "chain-config.json");
 var VERIFICATION_RULES_FILE = (0, import_path2.join)(HOOKS_DIR, "verification-rules.json");
 var HOOKS_CONFIG_FILE = (0, import_path2.join)(HOOKS_DIR, "hooks-config.yaml");
 var CHAIN_EVENTS_LOG = (0, import_path2.join)(TMP_DIR, "chain-events.jsonl");
+var GLOBAL_PROVIDERS_FILE = (0, import_path2.join)(CLAUDE_DIR, "brainbrew", "providers.json");
 
 // src/core/config.ts
 function asString(v) {
@@ -28674,8 +28675,286 @@ function listStrategies() {
   return [...registry2.keys()];
 }
 
-// src/memory/bus.ts
+// src/providers/registry.ts
 var import_fs3 = require("fs");
+
+// src/providers/adapters.ts
+var ADAPTER_KINDS = ["openai", "anthropic", "gemini"];
+function trimBase(base) {
+  return base.replace(/\/+$/, "");
+}
+function withSuffix(base, suffix) {
+  const b = trimBase(base);
+  return b.endsWith(suffix) ? b : b + suffix;
+}
+function str(v) {
+  return typeof v === "string" ? v : "";
+}
+var openai = {
+  kind: "openai",
+  buildUrl: (base) => withSuffix(base, "/chat/completions"),
+  authHeaders: (token) => {
+    const h = {};
+    if (token) h.Authorization = `Bearer ${token}`;
+    return h;
+  },
+  buildBody: (model, prompt) => ({
+    model,
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+    temperature: 0
+  }),
+  extractContent: (json2) => {
+    const j = json2;
+    return str(j.choices?.[0]?.message?.content);
+  }
+};
+var anthropic = {
+  kind: "anthropic",
+  buildUrl: (base) => withSuffix(base, "/v1/messages"),
+  authHeaders: (token) => {
+    const h = {};
+    if (token) {
+      h["x-api-key"] = token;
+      h["anthropic-version"] = "2023-06-01";
+    }
+    return h;
+  },
+  buildBody: (model, prompt) => ({
+    model,
+    max_tokens: 1024,
+    temperature: 0,
+    messages: [{ role: "user", content: prompt }]
+  }),
+  extractContent: (json2) => {
+    const j = json2;
+    const block = j.content?.find((b) => b.type === "text") ?? j.content?.[0];
+    return str(block?.text);
+  }
+};
+var gemini = {
+  kind: "gemini",
+  buildUrl: (base, model) => `${trimBase(base)}/models/${model}:generateContent`,
+  authHeaders: (token) => {
+    const h = {};
+    if (token) h["x-goog-api-key"] = token;
+    return h;
+  },
+  buildBody: (_model, prompt) => ({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0, responseMimeType: "application/json" }
+  }),
+  extractContent: (json2) => {
+    const j = json2;
+    return str(j.candidates?.[0]?.content?.parts?.[0]?.text);
+  }
+};
+var ADAPTERS = { openai, anthropic, gemini };
+function resolveAdapter(provider) {
+  return ADAPTERS[provider.provider ?? "openai"] ?? ADAPTERS.openai;
+}
+
+// src/providers/registry.ts
+function isPlainObject4(v) {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+function readJsonOrEmpty(file2) {
+  if (!(0, import_fs3.existsSync)(file2)) return null;
+  try {
+    return JSON.parse((0, import_fs3.readFileSync)(file2, "utf-8"));
+  } catch {
+    return null;
+  }
+}
+function normalizeProvider(name, raw, source, warnings) {
+  if (!isPlainObject4(raw)) {
+    warnings.push(`${source}: provider "${name}" must be an object`);
+    return null;
+  }
+  const model = raw.model;
+  if (typeof model !== "string" || !model) {
+    warnings.push(`${source}: provider "${name}" missing model`);
+    return null;
+  }
+  const baseURL = typeof raw.baseURL === "string" && raw.baseURL ? raw.baseURL : void 0;
+  const endpoint = typeof raw.endpoint === "string" && raw.endpoint ? raw.endpoint : void 0;
+  if (!baseURL && !endpoint) {
+    warnings.push(`${source}: provider "${name}" needs baseURL or endpoint`);
+    return null;
+  }
+  let provider = "openai";
+  if (typeof raw.provider === "string") {
+    if (!ADAPTER_KINDS.includes(raw.provider)) {
+      warnings.push(
+        `${source}: provider "${name}" \u2014 unknown provider "${raw.provider}". Use one of: ${ADAPTER_KINDS.join(", ")}`
+      );
+      return null;
+    }
+    provider = raw.provider;
+  }
+  const out = { model, provider };
+  if (endpoint) out.endpoint = endpoint;
+  if (baseURL) out.baseURL = baseURL;
+  if (typeof raw.token === "string" && raw.token) {
+    out.token = raw.token;
+  }
+  if (isPlainObject4(raw.headers)) {
+    const headers = {};
+    for (const [k, v] of Object.entries(raw.headers)) {
+      if (typeof v === "string") headers[k] = v;
+    }
+    if (Object.keys(headers).length) out.headers = headers;
+  }
+  if (typeof raw.timeout_ms === "number" && raw.timeout_ms > 0) {
+    out.timeout_ms = raw.timeout_ms;
+  }
+  return out;
+}
+function mergeLayer(registry3, file2, data) {
+  if (!data) return;
+  const drp = data.active_decide_provider;
+  if (typeof drp === "string" && drp.trim() !== "") {
+    if (/^[a-zA-Z0-9_-]+$/.test(drp)) {
+      registry3.activeDecideProvider = drp;
+    } else {
+      registry3.warnings.push(`${file2}: active_decide_provider must be a provider name string`);
+    }
+  } else if (drp !== void 0 && typeof drp !== "string") {
+    registry3.warnings.push(`${file2}: active_decide_provider must be a string`);
+  }
+  if (data.require_decide_provider === true) {
+    registry3.requireDecideProvider = true;
+  }
+  const providers = data.providers;
+  if (!isPlainObject4(providers)) {
+    registry3.warnings.push(`${file2}: missing providers object`);
+    return;
+  }
+  for (const [name, raw] of Object.entries(providers)) {
+    const def = normalizeProvider(name, raw, file2, registry3.warnings);
+    if (def) {
+      registry3.providers[name] = def;
+      registry3.origins[name] = file2;
+    }
+  }
+}
+function loadProviderRegistry() {
+  const registry3 = { providers: {}, origins: {}, warnings: [] };
+  mergeLayer(registry3, GLOBAL_PROVIDERS_FILE, readJsonOrEmpty(GLOBAL_PROVIDERS_FILE));
+  return registry3;
+}
+function resolveProviderToken(provider) {
+  return provider.token ?? null;
+}
+function resolveProviderUrl(provider) {
+  if (provider.endpoint) return provider.endpoint;
+  return resolveAdapter(provider).buildUrl(provider.baseURL ?? "", provider.model);
+}
+function setActiveDecideProvider(name) {
+  if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+    return { ok: false, error: `invalid provider name "${name}"` };
+  }
+  if (!(0, import_fs3.existsSync)(GLOBAL_PROVIDERS_FILE)) {
+    return { ok: false, error: `no providers file at ${GLOBAL_PROVIDERS_FILE} \u2014 add a provider first` };
+  }
+  let data;
+  try {
+    data = JSON.parse((0, import_fs3.readFileSync)(GLOBAL_PROVIDERS_FILE, "utf-8"));
+  } catch {
+    return { ok: false, error: `${GLOBAL_PROVIDERS_FILE} is not valid JSON` };
+  }
+  const providers = isPlainObject4(data.providers) ? data.providers : {};
+  if (!isPlainObject4(providers[name])) {
+    const avail = Object.keys(providers);
+    return {
+      ok: false,
+      error: `provider "${name}" not configured. Available: ${avail.length ? avail.join(", ") : "(none)"}`
+    };
+  }
+  data.active_decide_provider = name;
+  (0, import_fs3.writeFileSync)(GLOBAL_PROVIDERS_FILE, JSON.stringify(data, null, 2) + "\n");
+  return { ok: true };
+}
+
+// src/providers/http.ts
+var DEFAULT_TIMEOUT_MS2 = 15e3;
+async function callProvider(provider, prompt) {
+  const startedAt = Date.now();
+  const adapter = resolveAdapter(provider);
+  let authHeader;
+  try {
+    authHeader = adapter.authHeaders(resolveProviderToken(provider));
+  } catch (e) {
+    return { ok: false, error: e.message, duration_ms: 0 };
+  }
+  const url2 = resolveProviderUrl(provider);
+  const body = JSON.stringify(adapter.buildBody(provider.model, prompt));
+  const timeoutMs = provider.timeout_ms ?? DEFAULT_TIMEOUT_MS2;
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url2, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader,
+        ...provider.headers ?? {}
+      },
+      body,
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return {
+        ok: false,
+        error: `HTTP ${res.status}: ${text.slice(0, 500) || res.statusText}`,
+        duration_ms: Date.now() - startedAt
+      };
+    }
+    const json2 = await res.json();
+    const content = adapter.extractContent(json2);
+    if (!content) {
+      return {
+        ok: false,
+        error: "provider returned empty content",
+        duration_ms: Date.now() - startedAt
+      };
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      return {
+        ok: false,
+        error: `provider response was not valid JSON: ${content.slice(0, 200)}`,
+        duration_ms: Date.now() - startedAt
+      };
+    }
+    const route = typeof parsed.route === "string" ? parsed.route : "";
+    const reason = typeof parsed.reason === "string" ? parsed.reason : "";
+    if (!route) {
+      return {
+        ok: false,
+        error: "provider response missing route field",
+        duration_ms: Date.now() - startedAt
+      };
+    }
+    return { ok: true, response: { route, reason }, duration_ms: Date.now() - startedAt };
+  } catch (e) {
+    const err = e;
+    const aborted2 = err.name === "AbortError";
+    return {
+      ok: false,
+      error: aborted2 ? `provider timeout after ${timeoutMs}ms` : `provider call failed: ${err.message}`,
+      duration_ms: Date.now() - startedAt
+    };
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
+// src/memory/bus.ts
+var import_fs4 = require("fs");
 var import_path4 = require("path");
 var import_os2 = require("os");
 var import_crypto = require("crypto");
@@ -28686,23 +28965,23 @@ function getProjectStorePath(cwd) {
 }
 function ensureDir(filePath) {
   const dir = (0, import_path4.dirname)(filePath);
-  if (!(0, import_fs3.existsSync)(dir)) {
-    (0, import_fs3.mkdirSync)(dir, { recursive: true });
+  if (!(0, import_fs4.existsSync)(dir)) {
+    (0, import_fs4.mkdirSync)(dir, { recursive: true });
   }
 }
 function loadStore(path) {
-  if (!(0, import_fs3.existsSync)(path)) {
+  if (!(0, import_fs4.existsSync)(path)) {
     return { version: 1, messages: [] };
   }
   try {
-    return JSON.parse((0, import_fs3.readFileSync)(path, "utf-8"));
+    return JSON.parse((0, import_fs4.readFileSync)(path, "utf-8"));
   } catch {
     return { version: 1, messages: [] };
   }
 }
 function saveStore(path, store) {
   ensureDir(path);
-  (0, import_fs3.writeFileSync)(path, JSON.stringify(store, null, 2));
+  (0, import_fs4.writeFileSync)(path, JSON.stringify(store, null, 2));
 }
 function publish(content, options = {}) {
   const path = options.global ? GLOBAL_STORE_PATH : getProjectStorePath(options.cwd || process.cwd());
@@ -28766,15 +29045,15 @@ function clear(options = {}) {
 
 // src/mcp/server.ts
 function copyDirRecursive(src, dest) {
-  (0, import_fs4.mkdirSync)(dest, { recursive: true });
-  for (const entry of (0, import_fs4.readdirSync)(src)) {
+  (0, import_fs5.mkdirSync)(dest, { recursive: true });
+  for (const entry of (0, import_fs5.readdirSync)(src)) {
     const srcPath = (0, import_path5.join)(src, entry);
     const destPath = (0, import_path5.join)(dest, entry);
-    const stat = (0, import_fs4.statSync)(srcPath);
+    const stat = (0, import_fs5.statSync)(srcPath);
     if (stat.isDirectory()) {
       copyDirRecursive(srcPath, destPath);
     } else if (stat.isFile()) {
-      (0, import_fs4.copyFileSync)(srcPath, destPath);
+      (0, import_fs5.copyFileSync)(srcPath, destPath);
     }
   }
 }
@@ -28794,8 +29073,8 @@ var server = new Server(
   }
 );
 function listTemplateNames() {
-  if (!(0, import_fs4.existsSync)(TEMPLATES_DIR)) return [];
-  return (0, import_fs4.readdirSync)(TEMPLATES_DIR).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(/\.yaml$/, "")).sort();
+  if (!(0, import_fs5.existsSync)(TEMPLATES_DIR)) return [];
+  return (0, import_fs5.readdirSync)(TEMPLATES_DIR).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(/\.yaml$/, "")).sort();
 }
 var AVAILABLE_TEMPLATES = listTemplateNames();
 var TOOLS = [
@@ -28942,6 +29221,33 @@ var TOOLS = [
         all: { type: "boolean", description: "Clear all messages" }
       }
     }
+  },
+  // ─── Provider Tools ───
+  {
+    name: "providers_list",
+    description: `List chain decide providers from ${GLOBAL_PROVIDERS_FILE} with endpoint, model, and auth.`,
+    inputSchema: { type: "object", properties: {} }
+  },
+  {
+    name: "providers_test",
+    description: "Smoke-test a decide provider with a 1-token ping. Returns success/fail + latency. Omit name to test the active_decide_provider.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Provider name (key in providers.json). Defaults to active_decide_provider when omitted." }
+      }
+    }
+  },
+  {
+    name: "providers_use",
+    description: "Set active_decide_provider in providers.json \u2014 the provider every decide: node routes through. Validates the name is configured. This is how you activate a provider (NOT chain_switch, which only changes the active chain flow).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Provider name to activate (key in providers.json)" }
+      },
+      required: ["name"]
+    }
   }
 ];
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
@@ -28958,26 +29264,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
         const templateDir = (0, import_path5.join)(TEMPLATES_DIR, template);
         const templateYaml = (0, import_path5.join)(TEMPLATES_DIR, `${template}.yaml`);
-        if (!(0, import_fs4.existsSync)(templateYaml)) {
+        if (!(0, import_fs5.existsSync)(templateYaml)) {
           return error2(`Template "${template}" not found`);
         }
         const dirs = [".claude/agents", ".claude/skills", ".claude/hooks", ".claude/memory", ".claude/chains"];
-        dirs.forEach((d) => (0, import_fs4.mkdirSync)((0, import_path5.join)(cwd, d), { recursive: true }));
+        dirs.forEach((d) => (0, import_fs5.mkdirSync)((0, import_path5.join)(cwd, d), { recursive: true }));
         const agentsDir = (0, import_path5.join)(templateDir, "agents");
         let agentCount = 0;
-        if ((0, import_fs4.existsSync)(agentsDir)) {
-          (0, import_fs4.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => {
-            (0, import_fs4.copyFileSync)((0, import_path5.join)(agentsDir, f), (0, import_path5.join)(cwd, ".claude/agents", f));
+        if ((0, import_fs5.existsSync)(agentsDir)) {
+          (0, import_fs5.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => {
+            (0, import_fs5.copyFileSync)((0, import_path5.join)(agentsDir, f), (0, import_path5.join)(cwd, ".claude/agents", f));
             agentCount++;
           });
         }
         const skillsDir = (0, import_path5.join)(templateDir, "skills");
         let skillCount = 0;
-        if ((0, import_fs4.existsSync)(skillsDir)) {
-          (0, import_fs4.readdirSync)(skillsDir).forEach((skill) => {
+        if ((0, import_fs5.existsSync)(skillsDir)) {
+          (0, import_fs5.readdirSync)(skillsDir).forEach((skill) => {
             const src = (0, import_path5.join)(skillsDir, skill);
             const dest = (0, import_path5.join)(cwd, ".claude/skills", skill);
-            if ((0, import_fs4.statSync)(src).isDirectory()) {
+            if ((0, import_fs5.statSync)(src).isDirectory()) {
               copyDirRecursive(src, dest);
               skillCount++;
             }
@@ -28987,15 +29293,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (existingChain?.isLegacy) {
           migrateToMultiChain(cwd);
         }
-        (0, import_fs4.copyFileSync)(templateYaml, (0, import_path5.join)(cwd, ".claude/chains", `${template}.yaml`));
+        (0, import_fs5.copyFileSync)(templateYaml, (0, import_path5.join)(cwd, ".claude/chains", `${template}.yaml`));
         writePointer(cwd, template);
         const projectConfigPath = (0, import_path5.join)(cwd, ".claude", "config.yaml");
         let configScaffolded = false;
-        if (!(0, import_fs4.existsSync)(projectConfigPath) && (0, import_fs4.existsSync)(CONFIG_TEMPLATE)) {
-          (0, import_fs4.copyFileSync)(CONFIG_TEMPLATE, projectConfigPath);
+        if (!(0, import_fs5.existsSync)(projectConfigPath) && (0, import_fs5.existsSync)(CONFIG_TEMPLATE)) {
+          (0, import_fs5.copyFileSync)(CONFIG_TEMPLATE, projectConfigPath);
           configScaffolded = true;
         }
-        const config2 = (0, import_fs4.readFileSync)(templateYaml, "utf-8");
+        const config2 = (0, import_fs5.readFileSync)(templateYaml, "utf-8");
         const flowMatch = config2.match(/flow:[\s\S]*/);
         const flow = flowMatch ? flowMatch[0].substring(0, 500) : "";
         const configNote = configScaffolded ? `
@@ -29011,9 +29317,9 @@ ${flow}`);
       }
       // ─── list_templates ───
       case "template_list": {
-        const templates = (0, import_fs4.readdirSync)(TEMPLATES_DIR).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(".yaml", ""));
+        const templates = (0, import_fs5.readdirSync)(TEMPLATES_DIR).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(".yaml", ""));
         const info = templates.map((t) => {
-          const yaml = (0, import_fs4.readFileSync)((0, import_path5.join)(TEMPLATES_DIR, `${t}.yaml`), "utf-8");
+          const yaml = (0, import_fs5.readFileSync)((0, import_path5.join)(TEMPLATES_DIR, `${t}.yaml`), "utf-8");
           const desc = yaml.split("\n").find((l) => l.startsWith("#"))?.replace("#", "").trim() || "";
           return `- **${t}**: ${desc}`;
         }).join("\n");
@@ -29031,12 +29337,12 @@ ${info}`);
         if (!resolved) {
           return error2("No chain config found. Run template_bump to set up a workflow.");
         }
-        const content = (0, import_fs4.readFileSync)(resolved.configPath, "utf-8");
+        const content = (0, import_fs5.readFileSync)(resolved.configPath, "utf-8");
         const issues = [];
         const installedAgents = /* @__PURE__ */ new Set();
         const agentsDir = (0, import_path5.join)(cwd, ".claude", "agents");
-        if ((0, import_fs4.existsSync)(agentsDir)) {
-          (0, import_fs4.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => installedAgents.add(f.replace(".md", "")));
+        if ((0, import_fs5.existsSync)(agentsDir)) {
+          (0, import_fs5.readdirSync)(agentsDir).filter((f) => f.endsWith(".md")).forEach((f) => installedAgents.add(f.replace(".md", "")));
         }
         const parsedChain = parseChainYaml(content);
         const flowNodes = /* @__PURE__ */ new Map();
@@ -29095,7 +29401,7 @@ ${info}`);
         }
         for (const agentName of allReferencedAgents) {
           const agentPath = (0, import_path5.join)(agentsDir, `${agentName}.md`);
-          if (!(0, import_fs4.existsSync)(agentPath)) continue;
+          if (!(0, import_fs5.existsSync)(agentPath)) continue;
           const fm = parseFrontmatter(agentPath);
           if (!fm.valid) {
             issues.push(`\u274C Agent "${agentName}" has no YAML frontmatter`);
@@ -29114,13 +29420,13 @@ ${info}`);
         const skillNames = /* @__PURE__ */ new Set();
         let skillFormatIssues = 0;
         const skillsDir = (0, import_path5.join)(cwd, ".claude", "skills");
-        if ((0, import_fs4.existsSync)(skillsDir)) {
-          for (const entry of (0, import_fs4.readdirSync)(skillsDir)) {
+        if ((0, import_fs5.existsSync)(skillsDir)) {
+          for (const entry of (0, import_fs5.readdirSync)(skillsDir)) {
             const skillPath = (0, import_path5.join)(skillsDir, entry);
-            if (!(0, import_fs4.statSync)(skillPath).isDirectory()) continue;
+            if (!(0, import_fs5.statSync)(skillPath).isDirectory()) continue;
             if (entry === "common") continue;
             skillNames.add(entry);
-            const candidates = (0, import_fs4.readdirSync)(skillPath).filter((f) => f.toLowerCase() === "skill.md");
+            const candidates = (0, import_fs5.readdirSync)(skillPath).filter((f) => f.toLowerCase() === "skill.md");
             if (candidates.length === 0) {
               issues.push(`\u26A0 Skill "${entry}" has no SKILL.md file`);
               skillFormatIssues++;
@@ -29144,8 +29450,8 @@ ${info}`);
         }
         for (const agentName of allReferencedAgents) {
           const agentPath = (0, import_path5.join)(agentsDir, `${agentName}.md`);
-          if (!(0, import_fs4.existsSync)(agentPath)) continue;
-          const agentContent = (0, import_fs4.readFileSync)(agentPath, "utf-8");
+          if (!(0, import_fs5.existsSync)(agentPath)) continue;
+          const agentContent = (0, import_fs5.readFileSync)(agentPath, "utf-8");
           const skillRefs = agentContent.matchAll(/`([a-z][\w-]*)`\s*skills?/gi);
           for (const ref of skillRefs) {
             const refName = ref[1];
@@ -29199,7 +29505,7 @@ ${lines.join("\n")}`);
           return success2(`Chain "${chain}" is already active.`);
         }
         const pointerPath = (0, import_path5.join)(cwd, ".claude", "chain-config.yaml");
-        const pointerContent = (0, import_fs4.readFileSync)(pointerPath, "utf-8");
+        const pointerContent = (0, import_fs5.readFileSync)(pointerPath, "utf-8");
         const dirMatch = pointerContent.match(/^chains_dir:\s*(.+)/m);
         const existingChainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
         writePointer(cwd, chain, existingChainsDir);
@@ -29212,15 +29518,15 @@ ${lines.join("\n")}`);
           return error2(`Chain "${chain}" not found. Available: ${chains.join(", ")}`);
         }
         const pointerPath = (0, import_path5.join)(cwd, ".claude", "chain-config.yaml");
-        const pointerContent = (0, import_fs4.readFileSync)(pointerPath, "utf-8");
+        const pointerContent = (0, import_fs5.readFileSync)(pointerPath, "utf-8");
         const dirMatch = pointerContent.match(/^chains_dir:\s*(.+)/m);
         const existingChainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
         writePointer(cwd, chain, existingChainsDir);
         const chainPath = (0, import_path5.join)(cwd, existingChainsDir, `${chain}.yaml`);
         let firstAgent = "";
         let allAgents = "";
-        if ((0, import_fs4.existsSync)(chainPath)) {
-          const content = (0, import_fs4.readFileSync)(chainPath, "utf-8");
+        if ((0, import_fs5.existsSync)(chainPath)) {
+          const content = (0, import_fs5.readFileSync)(chainPath, "utf-8");
           const flowSection = content.split(/^flow:\s*$/m)[1] ?? "";
           const flowAgents = [...flowSection.matchAll(/^  (\S+):/gm)].map((m) => m[1]);
           firstAgent = flowAgents[0] ?? "";
@@ -29235,14 +29541,14 @@ You MUST now spawn: Agent(subagent_type="${firstAgent}")`);
       }
       case "stop_chain": {
         const stateDir = (0, import_path5.join)((0, import_os3.homedir)(), ".claude", "tmp", "chain-state");
-        if (!(0, import_fs4.existsSync)(stateDir)) {
+        if (!(0, import_fs5.existsSync)(stateDir)) {
           return success2("No active chain state \u2014 nothing to stop.");
         }
-        const files = (0, import_fs4.readdirSync)(stateDir).filter((f) => f.endsWith(".json"));
+        const files = (0, import_fs5.readdirSync)(stateDir).filter((f) => f.endsWith(".json"));
         let cleared = 0;
         for (const f of files) {
           try {
-            (0, import_fs4.unlinkSync)((0, import_path5.join)(stateDir, f));
+            (0, import_fs5.unlinkSync)((0, import_path5.join)(stateDir, f));
             cleared++;
           } catch {
           }
@@ -29282,7 +29588,7 @@ ${output}`);
         const HOME2 = (0, import_os3.homedir)();
         const SETTINGS_FILE2 = (0, import_path5.join)(HOME2, ".claude", "settings.json");
         const runnerPath = (0, import_path5.join)(PLUGIN_ROOT, "scripts", "runner.cjs");
-        if (!(0, import_fs4.existsSync)(runnerPath)) {
+        if (!(0, import_fs5.existsSync)(runnerPath)) {
           return error2(`runner.cjs not found at ${runnerPath}. PLUGIN_ROOT=${PLUGIN_ROOT}. Reinstall the plugin.`);
         }
         const defaultEvents = [
@@ -29297,14 +29603,14 @@ ${output}`);
         ];
         const events = Array.isArray(args?.events) && args.events.length > 0 ? args.events : defaultEvents;
         let settings = {};
-        if ((0, import_fs4.existsSync)(SETTINGS_FILE2)) {
+        if ((0, import_fs5.existsSync)(SETTINGS_FILE2)) {
           try {
-            settings = JSON.parse((0, import_fs4.readFileSync)(SETTINGS_FILE2, "utf-8"));
+            settings = JSON.parse((0, import_fs5.readFileSync)(SETTINGS_FILE2, "utf-8"));
           } catch (e) {
             return error2(`Cannot parse ~/.claude/settings.json: ${e.message}`);
           }
         } else {
-          (0, import_fs4.mkdirSync)((0, import_path5.dirname)(SETTINGS_FILE2), { recursive: true });
+          (0, import_fs5.mkdirSync)((0, import_path5.dirname)(SETTINGS_FILE2), { recursive: true });
         }
         const isOurHook = (h) => h?.hooks?.[0]?.command?.includes("brainbrew") || h?.hooks?.[0]?.command?.includes("runner.cjs") || h?.hooks?.[0]?.command?.includes("hooks/chains/");
         const hooksRoot = settings.hooks ??= {};
@@ -29317,7 +29623,7 @@ ${output}`);
           });
           hooksRoot[event] = existing;
         }
-        (0, import_fs4.writeFileSync)(SETTINGS_FILE2, JSON.stringify(settings, null, 2));
+        (0, import_fs5.writeFileSync)(SETTINGS_FILE2, JSON.stringify(settings, null, 2));
         return success2(
           `\u2713 Registered ${events.length} brainbrew hook events in ${SETTINGS_FILE2}
   Runner: ${runnerPath}
@@ -29337,17 +29643,17 @@ Restart opencode (or Claude Code) so the new hooks are picked up.`
       }
       case "plugin_list": {
         const query = (args?.query || "").toLowerCase().trim();
-        if (!(0, import_fs4.existsSync)(PLUGINS_DIR)) {
+        if (!(0, import_fs5.existsSync)(PLUGINS_DIR)) {
           return success2("No plugins directory found.");
         }
-        const entries = (0, import_fs4.readdirSync)(PLUGINS_DIR).filter(
-          (f) => (0, import_fs4.statSync)((0, import_path5.join)(PLUGINS_DIR, f)).isDirectory()
+        const entries = (0, import_fs5.readdirSync)(PLUGINS_DIR).filter(
+          (f) => (0, import_fs5.statSync)((0, import_path5.join)(PLUGINS_DIR, f)).isDirectory()
         );
         const plugins = entries.map((dir) => {
           const manifestPath = (0, import_path5.join)(PLUGINS_DIR, dir, "plugin.json");
-          if (!(0, import_fs4.existsSync)(manifestPath)) return null;
+          if (!(0, import_fs5.existsSync)(manifestPath)) return null;
           try {
-            const manifest = JSON.parse((0, import_fs4.readFileSync)(manifestPath, "utf-8"));
+            const manifest = JSON.parse((0, import_fs5.readFileSync)(manifestPath, "utf-8"));
             return { ...manifest, path: (0, import_path5.join)(PLUGINS_DIR, dir) };
           } catch {
             return null;
@@ -29369,6 +29675,103 @@ Restart opencode (or Claude Code) so the new hooks are picked up.`
 
 ${lines}`);
       }
+      // ─── providers_list ───
+      case "providers_list": {
+        const registry3 = loadProviderRegistry();
+        const names = Object.keys(registry3.providers);
+        if (names.length === 0) {
+          let msg = `No providers configured.
+
+Add one to ${GLOBAL_PROVIDERS_FILE}
+`;
+          if (registry3.warnings.length) {
+            msg += "\nWarnings while loading:\n" + registry3.warnings.map((w) => `  - ${w}`).join("\n");
+          }
+          return success2(msg);
+        }
+        const active = registry3.activeDecideProvider;
+        const lines = ["Providers:", ""];
+        for (const pname of names) {
+          const p = registry3.providers[pname];
+          const origin = registry3.origins[pname] ?? "?";
+          const authStr = p.token ? `bearer(token=${p.token.slice(0, 8)}...)` : "none";
+          lines.push(`  ${pname}${pname === active ? "  \u2190 active_decide_provider" : ""}`);
+          lines.push(`    provider : ${p.provider ?? "openai"}`);
+          lines.push(`    url      : ${resolveProviderUrl(p)}`);
+          lines.push(`    model    : ${p.model}`);
+          lines.push(`    auth     : ${authStr}`);
+          lines.push(`    source   : ${origin}`);
+          lines.push("");
+        }
+        const activeValid = !!active && !!registry3.providers[active];
+        lines.push(`active_decide_provider  : ${active || "(unset \u2192 claude -p)"}`);
+        lines.push(`require_decide_provider : ${registry3.requireDecideProvider ? "true" : "false"}`);
+        if (active && !activeValid) {
+          lines.push(`  \u26A0 active_decide_provider "${active}" is not one of the providers above`);
+        }
+        if (!activeValid) {
+          if (registry3.requireDecideProvider) {
+            lines.push("  \u26A0 require_decide_provider is ON but no valid active provider \u2192 decide nodes will ERROR until you set one.");
+          }
+          lines.push(`  To activate one:  providers_use name=${names[0]}`);
+        }
+        lines.push("");
+        if (registry3.warnings.length) {
+          lines.push("Warnings:");
+          lines.push(...registry3.warnings.map((w) => `  - ${w}`));
+        }
+        return success2(lines.join("\n"));
+      }
+      // ─── providers_test ───
+      case "providers_test": {
+        const registry3 = loadProviderRegistry();
+        let pname = String(args?.name ?? "").trim();
+        const usedActive = !pname;
+        if (usedActive) {
+          pname = registry3.activeDecideProvider ?? "";
+          if (!pname) {
+            return error2(
+              `providers_test: no name given and active_decide_provider is not set in ${GLOBAL_PROVIDERS_FILE}. Pass name, or set active_decide_provider.`
+            );
+          }
+        }
+        const provider = registry3.providers[pname];
+        if (!provider) {
+          const hint = usedActive ? `active_decide_provider "${pname}" is not configured.` : `Provider "${pname}" not configured.`;
+          return error2(`${hint} Run providers_list to see available.`);
+        }
+        const label = usedActive ? `${pname} (active_decide_provider)` : pname;
+        const prompt = 'You are testing a chain router connection. Respond ONLY with this exact JSON: {"route":"END","reason":"ping ok"}';
+        const result = await callProvider(provider, prompt);
+        if (result.ok) {
+          return success2(
+            `\u2713 Provider "${label}" PASS
+  url     : ${resolveProviderUrl(provider)}
+  model   : ${provider.model}
+  latency : ${result.duration_ms}ms
+  route   : ${result.response?.route}
+  reason  : ${result.response?.reason}`
+          );
+        }
+        return error2(
+          `Provider "${label}" FAIL
+  url     : ${resolveProviderUrl(provider)}
+  model   : ${provider.model}
+  latency : ${result.duration_ms}ms
+  error   : ${result.error}`
+        );
+      }
+      // ─── providers_use ───
+      case "providers_use": {
+        const pname = String(args?.name ?? "").trim();
+        if (!pname) return error2("providers_use: name required");
+        const res = setActiveDecideProvider(pname);
+        if (!res.ok) return error2(`providers_use failed: ${res.error}`);
+        return success2(
+          `\u2713 active_decide_provider set to "${pname}".
+Every decide: node now routes through it. Verify with providers_test.`
+        );
+      }
       default:
         return error2(`Unknown tool: ${name}`);
     }
@@ -29380,7 +29783,7 @@ function isSafeAgentName(name) {
   return /^[a-zA-Z0-9_-]+$/.test(name);
 }
 function parseFrontmatter(filePath) {
-  const content = (0, import_fs4.readFileSync)(filePath, "utf-8");
+  const content = (0, import_fs5.readFileSync)(filePath, "utf-8");
   const match = content.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return { valid: false, fields: {} };
   const fields = {};
