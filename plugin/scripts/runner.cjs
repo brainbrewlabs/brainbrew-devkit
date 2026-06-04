@@ -79,6 +79,7 @@ var CHAIN_CONFIG_FILE = (0, import_path2.join)(HOOKS_DIR, "chain-config.json");
 var VERIFICATION_RULES_FILE = (0, import_path2.join)(HOOKS_DIR, "verification-rules.json");
 var HOOKS_CONFIG_FILE = (0, import_path2.join)(HOOKS_DIR, "hooks-config.yaml");
 var CHAIN_EVENTS_LOG = (0, import_path2.join)(TMP_DIR, "chain-events.jsonl");
+var GLOBAL_PROVIDERS_FILE = (0, import_path2.join)(CLAUDE_DIR, "brainbrew", "providers.json");
 
 // src/utils/state.ts
 var STATE_DIR = (0, import_path3.join)(TMP_DIR, "chain-state");

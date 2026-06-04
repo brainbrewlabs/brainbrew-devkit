@@ -1,12 +1,13 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
-import { callHaiku } from '../ai/haiku.js';
 import { getState, updateState } from '../utils/state.js';
 import { log, logEvent } from '../utils/logger.js';
-import { TMP_DIR } from '../utils/paths.js';
+import { TMP_DIR, GLOBAL_PROVIDERS_FILE } from '../utils/paths.js';
 import { readActiveChainContent } from '../utils/chain-resolver.js';
 import { parseChainYaml, type FlowEntry } from '../core/config.js';
+import { loadProviderRegistry } from '../providers/registry.js';
+import { runDecide } from '../decide/runner.js';
 
 const LOG_FILE = join(TMP_DIR, 'agent-output.log');
 const PLANS_DIR = join(homedir(), '.claude', 'plans');
@@ -33,89 +34,37 @@ function loadChainConfig(cwd: string): ChainConfig {
   }
 }
 
-function getNextAgent(
+async function getNextAgent(
   agentType: string,
   output: string,
   config: ChainConfig
-): { next: string | null; reason: string } {
+): Promise<{ next: string | null; reason: string; error?: string }> {
   const flow = config.flow?.[agentType.toLowerCase()];
   if (!flow) {
     return { next: null, reason: 'No flow defined for this agent' };
   }
 
-  const routes: Record<string, string> = flow.routes ?? {};
-  if (!flow.routes) {
+  // Normalize legacy next/on_fail/on_issues into a routes map when `routes` absent,
+  // so runDecide has an explicit route set to choose from.
+  const node: FlowEntry = { ...flow };
+  if (!node.routes) {
+    const routes: Record<string, string> = {};
     if (flow.next) routes['next'] = flow.next;
     if (flow.on_fail) routes['on_fail'] = flow.on_fail;
     if (flow.on_issues) routes['on_issues'] = flow.on_issues;
+    node.routes = routes;
   }
 
-  const routeNames = Object.keys(routes);
-  const defaultNext = flow.next ?? routeNames[0] ?? null;
-
-  if (flow.decide && output.length > 50 && routeNames.length > 0) {
-    const routesList = routeNames.map(name => {
-      const desc = routes[name];
-      return `- "${name}" → ${desc || name}`;
-    }).join('\n');
-
-    const prompt = `You are a chain router. Analyze the agent output and decide which agent to route to next.
-
-ROUTING RULES:
-${flow.decide}
-
-AVAILABLE ROUTES:
-${routesList}
-- "END" → Stop the chain (no next agent)
-
-AGENT OUTPUT:
-${output.substring(0, 2000)}
-
-Based on the routing rules and output, which route should be taken?
-Respond ONLY with JSON: {"route": "<agent-name or END>", "reason": "brief explanation"}`;
-
-    try {
-      const result = callHaiku(prompt);
-      if (result && !result['error']) {
-        const route = (result['route'] as string) || '';
-        const reason = (result['reason'] as string) || 'AI decision';
-
-        if (route === 'END' || route === 'end' || route === 'null') {
-          return { next: null, reason: `[AI] ${reason}` };
-        }
-
-        if (routes[route]) {
-          return { next: route, reason: `[AI] ${reason}` };
-        }
-
-        const matchedKey = routeNames.find(r => routes[r] === route);
-        if (matchedKey) {
-          return { next: matchedKey, reason: `[AI] ${reason}` };
-        }
-      }
-    } catch {
-    }
-  }
-
-  const outputLower = output.toLowerCase();
-  const hasIssues = outputLower.includes('issues') ||
-                    outputLower.includes('fail') ||
-                    outputLower.includes('error') ||
-                    outputLower.includes('bug');
-  const hasPassed = outputLower.includes('pass') ||
-                    outputLower.includes('approved') ||
-                    outputLower.includes('success');
-
-  if (hasIssues && !hasPassed) {
-    if (flow.on_fail) {
-      return { next: flow.on_fail, reason: 'Output indicates failure' };
-    }
-    if (flow.on_issues) {
-      return { next: flow.on_issues, reason: 'Output indicates issues' };
-    }
-  }
-
-  return { next: defaultNext, reason: 'Default next in flow' };
+  // Decide cascade: provider HTTP → claude -p (no provider) → keyword.
+  // require_decide_provider turns the no-provider branch into an error instead.
+  const registry = loadProviderRegistry();
+  const decision = await runDecide(node, output, registry, registry.activeDecideProvider, registry.requireDecideProvider);
+  const isError = decision.source.startsWith('error:');
+  return {
+    next: decision.route,
+    reason: `[${decision.source}] ${decision.reason}`,
+    error: isError ? decision.reason : undefined,
+  };
 }
 
 
@@ -290,7 +239,7 @@ function formatStatsYaml(stats: AgentTranscriptStats): string {
   return yaml;
 }
 
-function main(): void {
+async function main(): Promise<void> {
   try {
     const stdin = readFileSync(0, 'utf-8').trim();
     if (!stdin) process.exit(0);
@@ -397,8 +346,23 @@ function main(): void {
       process.exit(2);
     }
 
-    const chainDecision = getNextAgent(type, text, config);
+    const chainDecision = await getNextAgent(type, text, config);
     let next: string | null = chainDecision.next;
+
+    // Routing config error (e.g. require_decide_provider on but no provider resolved).
+    // Hard-stop the chain — never let a config error masquerade as a clean END.
+    if (chainDecision.error) {
+      log(LOG_FILE, `[CHAIN ERROR] ${type}: ${chainDecision.error}\n`);
+      logEvent({ event: 'chain-error', agent: type, id, reason: chainDecision.reason });
+      console.log(JSON.stringify({
+        continue: true,
+        hookSpecificOutput: {
+          hookEventName: 'PostToolUse',
+          additionalContext: `**Chain ERROR** — routing for **${type}** could not run: ${chainDecision.error}\n\n<system-reminder>\n## CHAIN ROUTING ERROR\n${chainDecision.error}\n\nThe chain cannot continue. Do NOT spawn another agent. Do NOT skip ahead.\n\nFix — edit ${GLOBAL_PROVIDERS_FILE} and do ONE of:\n  1. Set "active_decide_provider" to a configured provider name, then verify with the providers_test MCP tool. Use providers_list to see available names.\n  2. Set "require_decide_provider": false to allow the built-in claude -p routing fallback.\n\nReport these two options to the user verbatim and stop.\n</system-reminder>`,
+        },
+      }));
+      process.exit(2);
+    }
 
     if (type.toLowerCase() === 'git-manager' && sessionId) {
       const progress = checkPhaseProgress(sessionId);

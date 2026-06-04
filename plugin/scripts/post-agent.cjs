@@ -970,13 +970,13 @@ var require_Collection = __commonJS({
 var require_stringifyComment = __commonJS({
   "node_modules/yaml/dist/stringify/stringifyComment.js"(exports2) {
     "use strict";
-    var stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
+    var stringifyComment = (str2) => str2.replace(/^(?!$)(?: $)?/gm, "#");
     function indentComment(comment, indent) {
       if (/^\n+$/.test(comment))
         return comment.substring(1);
       return indent ? comment.replace(/^(?! *$)/gm, indent) : comment;
     }
-    var lineComment = (str, indent, comment) => str.endsWith("\n") ? indentComment(comment, indent) : comment.includes("\n") ? "\n" + indentComment(comment, indent) : (str.endsWith(" ") ? "" : " ") + comment;
+    var lineComment = (str2, indent, comment) => str2.endsWith("\n") ? indentComment(comment, indent) : comment.includes("\n") ? "\n" + indentComment(comment, indent) : (str2.endsWith(" ") ? "" : " ") + comment;
     exports2.indentComment = indentComment;
     exports2.lineComment = lineComment;
     exports2.stringifyComment = stringifyComment;
@@ -1130,16 +1130,16 @@ var require_stringifyString = __commonJS({
       lineWidth: ctx.options.lineWidth,
       minContentWidth: ctx.options.minContentWidth
     });
-    var containsDocumentMarker = (str) => /^(%|---|\.\.\.)/m.test(str);
-    function lineLengthOverLimit(str, lineWidth, indentLength) {
+    var containsDocumentMarker = (str2) => /^(%|---|\.\.\.)/m.test(str2);
+    function lineLengthOverLimit(str2, lineWidth, indentLength) {
       if (!lineWidth || lineWidth < 0)
         return false;
       const limit = lineWidth - indentLength;
-      const strLen = str.length;
+      const strLen = str2.length;
       if (strLen <= limit)
         return false;
       for (let i = 0, start = 0; i < strLen; ++i) {
-        if (str[i] === "\n") {
+        if (str2[i] === "\n") {
           if (i - start > limit)
             return true;
           start = i + 1;
@@ -1156,11 +1156,11 @@ var require_stringifyString = __commonJS({
       const { implicitKey } = ctx;
       const minMultiLineLength = ctx.options.doubleQuotedMinMultiLineLength;
       const indent = ctx.indent || (containsDocumentMarker(value) ? "  " : "");
-      let str = "";
+      let str2 = "";
       let start = 0;
       for (let i = 0, ch = json[i]; ch; ch = json[++i]) {
         if (ch === " " && json[i + 1] === "\\" && json[i + 2] === "n") {
-          str += json.slice(start, i) + "\\ ";
+          str2 += json.slice(start, i) + "\\ ";
           i += 1;
           start = i;
           ch = "\\";
@@ -1169,38 +1169,38 @@ var require_stringifyString = __commonJS({
           switch (json[i + 1]) {
             case "u":
               {
-                str += json.slice(start, i);
+                str2 += json.slice(start, i);
                 const code = json.substr(i + 2, 4);
                 switch (code) {
                   case "0000":
-                    str += "\\0";
+                    str2 += "\\0";
                     break;
                   case "0007":
-                    str += "\\a";
+                    str2 += "\\a";
                     break;
                   case "000b":
-                    str += "\\v";
+                    str2 += "\\v";
                     break;
                   case "001b":
-                    str += "\\e";
+                    str2 += "\\e";
                     break;
                   case "0085":
-                    str += "\\N";
+                    str2 += "\\N";
                     break;
                   case "00a0":
-                    str += "\\_";
+                    str2 += "\\_";
                     break;
                   case "2028":
-                    str += "\\L";
+                    str2 += "\\L";
                     break;
                   case "2029":
-                    str += "\\P";
+                    str2 += "\\P";
                     break;
                   default:
                     if (code.substr(0, 2) === "00")
-                      str += "\\x" + code.substr(2);
+                      str2 += "\\x" + code.substr(2);
                     else
-                      str += json.substr(i, 6);
+                      str2 += json.substr(i, 6);
                 }
                 i += 5;
                 start = i + 1;
@@ -1210,14 +1210,14 @@ var require_stringifyString = __commonJS({
               if (implicitKey || json[i + 2] === '"' || json.length < minMultiLineLength) {
                 i += 1;
               } else {
-                str += json.slice(start, i) + "\n\n";
+                str2 += json.slice(start, i) + "\n\n";
                 while (json[i + 2] === "\\" && json[i + 3] === "n" && json[i + 4] !== '"') {
-                  str += "\n";
+                  str2 += "\n";
                   i += 2;
                 }
-                str += indent;
+                str2 += indent;
                 if (json[i + 2] === " ")
-                  str += "\\";
+                  str2 += "\\";
                 i += 1;
                 start = i + 1;
               }
@@ -1226,8 +1226,8 @@ var require_stringifyString = __commonJS({
               i += 1;
           }
       }
-      str = start ? str + json.slice(start) : json;
-      return implicitKey ? str : foldFlowLines.foldFlowLines(str, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
+      str2 = start ? str2 + json.slice(start) : json;
+      return implicitKey ? str2 : foldFlowLines.foldFlowLines(str2, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
     }
     function singleQuotedString(value, ctx) {
       if (ctx.options.singleQuote === false || ctx.implicitKey && value.includes("\n") || /[ \t]\n|\n[ \t]/.test(value))
@@ -1355,15 +1355,15 @@ ${indent}${start}${value}${end}`;
           return quotedString(value, ctx);
         }
       }
-      const str = value.replace(/\n+/g, `$&
+      const str2 = value.replace(/\n+/g, `$&
 ${indent}`);
       if (actualString) {
-        const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str);
+        const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str2);
         const { compat, tags } = ctx.doc.schema;
         if (tags.some(test) || compat?.some(test))
           return quotedString(value, ctx);
       }
-      return implicitKey ? str : foldFlowLines.foldFlowLines(str, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
+      return implicitKey ? str2 : foldFlowLines.foldFlowLines(str2, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
     }
     function stringifyString(item, ctx, onComment, onChompKeep) {
       const { implicitKey, inFlow } = ctx;
@@ -1515,11 +1515,11 @@ var require_stringify = __commonJS({
       const props = stringifyProps(node, tagObj, ctx);
       if (props.length > 0)
         ctx.indentAtStart = (ctx.indentAtStart ?? 0) + props.length + 1;
-      const str = typeof tagObj.stringify === "function" ? tagObj.stringify(node, ctx, onComment, onChompKeep) : identity.isScalar(node) ? stringifyString.stringifyString(node, ctx, onComment, onChompKeep) : node.toString(ctx, onComment, onChompKeep);
+      const str2 = typeof tagObj.stringify === "function" ? tagObj.stringify(node, ctx, onComment, onChompKeep) : identity.isScalar(node) ? stringifyString.stringifyString(node, ctx, onComment, onChompKeep) : node.toString(ctx, onComment, onChompKeep);
       if (!props)
-        return str;
-      return identity.isScalar(node) || str[0] === "{" || str[0] === "[" ? `${props} ${str}` : `${props}
-${ctx.indent}${str}`;
+        return str2;
+      return identity.isScalar(node) || str2[0] === "{" || str2[0] === "[" ? `${props} ${str2}` : `${props}
+${ctx.indent}${str2}`;
     }
     exports2.createStringifyContext = createStringifyContext;
     exports2.stringify = stringify;
@@ -1554,8 +1554,8 @@ var require_stringifyPair = __commonJS({
       });
       let keyCommentDone = false;
       let chompKeep = false;
-      let str = stringify.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
-      if (!explicitKey && !ctx.inFlow && str.length > 1024) {
+      let str2 = stringify.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
+      if (!explicitKey && !ctx.inFlow && str2.length > 1024) {
         if (simpleKeys)
           throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
         explicitKey = true;
@@ -1564,27 +1564,27 @@ var require_stringifyPair = __commonJS({
         if (allNullValues || value == null) {
           if (keyCommentDone && onComment)
             onComment();
-          return str === "" ? "?" : explicitKey ? `? ${str}` : str;
+          return str2 === "" ? "?" : explicitKey ? `? ${str2}` : str2;
         }
       } else if (allNullValues && !simpleKeys || value == null && explicitKey) {
-        str = `? ${str}`;
+        str2 = `? ${str2}`;
         if (keyComment && !keyCommentDone) {
-          str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
+          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
         } else if (chompKeep && onChompKeep)
           onChompKeep();
-        return str;
+        return str2;
       }
       if (keyCommentDone)
         keyComment = null;
       if (explicitKey) {
         if (keyComment)
-          str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
-        str = `? ${str}
+          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
+        str2 = `? ${str2}
 ${indent}:`;
       } else {
-        str = `${str}:`;
+        str2 = `${str2}:`;
         if (keyComment)
-          str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
+          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
       }
       let vsb, vcb, valueComment;
       if (identity.isNode(value)) {
@@ -1600,7 +1600,7 @@ ${indent}:`;
       }
       ctx.implicitKey = false;
       if (!explicitKey && !keyComment && identity.isScalar(value))
-        ctx.indentAtStart = str.length + 1;
+        ctx.indentAtStart = str2.length + 1;
       chompKeep = false;
       if (!indentSeq && indentStep.length >= 2 && !ctx.inFlow && !explicitKey && identity.isSeq(value) && !value.flow && !value.tag && !value.anchor) {
         ctx.indent = ctx.indent.substring(2);
@@ -1644,16 +1644,16 @@ ${ctx.indent}`;
       } else if (valueStr === "" || valueStr[0] === "\n") {
         ws = "";
       }
-      str += ws + valueStr;
+      str2 += ws + valueStr;
       if (ctx.inFlow) {
         if (valueCommentDone && onComment)
           onComment();
       } else if (valueComment && !valueCommentDone) {
-        str += stringifyComment.lineComment(str, ctx.indent, commentString(valueComment));
+        str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(valueComment));
       } else if (chompKeep && onChompKeep) {
         onChompKeep();
       }
-      return str;
+      return str2;
     }
     exports2.stringifyPair = stringifyPair;
   }
@@ -1880,31 +1880,31 @@ var require_stringifyCollection = __commonJS({
           }
         }
         chompKeep = false;
-        let str2 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
+        let str3 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
         if (comment2)
-          str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment2));
+          str3 += stringifyComment.lineComment(str3, itemIndent, commentString(comment2));
         if (chompKeep && comment2)
           chompKeep = false;
-        lines.push(blockItemPrefix + str2);
+        lines.push(blockItemPrefix + str3);
       }
-      let str;
+      let str2;
       if (lines.length === 0) {
-        str = flowChars.start + flowChars.end;
+        str2 = flowChars.start + flowChars.end;
       } else {
-        str = lines[0];
+        str2 = lines[0];
         for (let i = 1; i < lines.length; ++i) {
           const line = lines[i];
-          str += line ? `
+          str2 += line ? `
 ${indent}${line}` : "\n";
         }
       }
       if (comment) {
-        str += "\n" + stringifyComment.indentComment(commentString(comment), indent);
+        str2 += "\n" + stringifyComment.indentComment(commentString(comment), indent);
         if (onComment)
           onComment();
       } else if (chompKeep && onChompKeep)
         onChompKeep();
-      return str;
+      return str2;
     }
     function stringifyFlowCollection({ items }, ctx, { flowChars, itemIndent }) {
       const { indent, indentStep, flowCollectionPadding: fcPadding, options: { commentString } } = ctx;
@@ -1947,21 +1947,21 @@ ${indent}${line}` : "\n";
         }
         if (comment)
           reqNewline = true;
-        let str = stringify.stringify(item, itemCtx, () => comment = null);
-        reqNewline || (reqNewline = lines.length > linesAtValue || str.includes("\n"));
+        let str2 = stringify.stringify(item, itemCtx, () => comment = null);
+        reqNewline || (reqNewline = lines.length > linesAtValue || str2.includes("\n"));
         if (i < items.length - 1) {
-          str += ",";
+          str2 += ",";
         } else if (ctx.options.trailingComma) {
           if (ctx.options.lineWidth > 0) {
-            reqNewline || (reqNewline = lines.reduce((sum, line) => sum + line.length + 2, 2) + (str.length + 2) > ctx.options.lineWidth);
+            reqNewline || (reqNewline = lines.reduce((sum, line) => sum + line.length + 2, 2) + (str2.length + 2) > ctx.options.lineWidth);
           }
           if (reqNewline) {
-            str += ",";
+            str2 += ",";
           }
         }
         if (comment)
-          str += stringifyComment.lineComment(str, itemIndent, commentString(comment));
-        lines.push(str);
+          str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment));
+        lines.push(str2);
         linesAtValue = lines.length;
       }
       const { start, end } = flowChars;
@@ -1973,11 +1973,11 @@ ${indent}${line}` : "\n";
           reqNewline = ctx.options.lineWidth > 0 && len > ctx.options.lineWidth;
         }
         if (reqNewline) {
-          let str = start;
+          let str2 = start;
           for (const line of lines)
-            str += line ? `
+            str2 += line ? `
 ${indentStep}${indent}${line}` : "\n";
-          return `${str}
+          return `${str2}
 ${indent}${end}`;
         } else {
           return `${start}${fcPadding}${lines.join(" ")}${fcPadding}${end}`;
@@ -2309,7 +2309,7 @@ var require_string = __commonJS({
       identify: (value) => typeof value === "string",
       default: true,
       tag: "tag:yaml.org,2002:str",
-      resolve: (str) => str,
+      resolve: (str2) => str2,
       stringify(item, ctx, onComment, onChompKeep) {
         ctx = Object.assign({ actualString: true }, ctx);
         return stringifyString.stringifyString(item, ctx, onComment, onChompKeep);
@@ -2347,7 +2347,7 @@ var require_bool = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:bool",
       test: /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/,
-      resolve: (str) => new Scalar.Scalar(str[0] === "t" || str[0] === "T"),
+      resolve: (str2) => new Scalar.Scalar(str2[0] === "t" || str2[0] === "T"),
       stringify({ source, value }, ctx) {
         if (source && boolTag.test.test(source)) {
           const sv = source[0] === "t" || source[0] === "T";
@@ -2399,7 +2399,7 @@ var require_float = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-      resolve: (str) => str.slice(-3).toLowerCase() === "nan" ? NaN : str[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+      resolve: (str2) => str2.slice(-3).toLowerCase() === "nan" ? NaN : str2[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
@@ -2408,7 +2408,7 @@ var require_float = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
-      resolve: (str) => parseFloat(str),
+      resolve: (str2) => parseFloat(str2),
       stringify(node) {
         const num = Number(node.value);
         return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
@@ -2419,11 +2419,11 @@ var require_float = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/,
-      resolve(str) {
-        const node = new Scalar.Scalar(parseFloat(str));
-        const dot = str.indexOf(".");
-        if (dot !== -1 && str[str.length - 1] === "0")
-          node.minFractionDigits = str.length - dot - 1;
+      resolve(str2) {
+        const node = new Scalar.Scalar(parseFloat(str2));
+        const dot = str2.indexOf(".");
+        if (dot !== -1 && str2[str2.length - 1] === "0")
+          node.minFractionDigits = str2.length - dot - 1;
         return node;
       },
       stringify: stringifyNumber.stringifyNumber
@@ -2440,7 +2440,7 @@ var require_int = __commonJS({
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
-    var intResolve = (str, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str.substring(offset), radix);
+    var intResolve = (str2, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str2) : parseInt(str2.substring(offset), radix);
     function intStringify(node, radix, prefix) {
       const { value } = node;
       if (intIdentify(value) && value >= 0)
@@ -2453,7 +2453,7 @@ var require_int = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "OCT",
       test: /^0o[0-7]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 2, 8, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 2, 8, opt),
       stringify: (node) => intStringify(node, 8, "0o")
     };
     var int = {
@@ -2461,7 +2461,7 @@ var require_int = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:int",
       test: /^[-+]?[0-9]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 0, 10, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 0, 10, opt),
       stringify: stringifyNumber.stringifyNumber
     };
     var intHex = {
@@ -2470,7 +2470,7 @@ var require_int = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "HEX",
       test: /^0x[0-9a-fA-F]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 2, 16, opt),
       stringify: (node) => intStringify(node, 16, "0x")
     };
     exports2.int = int;
@@ -2523,7 +2523,7 @@ var require_schema2 = __commonJS({
         identify: (value) => typeof value === "string",
         default: true,
         tag: "tag:yaml.org,2002:str",
-        resolve: (str) => str,
+        resolve: (str2) => str2,
         stringify: stringifyJSON
       },
       {
@@ -2540,7 +2540,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:bool",
         test: /^true$|^false$/,
-        resolve: (str) => str === "true",
+        resolve: (str2) => str2 === "true",
         stringify: stringifyJSON
       },
       {
@@ -2548,7 +2548,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:int",
         test: /^-?(?:0|[1-9][0-9]*)$/,
-        resolve: (str, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str, 10),
+        resolve: (str2, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str2) : parseInt(str2, 10),
         stringify: ({ value }) => intIdentify(value) ? value.toString() : JSON.stringify(value)
       },
       {
@@ -2556,7 +2556,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:float",
         test: /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?$/,
-        resolve: (str) => parseFloat(str),
+        resolve: (str2) => parseFloat(str2),
         stringify: stringifyJSON
       }
     ];
@@ -2564,9 +2564,9 @@ var require_schema2 = __commonJS({
       default: true,
       tag: "",
       test: /^/,
-      resolve(str, onError) {
-        onError(`Unresolved plain scalar ${JSON.stringify(str)}`);
-        return str;
+      resolve(str2, onError) {
+        onError(`Unresolved plain scalar ${JSON.stringify(str2)}`);
+        return str2;
       }
     };
     var schema = [map.map, seq.seq].concat(jsonScalars, jsonError);
@@ -2598,10 +2598,10 @@ var require_binary = __commonJS({
         if (typeof node_buffer.Buffer === "function") {
           return node_buffer.Buffer.from(src, "base64");
         } else if (typeof atob === "function") {
-          const str = atob(src.replace(/[\n\r]/g, ""));
-          const buffer = new Uint8Array(str.length);
-          for (let i = 0; i < str.length; ++i)
-            buffer[i] = str.charCodeAt(i);
+          const str2 = atob(src.replace(/[\n\r]/g, ""));
+          const buffer = new Uint8Array(str2.length);
+          for (let i = 0; i < str2.length; ++i)
+            buffer[i] = str2.charCodeAt(i);
           return buffer;
         } else {
           onError("This environment does not support reading binary tags; either Buffer or atob is required");
@@ -2612,28 +2612,28 @@ var require_binary = __commonJS({
         if (!value)
           return "";
         const buf = value;
-        let str;
+        let str2;
         if (typeof node_buffer.Buffer === "function") {
-          str = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
+          str2 = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
         } else if (typeof btoa === "function") {
           let s = "";
           for (let i = 0; i < buf.length; ++i)
             s += String.fromCharCode(buf[i]);
-          str = btoa(s);
+          str2 = btoa(s);
         } else {
           throw new Error("This environment does not support writing binary tags; either Buffer or btoa is required");
         }
         type ?? (type = Scalar.Scalar.BLOCK_LITERAL);
         if (type !== Scalar.Scalar.QUOTE_DOUBLE) {
           const lineWidth = Math.max(ctx.options.lineWidth - ctx.indent.length, ctx.options.minContentWidth);
-          const n = Math.ceil(str.length / lineWidth);
+          const n = Math.ceil(str2.length / lineWidth);
           const lines = new Array(n);
           for (let i = 0, o = 0; i < n; ++i, o += lineWidth) {
-            lines[i] = str.substr(o, lineWidth);
+            lines[i] = str2.substr(o, lineWidth);
           }
-          str = lines.join(type === Scalar.Scalar.BLOCK_LITERAL ? "\n" : " ");
+          str2 = lines.join(type === Scalar.Scalar.BLOCK_LITERAL ? "\n" : " ");
         }
-        return stringifyString.stringifyString({ comment, type, value: str }, ctx, onComment, onChompKeep);
+        return stringifyString.stringifyString({ comment, type, value: str2 }, ctx, onComment, onChompKeep);
       }
     };
     exports2.binary = binary;
@@ -2839,7 +2839,7 @@ var require_float2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-      resolve: (str) => str.slice(-3).toLowerCase() === "nan" ? NaN : str[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+      resolve: (str2) => str2.slice(-3).toLowerCase() === "nan" ? NaN : str2[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
@@ -2848,7 +2848,7 @@ var require_float2 = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
       test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
-      resolve: (str) => parseFloat(str.replace(/_/g, "")),
+      resolve: (str2) => parseFloat(str2.replace(/_/g, "")),
       stringify(node) {
         const num = Number(node.value);
         return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
@@ -2859,11 +2859,11 @@ var require_float2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/,
-      resolve(str) {
-        const node = new Scalar.Scalar(parseFloat(str.replace(/_/g, "")));
-        const dot = str.indexOf(".");
+      resolve(str2) {
+        const node = new Scalar.Scalar(parseFloat(str2.replace(/_/g, "")));
+        const dot = str2.indexOf(".");
         if (dot !== -1) {
-          const f = str.substring(dot + 1).replace(/_/g, "");
+          const f = str2.substring(dot + 1).replace(/_/g, "");
           if (f[f.length - 1] === "0")
             node.minFractionDigits = f.length;
         }
@@ -2883,34 +2883,34 @@ var require_int2 = __commonJS({
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
-    function intResolve(str, offset, radix, { intAsBigInt }) {
-      const sign = str[0];
+    function intResolve(str2, offset, radix, { intAsBigInt }) {
+      const sign = str2[0];
       if (sign === "-" || sign === "+")
         offset += 1;
-      str = str.substring(offset).replace(/_/g, "");
+      str2 = str2.substring(offset).replace(/_/g, "");
       if (intAsBigInt) {
         switch (radix) {
           case 2:
-            str = `0b${str}`;
+            str2 = `0b${str2}`;
             break;
           case 8:
-            str = `0o${str}`;
+            str2 = `0o${str2}`;
             break;
           case 16:
-            str = `0x${str}`;
+            str2 = `0x${str2}`;
             break;
         }
-        const n2 = BigInt(str);
+        const n2 = BigInt(str2);
         return sign === "-" ? BigInt(-1) * n2 : n2;
       }
-      const n = parseInt(str, radix);
+      const n = parseInt(str2, radix);
       return sign === "-" ? -1 * n : n;
     }
     function intStringify(node, radix, prefix) {
       const { value } = node;
       if (intIdentify(value)) {
-        const str = value.toString(radix);
-        return value < 0 ? "-" + prefix + str.substr(1) : prefix + str;
+        const str2 = value.toString(radix);
+        return value < 0 ? "-" + prefix + str2.substr(1) : prefix + str2;
       }
       return stringifyNumber.stringifyNumber(node);
     }
@@ -2920,7 +2920,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "BIN",
       test: /^[-+]?0b[0-1_]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 2, 2, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 2, 2, opt),
       stringify: (node) => intStringify(node, 2, "0b")
     };
     var intOct = {
@@ -2929,7 +2929,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "OCT",
       test: /^[-+]?0[0-7_]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 1, 8, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 1, 8, opt),
       stringify: (node) => intStringify(node, 8, "0")
     };
     var int = {
@@ -2937,7 +2937,7 @@ var require_int2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:int",
       test: /^[-+]?[0-9][0-9_]*$/,
-      resolve: (str, _onError, opt) => intResolve(str, 0, 10, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 0, 10, opt),
       stringify: stringifyNumber.stringifyNumber
     };
     var intHex = {
@@ -2946,7 +2946,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "HEX",
       test: /^[-+]?0x[0-9a-fA-F_]+$/,
-      resolve: (str, _onError, opt) => intResolve(str, 2, 16, opt),
+      resolve: (str2, _onError, opt) => intResolve(str2, 2, 16, opt),
       stringify: (node) => intStringify(node, 16, "0x")
     };
     exports2.int = int;
@@ -3050,9 +3050,9 @@ var require_timestamp = __commonJS({
   "node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports2) {
     "use strict";
     var stringifyNumber = require_stringifyNumber();
-    function parseSexagesimal(str, asBigInt) {
-      const sign = str[0];
-      const parts = sign === "-" || sign === "+" ? str.substring(1) : str;
+    function parseSexagesimal(str2, asBigInt) {
+      const sign = str2[0];
+      const parts = sign === "-" || sign === "+" ? str2.substring(1) : str2;
       const num = (n) => asBigInt ? BigInt(n) : Number(n);
       const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num(60) + num(p), num(0));
       return sign === "-" ? num(-1) * res : res;
@@ -3089,7 +3089,7 @@ var require_timestamp = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "TIME",
       test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+$/,
-      resolve: (str, _onError, { intAsBigInt }) => parseSexagesimal(str, intAsBigInt),
+      resolve: (str2, _onError, { intAsBigInt }) => parseSexagesimal(str2, intAsBigInt),
       stringify: stringifySexagesimal
     };
     var floatTime = {
@@ -3098,7 +3098,7 @@ var require_timestamp = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "TIME",
       test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*$/,
-      resolve: (str) => parseSexagesimal(str, false),
+      resolve: (str2) => parseSexagesimal(str2, false),
       stringify: stringifySexagesimal
     };
     var timestamp = {
@@ -3109,8 +3109,8 @@ var require_timestamp = __commonJS({
       // may be omitted altogether, resulting in a date format. In such a case, the time part is
       // assumed to be 00:00:00Z (start of day, UTC).
       test: RegExp("^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})(?:(?:t|T|[ \\t]+)([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}(\\.[0-9]+)?)(?:[ \\t]*(Z|[-+][012]?[0-9](?::[0-9]{2})?))?)?$"),
-      resolve(str) {
-        const match = str.match(timestamp.test);
+      resolve(str2) {
+        const match = str2.match(timestamp.test);
         if (!match)
           throw new Error("!!timestamp expects a date, starting with yyyy-mm-dd");
         const [, year, month, day, hour, minute, second] = match.map(Number);
@@ -7334,84 +7334,38 @@ var require_dist = __commonJS({
 });
 
 // src/hooks/post-agent.ts
-var import_fs5 = require("fs");
+var import_fs6 = require("fs");
 var import_path6 = require("path");
 var import_os2 = require("os");
 
-// src/ai/haiku.ts
-var import_child_process = require("child_process");
-var import_fs = require("fs");
-var import_path = require("path");
-var AI_MODEL = "claude-haiku-4-5";
-var AI_TIMEOUT = 3e4;
-function callHaiku(prompt, logFn = () => {
-}) {
-  const tmpDir = (0, import_fs.mkdtempSync)((0, import_path.join)("/tmp", "ai-call-"));
-  const tmpFile = (0, import_path.join)(tmpDir, "prompt.txt");
-  try {
-    (0, import_fs.writeFileSync)(tmpFile, prompt, { mode: 384 });
-    const cleanEnv = { ...process.env };
-    delete cleanEnv["CLAUDECODE"];
-    const aiOutput = (0, import_child_process.execSync)(`cat "${tmpFile}" | claude -p --model ${AI_MODEL}`, {
-      timeout: AI_TIMEOUT,
-      encoding: "utf8",
-      shell: "/bin/bash",
-      env: cleanEnv,
-      cwd: tmpDir,
-      maxBuffer: 5 * 1024 * 1024,
-      stdio: ["pipe", "pipe", "pipe"]
-    });
-    try {
-      (0, import_fs.unlinkSync)(tmpFile);
-      (0, import_fs.rmdirSync)(tmpDir);
-    } catch {
-    }
-    let jsonStr = aiOutput.trim();
-    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
-    if (jsonMatch) jsonStr = jsonMatch[0];
-    return JSON.parse(jsonStr);
-  } catch (err) {
-    try {
-      (0, import_fs.unlinkSync)(tmpFile);
-      (0, import_fs.rmdirSync)(tmpDir);
-    } catch {
-    }
-    const error = err;
-    logFn(`[AI ERROR] ${error.message}`);
-    if (error.killed) {
-      return { error: "timeout", message: "AI verification timed out" };
-    }
-    return { error: "call_failed", message: error.message };
-  }
-}
-
 // src/utils/state.ts
-var import_fs2 = require("fs");
-var import_path3 = require("path");
+var import_fs = require("fs");
+var import_path2 = require("path");
 
 // src/utils/paths.ts
 var import_os = require("os");
-var import_path2 = require("path");
+var import_path = require("path");
 var HOME = (0, import_os.homedir)();
-var CLAUDE_DIR = (0, import_path2.join)(HOME, ".claude");
-var CHAINS_DIR = (0, import_path2.join)(CLAUDE_DIR, "chains");
-var BACKUP_DIR = (0, import_path2.join)(CHAINS_DIR, ".backup");
-var AGENTS_DIR = (0, import_path2.join)(CLAUDE_DIR, "agents");
-var SKILLS_DIR = (0, import_path2.join)(CLAUDE_DIR, "skills");
-var HOOKS_DIR = (0, import_path2.join)(CLAUDE_DIR, "hooks", "chains");
-var CUSTOM_HOOKS_DIR = (0, import_path2.join)(HOOKS_DIR, "custom");
-var TMP_DIR = (0, import_path2.join)(CLAUDE_DIR, "tmp");
-var PROJECTS_DIR = (0, import_path2.join)(CLAUDE_DIR, "projects");
-var SETTINGS_FILE = (0, import_path2.join)(CLAUDE_DIR, "settings.json");
-var CHAIN_CONFIG_FILE = (0, import_path2.join)(HOOKS_DIR, "chain-config.json");
-var VERIFICATION_RULES_FILE = (0, import_path2.join)(HOOKS_DIR, "verification-rules.json");
-var HOOKS_CONFIG_FILE = (0, import_path2.join)(HOOKS_DIR, "hooks-config.yaml");
-var CHAIN_EVENTS_LOG = (0, import_path2.join)(TMP_DIR, "chain-events.jsonl");
+var CLAUDE_DIR = (0, import_path.join)(HOME, ".claude");
+var CHAINS_DIR = (0, import_path.join)(CLAUDE_DIR, "chains");
+var BACKUP_DIR = (0, import_path.join)(CHAINS_DIR, ".backup");
+var AGENTS_DIR = (0, import_path.join)(CLAUDE_DIR, "agents");
+var SKILLS_DIR = (0, import_path.join)(CLAUDE_DIR, "skills");
+var HOOKS_DIR = (0, import_path.join)(CLAUDE_DIR, "hooks", "chains");
+var CUSTOM_HOOKS_DIR = (0, import_path.join)(HOOKS_DIR, "custom");
+var TMP_DIR = (0, import_path.join)(CLAUDE_DIR, "tmp");
+var PROJECTS_DIR = (0, import_path.join)(CLAUDE_DIR, "projects");
+var SETTINGS_FILE = (0, import_path.join)(CLAUDE_DIR, "settings.json");
+var CHAIN_CONFIG_FILE = (0, import_path.join)(HOOKS_DIR, "chain-config.json");
+var VERIFICATION_RULES_FILE = (0, import_path.join)(HOOKS_DIR, "verification-rules.json");
+var HOOKS_CONFIG_FILE = (0, import_path.join)(HOOKS_DIR, "hooks-config.yaml");
+var CHAIN_EVENTS_LOG = (0, import_path.join)(TMP_DIR, "chain-events.jsonl");
+var GLOBAL_PROVIDERS_FILE = (0, import_path.join)(CLAUDE_DIR, "brainbrew", "providers.json");
 
 // src/utils/state.ts
-var STATE_DIR = (0, import_path3.join)(TMP_DIR, "chain-state");
+var STATE_DIR = (0, import_path2.join)(TMP_DIR, "chain-state");
 function statePath(sessionId) {
-  return (0, import_path3.join)(STATE_DIR, `${sessionId}.json`);
+  return (0, import_path2.join)(STATE_DIR, `${sessionId}.json`);
 }
 function isPlainObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -7450,13 +7404,13 @@ function sanitize(raw) {
 function getState(sessionId) {
   if (!sessionId) return null;
   const file = statePath(sessionId);
-  if (!(0, import_fs2.existsSync)(file)) return null;
+  if (!(0, import_fs.existsSync)(file)) return null;
   let raw;
   try {
-    raw = JSON.parse((0, import_fs2.readFileSync)(file, "utf-8"));
+    raw = JSON.parse((0, import_fs.readFileSync)(file, "utf-8"));
   } catch {
     try {
-      (0, import_fs2.unlinkSync)(file);
+      (0, import_fs.unlinkSync)(file);
     } catch {
     }
     return null;
@@ -7464,7 +7418,7 @@ function getState(sessionId) {
   const clean = sanitize(raw);
   if (!clean) {
     try {
-      (0, import_fs2.unlinkSync)(file);
+      (0, import_fs.unlinkSync)(file);
     } catch {
     }
     return null;
@@ -7473,38 +7427,38 @@ function getState(sessionId) {
 }
 function updateState(sessionId, updates) {
   if (!sessionId) return;
-  if (!(0, import_fs2.existsSync)(STATE_DIR)) (0, import_fs2.mkdirSync)(STATE_DIR, { recursive: true });
+  if (!(0, import_fs.existsSync)(STATE_DIR)) (0, import_fs.mkdirSync)(STATE_DIR, { recursive: true });
   const current = getState(sessionId) || { previousAgents: [] };
   const merged = sanitize({ ...current, ...updates }) || { previousAgents: [] };
   const finalPath = statePath(sessionId);
   const tmpPath = `${finalPath}.${process.pid}.${Date.now()}.tmp`;
-  (0, import_fs2.writeFileSync)(tmpPath, JSON.stringify(merged, null, 2));
-  (0, import_fs2.renameSync)(tmpPath, finalPath);
+  (0, import_fs.writeFileSync)(tmpPath, JSON.stringify(merged, null, 2));
+  (0, import_fs.renameSync)(tmpPath, finalPath);
 }
 
 // src/utils/logger.ts
-var import_fs3 = require("fs");
-var import_path4 = require("path");
+var import_fs2 = require("fs");
+var import_path3 = require("path");
 function log(file, msg) {
-  const dir = (0, import_path4.dirname)(file);
-  if (!(0, import_fs3.existsSync)(dir)) (0, import_fs3.mkdirSync)(dir, { recursive: true });
-  (0, import_fs3.appendFileSync)(file, `${(/* @__PURE__ */ new Date()).toISOString()} ${msg}
+  const dir = (0, import_path3.dirname)(file);
+  if (!(0, import_fs2.existsSync)(dir)) (0, import_fs2.mkdirSync)(dir, { recursive: true });
+  (0, import_fs2.appendFileSync)(file, `${(/* @__PURE__ */ new Date()).toISOString()} ${msg}
 `);
 }
 function logEvent(data) {
-  const dir = (0, import_path4.dirname)(CHAIN_EVENTS_LOG);
-  if (!(0, import_fs3.existsSync)(dir)) (0, import_fs3.mkdirSync)(dir, { recursive: true });
+  const dir = (0, import_path3.dirname)(CHAIN_EVENTS_LOG);
+  if (!(0, import_fs2.existsSync)(dir)) (0, import_fs2.mkdirSync)(dir, { recursive: true });
   const entry = { ts: (/* @__PURE__ */ new Date()).toISOString(), ...data };
-  (0, import_fs3.appendFileSync)(CHAIN_EVENTS_LOG, JSON.stringify(entry) + "\n");
+  (0, import_fs2.appendFileSync)(CHAIN_EVENTS_LOG, JSON.stringify(entry) + "\n");
 }
 
 // src/utils/chain-resolver.ts
-var import_fs4 = require("fs");
-var import_path5 = require("path");
+var import_fs3 = require("fs");
+var import_path4 = require("path");
 function resolveActiveChain(cwd) {
-  const pointerPath = (0, import_path5.join)(cwd, ".claude", "chain-config.yaml");
-  if (!(0, import_fs4.existsSync)(pointerPath)) return null;
-  const content = (0, import_fs4.readFileSync)(pointerPath, "utf-8");
+  const pointerPath = (0, import_path4.join)(cwd, ".claude", "chain-config.yaml");
+  if (!(0, import_fs3.existsSync)(pointerPath)) return null;
+  const content = (0, import_fs3.readFileSync)(pointerPath, "utf-8");
   if (/^(flow|hooks):/m.test(content)) {
     return { configPath: pointerPath, chainName: "default", isLegacy: true };
   }
@@ -7514,17 +7468,17 @@ function resolveActiveChain(cwd) {
   const dirMatch = content.match(/^chains_dir:\s*(.+)/m);
   const chainsDir = dirMatch ? dirMatch[1].trim() : ".claude/chains/";
   if (active.includes("..") || chainsDir.includes("..")) return null;
-  const chainPath = (0, import_path5.join)(cwd, chainsDir, `${active}.yaml`);
-  const resolvedPath = (0, import_path5.resolve)(chainPath);
-  const expectedBase = (0, import_path5.resolve)((0, import_path5.join)(cwd, ".claude"));
+  const chainPath = (0, import_path4.join)(cwd, chainsDir, `${active}.yaml`);
+  const resolvedPath = (0, import_path4.resolve)(chainPath);
+  const expectedBase = (0, import_path4.resolve)((0, import_path4.join)(cwd, ".claude"));
   if (!resolvedPath.startsWith(expectedBase)) return null;
-  if (!(0, import_fs4.existsSync)(chainPath)) return null;
+  if (!(0, import_fs3.existsSync)(chainPath)) return null;
   return { configPath: chainPath, chainName: active, isLegacy: false };
 }
 function readActiveChainContent(cwd) {
   const resolved = resolveActiveChain(cwd);
   if (!resolved) return null;
-  return (0, import_fs4.readFileSync)(resolved.configPath, "utf-8");
+  return (0, import_fs3.readFileSync)(resolved.configPath, "utf-8");
 }
 
 // src/core/config.ts
@@ -7683,6 +7637,450 @@ function parseChainYaml(content) {
   return chain;
 }
 
+// src/providers/registry.ts
+var import_fs4 = require("fs");
+
+// src/providers/adapters.ts
+var ADAPTER_KINDS = ["openai", "anthropic", "gemini"];
+function trimBase(base) {
+  return base.replace(/\/+$/, "");
+}
+function withSuffix(base, suffix) {
+  const b = trimBase(base);
+  return b.endsWith(suffix) ? b : b + suffix;
+}
+function str(v) {
+  return typeof v === "string" ? v : "";
+}
+var openai = {
+  kind: "openai",
+  buildUrl: (base) => withSuffix(base, "/chat/completions"),
+  authHeaders: (token) => {
+    const h = {};
+    if (token) h.Authorization = `Bearer ${token}`;
+    return h;
+  },
+  buildBody: (model, prompt) => ({
+    model,
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+    temperature: 0
+  }),
+  extractContent: (json) => {
+    const j = json;
+    return str(j.choices?.[0]?.message?.content);
+  }
+};
+var anthropic = {
+  kind: "anthropic",
+  buildUrl: (base) => withSuffix(base, "/v1/messages"),
+  authHeaders: (token) => {
+    const h = {};
+    if (token) {
+      h["x-api-key"] = token;
+      h["anthropic-version"] = "2023-06-01";
+    }
+    return h;
+  },
+  buildBody: (model, prompt) => ({
+    model,
+    max_tokens: 1024,
+    temperature: 0,
+    messages: [{ role: "user", content: prompt }]
+  }),
+  extractContent: (json) => {
+    const j = json;
+    const block = j.content?.find((b) => b.type === "text") ?? j.content?.[0];
+    return str(block?.text);
+  }
+};
+var gemini = {
+  kind: "gemini",
+  buildUrl: (base, model) => `${trimBase(base)}/models/${model}:generateContent`,
+  authHeaders: (token) => {
+    const h = {};
+    if (token) h["x-goog-api-key"] = token;
+    return h;
+  },
+  buildBody: (_model, prompt) => ({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0, responseMimeType: "application/json" }
+  }),
+  extractContent: (json) => {
+    const j = json;
+    return str(j.candidates?.[0]?.content?.parts?.[0]?.text);
+  }
+};
+var ADAPTERS = { openai, anthropic, gemini };
+function resolveAdapter(provider) {
+  return ADAPTERS[provider.provider ?? "openai"] ?? ADAPTERS.openai;
+}
+
+// src/providers/registry.ts
+function isPlainObject2(v) {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+function readJsonOrEmpty(file) {
+  if (!(0, import_fs4.existsSync)(file)) return null;
+  try {
+    return JSON.parse((0, import_fs4.readFileSync)(file, "utf-8"));
+  } catch {
+    return null;
+  }
+}
+function normalizeProvider(name, raw, source, warnings) {
+  if (!isPlainObject2(raw)) {
+    warnings.push(`${source}: provider "${name}" must be an object`);
+    return null;
+  }
+  const model = raw.model;
+  if (typeof model !== "string" || !model) {
+    warnings.push(`${source}: provider "${name}" missing model`);
+    return null;
+  }
+  const baseURL = typeof raw.baseURL === "string" && raw.baseURL ? raw.baseURL : void 0;
+  const endpoint = typeof raw.endpoint === "string" && raw.endpoint ? raw.endpoint : void 0;
+  if (!baseURL && !endpoint) {
+    warnings.push(`${source}: provider "${name}" needs baseURL or endpoint`);
+    return null;
+  }
+  let provider = "openai";
+  if (typeof raw.provider === "string") {
+    if (!ADAPTER_KINDS.includes(raw.provider)) {
+      warnings.push(
+        `${source}: provider "${name}" \u2014 unknown provider "${raw.provider}". Use one of: ${ADAPTER_KINDS.join(", ")}`
+      );
+      return null;
+    }
+    provider = raw.provider;
+  }
+  const out = { model, provider };
+  if (endpoint) out.endpoint = endpoint;
+  if (baseURL) out.baseURL = baseURL;
+  if (typeof raw.token === "string" && raw.token) {
+    out.token = raw.token;
+  }
+  if (isPlainObject2(raw.headers)) {
+    const headers = {};
+    for (const [k, v] of Object.entries(raw.headers)) {
+      if (typeof v === "string") headers[k] = v;
+    }
+    if (Object.keys(headers).length) out.headers = headers;
+  }
+  if (typeof raw.timeout_ms === "number" && raw.timeout_ms > 0) {
+    out.timeout_ms = raw.timeout_ms;
+  }
+  return out;
+}
+function mergeLayer(registry, file, data) {
+  if (!data) return;
+  const drp = data.active_decide_provider;
+  if (typeof drp === "string" && drp.trim() !== "") {
+    if (/^[a-zA-Z0-9_-]+$/.test(drp)) {
+      registry.activeDecideProvider = drp;
+    } else {
+      registry.warnings.push(`${file}: active_decide_provider must be a provider name string`);
+    }
+  } else if (drp !== void 0 && typeof drp !== "string") {
+    registry.warnings.push(`${file}: active_decide_provider must be a string`);
+  }
+  if (data.require_decide_provider === true) {
+    registry.requireDecideProvider = true;
+  }
+  const providers = data.providers;
+  if (!isPlainObject2(providers)) {
+    registry.warnings.push(`${file}: missing providers object`);
+    return;
+  }
+  for (const [name, raw] of Object.entries(providers)) {
+    const def = normalizeProvider(name, raw, file, registry.warnings);
+    if (def) {
+      registry.providers[name] = def;
+      registry.origins[name] = file;
+    }
+  }
+}
+function loadProviderRegistry() {
+  const registry = { providers: {}, origins: {}, warnings: [] };
+  mergeLayer(registry, GLOBAL_PROVIDERS_FILE, readJsonOrEmpty(GLOBAL_PROVIDERS_FILE));
+  return registry;
+}
+function resolveProviderToken(provider) {
+  return provider.token ?? null;
+}
+function resolveProviderUrl(provider) {
+  if (provider.endpoint) return provider.endpoint;
+  return resolveAdapter(provider).buildUrl(provider.baseURL ?? "", provider.model);
+}
+
+// src/providers/http.ts
+var DEFAULT_TIMEOUT_MS = 15e3;
+async function callProvider(provider, prompt) {
+  const startedAt = Date.now();
+  const adapter = resolveAdapter(provider);
+  let authHeader;
+  try {
+    authHeader = adapter.authHeaders(resolveProviderToken(provider));
+  } catch (e) {
+    return { ok: false, error: e.message, duration_ms: 0 };
+  }
+  const url = resolveProviderUrl(provider);
+  const body = JSON.stringify(adapter.buildBody(provider.model, prompt));
+  const timeoutMs = provider.timeout_ms ?? DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader,
+        ...provider.headers ?? {}
+      },
+      body,
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      return {
+        ok: false,
+        error: `HTTP ${res.status}: ${text.slice(0, 500) || res.statusText}`,
+        duration_ms: Date.now() - startedAt
+      };
+    }
+    const json = await res.json();
+    const content = adapter.extractContent(json);
+    if (!content) {
+      return {
+        ok: false,
+        error: "provider returned empty content",
+        duration_ms: Date.now() - startedAt
+      };
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      return {
+        ok: false,
+        error: `provider response was not valid JSON: ${content.slice(0, 200)}`,
+        duration_ms: Date.now() - startedAt
+      };
+    }
+    const route = typeof parsed.route === "string" ? parsed.route : "";
+    const reason = typeof parsed.reason === "string" ? parsed.reason : "";
+    if (!route) {
+      return {
+        ok: false,
+        error: "provider response missing route field",
+        duration_ms: Date.now() - startedAt
+      };
+    }
+    return { ok: true, response: { route, reason }, duration_ms: Date.now() - startedAt };
+  } catch (e) {
+    const err = e;
+    const aborted = err.name === "AbortError";
+    return {
+      ok: false,
+      error: aborted ? `provider timeout after ${timeoutMs}ms` : `provider call failed: ${err.message}`,
+      duration_ms: Date.now() - startedAt
+    };
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
+// src/ai/haiku.ts
+var import_child_process = require("child_process");
+var import_fs5 = require("fs");
+var import_path5 = require("path");
+var AI_MODEL = "claude-haiku-4-5";
+var AI_TIMEOUT = 3e4;
+function callHaiku(prompt, logFn = () => {
+}) {
+  const tmpDir = (0, import_fs5.mkdtempSync)((0, import_path5.join)("/tmp", "ai-call-"));
+  const tmpFile = (0, import_path5.join)(tmpDir, "prompt.txt");
+  try {
+    (0, import_fs5.writeFileSync)(tmpFile, prompt, { mode: 384 });
+    const cleanEnv = { ...process.env };
+    delete cleanEnv["CLAUDECODE"];
+    const aiOutput = (0, import_child_process.execSync)(`cat "${tmpFile}" | claude -p --model ${AI_MODEL}`, {
+      timeout: AI_TIMEOUT,
+      encoding: "utf8",
+      shell: "/bin/bash",
+      env: cleanEnv,
+      cwd: tmpDir,
+      maxBuffer: 5 * 1024 * 1024,
+      stdio: ["pipe", "pipe", "pipe"]
+    });
+    try {
+      (0, import_fs5.unlinkSync)(tmpFile);
+      (0, import_fs5.rmdirSync)(tmpDir);
+    } catch {
+    }
+    let jsonStr = aiOutput.trim();
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (jsonMatch) jsonStr = jsonMatch[0];
+    return JSON.parse(jsonStr);
+  } catch (err) {
+    try {
+      (0, import_fs5.unlinkSync)(tmpFile);
+      (0, import_fs5.rmdirSync)(tmpDir);
+    } catch {
+    }
+    const error = err;
+    logFn(`[AI ERROR] ${error.message}`);
+    if (error.killed) {
+      return { error: "timeout", message: "AI verification timed out" };
+    }
+    return { error: "call_failed", message: error.message };
+  }
+}
+
+// src/decide/keyword.ts
+var ISSUE_KEYWORDS = ["issues", "fail", "error", "bug", "broken"];
+var PASS_KEYWORDS = ["pass", "approved", "success", "all good", "lgtm"];
+function keywordDecide(text, routes, fallback) {
+  const routeNames = Object.keys(routes);
+  if (routeNames.length === 0) {
+    return { route: null, reason: "no routes defined" };
+  }
+  const lower = text.toLowerCase();
+  const hasIssues = ISSUE_KEYWORDS.some((k) => lower.includes(k));
+  const hasPassed = PASS_KEYWORDS.some((k) => lower.includes(k));
+  if (hasIssues && !hasPassed) {
+    if (fallback.onFail && routes[fallback.onFail] !== void 0) {
+      return { route: fallback.onFail, reason: "keyword: failure detected" };
+    }
+    if (fallback.onIssues && routes[fallback.onIssues] !== void 0) {
+      return { route: fallback.onIssues, reason: "keyword: issues detected" };
+    }
+    const fixLike = routeNames.find((n) => /fix|fail|issue|on_fail|on_issues|abort/i.test(n));
+    if (fixLike) return { route: fixLike, reason: "keyword: fallback failure-shaped route" };
+  }
+  if (hasPassed) {
+    const okLike = routeNames.find((n) => /next|pass|approve|success|continue|ok/i.test(n));
+    if (okLike) return { route: okLike, reason: "keyword: pass detected" };
+  }
+  const def = fallback.defaultNext && routes[fallback.defaultNext] !== void 0 ? fallback.defaultNext : routeNames[0];
+  return { route: def, reason: "keyword: default to first route" };
+}
+
+// src/decide/runner.ts
+function isEnd(r) {
+  return r === "END";
+}
+function validateLlmRoute(route, routes, routeNames) {
+  if (typeof route !== "string" || !route) return void 0;
+  if (isEnd(route)) return null;
+  if (routes[route] !== void 0) return route;
+  return routeNames.find((r) => routes[r] === route) ?? void 0;
+}
+async function runDecide(node, agentOutput, registry, decideProvider, requireDecideProvider = false) {
+  const routes = node.routes ?? {};
+  const routeNames = Object.keys(routes);
+  const nonEnd = routeNames.filter((r) => !isEnd(r));
+  const decide = node.decide;
+  const hasDecideBlock = decide !== void 0 && decide !== null;
+  const rules = decide;
+  const providerName = decideProvider;
+  const keyword = () => {
+    const d = keywordDecide(agentOutput, routes, {
+      onFail: node.on_fail,
+      onIssues: node.on_issues,
+      defaultNext: typeof node.next === "string" ? node.next : void 0
+    });
+    return { route: d.route, reason: d.reason, source: "keyword" };
+  };
+  if (nonEnd.length === 0) {
+    return { route: null, reason: "all routes END", source: "skip" };
+  }
+  if (nonEnd.length === 1 && !hasDecideBlock) {
+    return { route: nonEnd[0], reason: "single non-END route \u2014 decide skipped", source: "skip" };
+  }
+  if (!hasDecideBlock || agentOutput.length <= 50) {
+    return keyword();
+  }
+  if (providerName && !registry.providers[providerName]) {
+    if (requireDecideProvider) {
+      return {
+        route: null,
+        reason: `provider "${providerName}" not configured and require_decide_provider is on`,
+        source: "error:no-provider"
+      };
+    }
+    const kw2 = keyword();
+    return {
+      route: kw2.route,
+      reason: `provider "${providerName}" not configured \u2014 fell back to keyword: ${kw2.reason}`,
+      source: `fallback:${providerName}-missing`
+    };
+  }
+  if (!providerName) {
+    if (requireDecideProvider) {
+      return {
+        route: null,
+        reason: "no provider configured and require_decide_provider is on",
+        source: "error:no-provider"
+      };
+    }
+    const prompt2 = buildDecidePrompt(rules, routes, agentOutput);
+    const haiku = callHaiku(prompt2);
+    const validated = validateLlmRoute(haiku.route, routes, routeNames);
+    if (!haiku.error && validated !== void 0) {
+      const reason = typeof haiku.reason === "string" ? haiku.reason : "";
+      return { route: validated, reason, source: "claude-p" };
+    }
+    const kw2 = keyword();
+    const why2 = haiku.error ? String(haiku.message ?? haiku.error) : "returned invalid route";
+    return {
+      route: kw2.route,
+      reason: `claude -p ${why2} \u2014 fell back to keyword: ${kw2.reason}`,
+      source: "fallback:claude-p-error"
+    };
+  }
+  const provider = registry.providers[providerName];
+  const prompt = buildDecidePrompt(rules, routes, agentOutput);
+  const httpResult = await callProvider(provider, prompt);
+  if (httpResult.ok && httpResult.response) {
+    const { route, reason } = httpResult.response;
+    const validated = validateLlmRoute(route, routes, routeNames);
+    if (validated !== void 0) {
+      return { route: validated, reason, source: `provider:${providerName}` };
+    }
+  }
+  const why = httpResult.error ?? "returned invalid route";
+  if (requireDecideProvider) {
+    return {
+      route: null,
+      reason: `provider "${providerName}" ${why} and require_decide_provider is on`,
+      source: "error:provider-failed"
+    };
+  }
+  const kw = keyword();
+  return {
+    route: kw.route,
+    reason: `provider "${providerName}" ${why} \u2014 fell back to keyword: ${kw.reason}`,
+    source: `fallback:${providerName}-error`
+  };
+}
+function buildDecidePrompt(rules, routes, agentOutput) {
+  const routesList = Object.entries(routes).map(([name, desc]) => `- "${name}" \u2192 ${desc || name}`).join("\n");
+  return `You are a chain router. Analyze the agent output and pick the next route.
+
+ROUTING RULES:
+${rules ?? "(no specific rules \u2014 use route descriptions)"}
+
+AVAILABLE ROUTES:
+${routesList}
+- "END" \u2192 stop the chain
+
+AGENT OUTPUT:
+${agentOutput.slice(0, 2e3)}
+
+Respond ONLY with JSON: {"route": "<name or END>", "reason": "brief explanation"}`;
+}
+
 // src/hooks/post-agent.ts
 var LOG_FILE = (0, import_path6.join)(TMP_DIR, "agent-output.log");
 var PLANS_DIR = (0, import_path6.join)((0, import_os2.homedir)(), ".claude", "plans");
@@ -7701,69 +8099,27 @@ function loadChainConfig(cwd) {
     return { saveOutput: [...DEFAULT_SAVE_AGENTS] };
   }
 }
-function getNextAgent(agentType, output, config) {
+async function getNextAgent(agentType, output, config) {
   const flow = config.flow?.[agentType.toLowerCase()];
   if (!flow) {
     return { next: null, reason: "No flow defined for this agent" };
   }
-  const routes = flow.routes ?? {};
-  if (!flow.routes) {
+  const node = { ...flow };
+  if (!node.routes) {
+    const routes = {};
     if (flow.next) routes["next"] = flow.next;
     if (flow.on_fail) routes["on_fail"] = flow.on_fail;
     if (flow.on_issues) routes["on_issues"] = flow.on_issues;
+    node.routes = routes;
   }
-  const routeNames = Object.keys(routes);
-  const defaultNext = flow.next ?? routeNames[0] ?? null;
-  if (flow.decide && output.length > 50 && routeNames.length > 0) {
-    const routesList = routeNames.map((name) => {
-      const desc = routes[name];
-      return `- "${name}" \u2192 ${desc || name}`;
-    }).join("\n");
-    const prompt = `You are a chain router. Analyze the agent output and decide which agent to route to next.
-
-ROUTING RULES:
-${flow.decide}
-
-AVAILABLE ROUTES:
-${routesList}
-- "END" \u2192 Stop the chain (no next agent)
-
-AGENT OUTPUT:
-${output.substring(0, 2e3)}
-
-Based on the routing rules and output, which route should be taken?
-Respond ONLY with JSON: {"route": "<agent-name or END>", "reason": "brief explanation"}`;
-    try {
-      const result = callHaiku(prompt);
-      if (result && !result["error"]) {
-        const route = result["route"] || "";
-        const reason = result["reason"] || "AI decision";
-        if (route === "END" || route === "end" || route === "null") {
-          return { next: null, reason: `[AI] ${reason}` };
-        }
-        if (routes[route]) {
-          return { next: route, reason: `[AI] ${reason}` };
-        }
-        const matchedKey = routeNames.find((r) => routes[r] === route);
-        if (matchedKey) {
-          return { next: matchedKey, reason: `[AI] ${reason}` };
-        }
-      }
-    } catch {
-    }
-  }
-  const outputLower = output.toLowerCase();
-  const hasIssues = outputLower.includes("issues") || outputLower.includes("fail") || outputLower.includes("error") || outputLower.includes("bug");
-  const hasPassed = outputLower.includes("pass") || outputLower.includes("approved") || outputLower.includes("success");
-  if (hasIssues && !hasPassed) {
-    if (flow.on_fail) {
-      return { next: flow.on_fail, reason: "Output indicates failure" };
-    }
-    if (flow.on_issues) {
-      return { next: flow.on_issues, reason: "Output indicates issues" };
-    }
-  }
-  return { next: defaultNext, reason: "Default next in flow" };
+  const registry = loadProviderRegistry();
+  const decision = await runDecide(node, output, registry, registry.activeDecideProvider, registry.requireDecideProvider);
+  const isError = decision.source.startsWith("error:");
+  return {
+    next: decision.route,
+    reason: `[${decision.source}] ${decision.reason}`,
+    error: isError ? decision.reason : void 0
+  };
 }
 function extractPhases(planContent) {
   const phases = [];
@@ -7788,12 +8144,12 @@ function findRecentPlan(sessionId) {
   const state = getState(sessionId);
   if (state?.phaseTracking) {
     const pt = state.phaseTracking;
-    if (pt.planFile && (0, import_fs5.existsSync)(pt.planFile)) return pt.planFile;
+    if (pt.planFile && (0, import_fs6.existsSync)(pt.planFile)) return pt.planFile;
   }
-  if (!(0, import_fs5.existsSync)(PLANS_DIR)) return null;
-  const files = (0, import_fs5.readdirSync)(PLANS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({
+  if (!(0, import_fs6.existsSync)(PLANS_DIR)) return null;
+  const files = (0, import_fs6.readdirSync)(PLANS_DIR).filter((f) => f.endsWith(".md")).map((f) => ({
     path: (0, import_path6.join)(PLANS_DIR, f),
-    mtime: (0, import_fs5.statSync)((0, import_path6.join)(PLANS_DIR, f)).mtime
+    mtime: (0, import_fs6.statSync)((0, import_path6.join)(PLANS_DIR, f)).mtime
   })).sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
   return files[0]?.path ?? null;
 }
@@ -7805,7 +8161,7 @@ function checkPhaseProgress(sessionId) {
     const planFile = findRecentPlan(sessionId);
     if (!planFile) return { hasMore: false };
     try {
-      const planContent = (0, import_fs5.readFileSync)(planFile, "utf-8");
+      const planContent = (0, import_fs6.readFileSync)(planFile, "utf-8");
       const phases = extractPhases(planContent);
       if (phases.length <= 1) return { hasMore: false };
       tracking = {
@@ -7842,10 +8198,10 @@ function checkPhaseProgress(sessionId) {
 var STATS_DIR = (0, import_path6.join)(TMP_DIR, "agent-stats");
 function loadAgentStats(agentId) {
   const statsFile = (0, import_path6.join)(STATS_DIR, `${agentId}.json`);
-  if (!(0, import_fs5.existsSync)(statsFile)) return null;
+  if (!(0, import_fs6.existsSync)(statsFile)) return null;
   try {
-    const stats = JSON.parse((0, import_fs5.readFileSync)(statsFile, "utf-8"));
-    (0, import_fs5.unlinkSync)(statsFile);
+    const stats = JSON.parse((0, import_fs6.readFileSync)(statsFile, "utf-8"));
+    (0, import_fs6.unlinkSync)(statsFile);
     return stats;
   } catch {
     return null;
@@ -7887,9 +8243,9 @@ function formatStatsYaml(stats) {
   }
   return yaml;
 }
-function main() {
+async function main() {
   try {
-    const stdin = (0, import_fs5.readFileSync)(0, "utf-8").trim();
+    const stdin = (0, import_fs6.readFileSync)(0, "utf-8").trim();
     if (!stdin) process.exit(0);
     const p = JSON.parse(stdin);
     const tr = p.tool_response ?? {};
@@ -7931,7 +8287,7 @@ ${preview2}`;
       if (text && cwd && config.saveOutput?.includes(type.toLowerCase())) {
         try {
           const outputDir = (0, import_path6.join)(cwd, ".claude", "outputs", type.toLowerCase());
-          if (!(0, import_fs5.existsSync)(outputDir)) (0, import_fs5.mkdirSync)(outputDir, { recursive: true });
+          if (!(0, import_fs6.existsSync)(outputDir)) (0, import_fs6.mkdirSync)(outputDir, { recursive: true });
           const ts = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").substring(0, 19);
           const filename = `${ts}.md`;
           const stats = loadAgentStats(id);
@@ -7955,7 +8311,7 @@ ${prompt}
 ## Output
 
 ` : "";
-          (0, import_fs5.writeFileSync)((0, import_path6.join)(outputDir, filename), header + promptSection + text);
+          (0, import_fs6.writeFileSync)((0, import_path6.join)(outputDir, filename), header + promptSection + text);
           log(LOG_FILE, `[SAVE] ${type} \u2192 ${type.toLowerCase()}/${filename} (${text.length} chars)`);
         } catch {
         }
@@ -7972,7 +8328,7 @@ ${prompt}
     const isBackgrounded = tokens === 0 && ms === 0 && text.length === 0;
     if (isBackgrounded) {
       const dir = (0, import_path6.dirname)(LOG_FILE);
-      if (!(0, import_fs5.existsSync)(dir)) (0, import_fs5.mkdirSync)(dir, { recursive: true });
+      if (!(0, import_fs6.existsSync)(dir)) (0, import_fs6.mkdirSync)(dir, { recursive: true });
       log(LOG_FILE, `
 [${(/* @__PURE__ */ new Date()).toISOString()}] ${type}:${id} BACKGROUNDED (waiting)
 `);
@@ -7993,8 +8349,34 @@ The chain will continue automatically when the agent finishes.
       }));
       process.exit(2);
     }
-    const chainDecision = getNextAgent(type, text, config);
+    const chainDecision = await getNextAgent(type, text, config);
     let next = chainDecision.next;
+    if (chainDecision.error) {
+      log(LOG_FILE, `[CHAIN ERROR] ${type}: ${chainDecision.error}
+`);
+      logEvent({ event: "chain-error", agent: type, id, reason: chainDecision.reason });
+      console.log(JSON.stringify({
+        continue: true,
+        hookSpecificOutput: {
+          hookEventName: "PostToolUse",
+          additionalContext: `**Chain ERROR** \u2014 routing for **${type}** could not run: ${chainDecision.error}
+
+<system-reminder>
+## CHAIN ROUTING ERROR
+${chainDecision.error}
+
+The chain cannot continue. Do NOT spawn another agent. Do NOT skip ahead.
+
+Fix \u2014 edit ${GLOBAL_PROVIDERS_FILE} and do ONE of:
+  1. Set "active_decide_provider" to a configured provider name, then verify with the providers_test MCP tool. Use providers_list to see available names.
+  2. Set "require_decide_provider": false to allow the built-in claude -p routing fallback.
+
+Report these two options to the user verbatim and stop.
+</system-reminder>`
+        }
+      }));
+      process.exit(2);
+    }
     if (type.toLowerCase() === "git-manager" && sessionId) {
       const progress = checkPhaseProgress(sessionId);
       if (progress.hasMore) {
@@ -8133,8 +8515,8 @@ ${preview}`;
       updateState(sessionId, state);
       try {
         const tmpOutputDir = (0, import_path6.join)(TMP_DIR, "agent-outputs");
-        if (!(0, import_fs5.existsSync)(tmpOutputDir)) (0, import_fs5.mkdirSync)(tmpOutputDir, { recursive: true });
-        (0, import_fs5.writeFileSync)((0, import_path6.join)(tmpOutputDir, `${id}.md`), text);
+        if (!(0, import_fs6.existsSync)(tmpOutputDir)) (0, import_fs6.mkdirSync)(tmpOutputDir, { recursive: true });
+        (0, import_fs6.writeFileSync)((0, import_path6.join)(tmpOutputDir, `${id}.md`), text);
       } catch {
       }
     }
@@ -8142,7 +8524,7 @@ ${preview}`;
     if (flowNode?.saveOutput === true && text && cwd) {
       try {
         const outputDir = (0, import_path6.join)(cwd, ".claude", "outputs", type.toLowerCase());
-        if (!(0, import_fs5.existsSync)(outputDir)) (0, import_fs5.mkdirSync)(outputDir, { recursive: true });
+        if (!(0, import_fs6.existsSync)(outputDir)) (0, import_fs6.mkdirSync)(outputDir, { recursive: true });
         const ts = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").substring(0, 19);
         const filename = `${ts}.md`;
         const stats = loadAgentStats(id);
@@ -8167,7 +8549,7 @@ ${prompt}
 ## Output
 
 ` : "";
-        (0, import_fs5.writeFileSync)((0, import_path6.join)(outputDir, filename), header + promptSection + text);
+        (0, import_fs6.writeFileSync)((0, import_path6.join)(outputDir, filename), header + promptSection + text);
         log(LOG_FILE, `[SAVE] ${type} \u2192 ${type.toLowerCase()}/${filename} (${text.length} chars)`);
       } catch {
       }

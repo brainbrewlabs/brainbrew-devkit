@@ -148,11 +148,33 @@ flow:
 
 Each agent is a markdown file in `.claude/agents/`. Chains live in your repo — version-controlled, no vendor lock-in.
 
+## Decide providers
+
+A `decide:` node picks the next route. By default that routing runs through `claude -p`. Point it at a cheaper or local model instead (OpenAI-compatible, Anthropic, or Gemini) by registering a provider in `~/.claude/brainbrew/providers.json` (user-global) and activating it:
+
+```json
+{
+  "active_decide_provider": "minimax",
+  "providers": {
+    "minimax": {
+      "provider": "openai",
+      "baseURL": "https://host/gateway/v1",
+      "model": "MiniMax/MiniMax-M2.7",
+      "token": "sk-..."
+    }
+  }
+}
+```
+
+`provider` picks the wire-format adapter — `openai` (default), `anthropic`, or `gemini` — setting the endpoint suffix, auth header, body, and response parser. `baseURL` is a base URL the adapter appends its suffix to (`/chat/completions` for openai); use `endpoint` instead for a full verbatim URL (wins over `baseURL`). Set `require_decide_provider: true` to forbid the silent `claude -p` fallback.
+
+→ Full guide: [Decide Providers](docs/guide/decide-providers.md) — cascade, when routing calls a model, all the `providers_*` tools, and troubleshooting.
+
 ## vs. Vanilla Claude Code
 
 | | Vanilla | Brainbrew |
 |---|---|---|
-| Agent chaining | manual | auto (Haiku-routed) |
+| Agent chaining | manual | auto (provider/LLM-routed) |
 | Failure recovery | none | built-in (debugger → retry) |
 | Quality gates | none | post-agent verification |
 | Inter-agent context | none | auto-injected |
